@@ -35,5 +35,7 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     Double getTotalRevenueBetweenDates(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
     long countByPaymentStatus(Order.PaymentStatus paymentStatus);
+
+    List<Order> findByUser_UserIdAndPaymentStatus(String userId, Order.PaymentStatus paymentStatus);
 }
 

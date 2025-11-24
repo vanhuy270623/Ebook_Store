@@ -18,5 +18,13 @@ public interface UserDeviceRepository extends JpaRepository<UserDevice, String> 
     List<UserDevice> findByUserAndDeviceType(User user, DeviceType deviceType);
 
     long countByUserAndIsActiveTrue(User user);
+
+    List<UserDevice> findByUser_UserId(String userId);
+
+    List<UserDevice> findByUser_UserIdAndIsActiveTrue(String userId);
+
+    List<UserDevice> findByUser_UserIdAndIsActiveFalse(String userId);
+
+    int countByUser_UserIdAndIsActiveTrue(String userId);
 }
 

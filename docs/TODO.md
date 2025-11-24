@@ -1,12 +1,19 @@
 # TODO List - Ebook Store Project
 
-**Cập nhật:** 23/11/2025  
-**Tiến độ tổng thể:** 35% ⬆️ (+10% so với 21/11)  
+**Cập nhật:** 24/11/2025  
+**Tiến độ tổng thể:** 40% ⬆️ (+5% so với 23/11)  
 **Priority:** 🔴 High | 🟡 Medium | 🟢 Low
 
 ---
 
 ## ✅ HOÀN THÀNH GẦN ĐÂY
+
+### Sprint 24/11/2025
+- ✅ Hoàn thành FileStorageService (File upload system)
+- ✅ Hoàn thành BookAssetService (PDF/EPUB management)
+- ✅ Hoàn thành OrderItemService (Order items management)
+- ✅ Hoàn thành UserDeviceService (Device tracking & limits)
+- ✅ Cập nhật tất cả Repositories với missing methods
 
 ### Sprint 21-23/11/2025
 - ✅ Hoàn thành tất cả Service implementations (13/13)
@@ -19,7 +26,7 @@
 
 ---
 
-## 🚀 Phase 1: Core Backend (IN PROGRESS - 70% complete)
+## 🚀 Phase 1: Core Backend (IN PROGRESS - 75% complete)
 
 ### 1. Services Layer ✅ COMPLETED
 **Timeline:** ~~2-3 days~~ → DONE  
@@ -33,19 +40,26 @@
 - [x] CartService + CartServiceImpl ✅
 - [x] CartItemService + CartItemServiceImpl ✅
 - [x] OrderService + OrderServiceImpl ✅
+- [x] OrderItemService + OrderItemServiceImpl ✅ **NEW**
 - [x] ReviewService + ReviewServiceImpl ✅
 - [x] ReadingProgressService + ReadingProgressServiceImpl ✅
 - [x] SubscriptionService + SubscriptionServiceImpl ✅
 - [x] PostService + PostServiceImpl ✅
 - [x] BannerService + BannerServiceImpl ✅
 - [x] CouponService + CouponServiceImpl ✅
+- [x] FileStorageService + FileStorageServiceImpl ✅ **NEW**
+- [x] BookAssetService + BookAssetServiceImpl ✅ **NEW**
+- [x] UserDeviceService + UserDeviceServiceImpl ✅ **NEW**
 
 **Features Completed:**
 - ✅ @Transactional support
 - ✅ Business logic implementation
 - ✅ Exception handling
-- ✅ File upload integration
+- ✅ File upload integration (images, PDF, EPUB)
 - ✅ Password encryption (BCrypt)
+- ✅ Device limit enforcement
+- ✅ Book asset management
+- ✅ Order item tracking
 
 ---
 
@@ -173,16 +187,16 @@
 - [x] Resource handlers ✅
 - [x] Cover image upload ✅
 - [x] Auto-create directories ✅
+- [x] Author avatar upload ✅
+- [x] Ebook file upload (PDF/EPUB) ✅
+- [x] Banner upload ✅
 
 #### Future Enhancements
-- [ ] Author avatar upload
-- [ ] Ebook file upload (PDF/EPUB)
-- [ ] Banner upload
 - [ ] Cloud storage (AWS S3)
 
-### 2. Service Layer 🔴
-**Timeline:** 5-7 days  
-**Status:** 🔄 In Progress (~60%)
+### 2. Service Layer ✅ COMPLETED
+**Timeline:** ~~5-7 days~~ → DONE  
+**Status:** ✅ 100% Complete
 
 #### Core Services
 - [x] `AuthService` - Login, Register (via UserService) ✅
@@ -193,15 +207,18 @@
 - [x] `CartService` - Add, Remove, Clear cart ✅
 - [x] `CartItemService` - Cart item operations ✅
 - [x] `OrderService` - Create order, Process payment, History ✅
+- [x] `OrderItemService` - Order item management, Sales tracking ✅
 - [x] `SubscriptionService` - Package management, Subscribe ✅
 - [x] `ReviewService` - Submit, Approve, Calculate rating ✅
 - [x] `ReadingProgressService` - Track progress, Continue reading ✅
 - [x] `PostService` - Blog CRUD, Publish ✅
 - [x] `BannerService` - Banner management ✅
 - [x] `CouponService` - Coupon management ✅
-- [ ] `FileStorageService` - Upload PDF, EPUB, Images
+- [x] `FileStorageService` - Upload PDF, EPUB, Images ✅
+- [x] `BookAssetService` - Manage book files (PDF/EPUB) ✅
+- [x] `UserDeviceService` - Device tracking, Device limits ✅
 
-**Đã tạo:** 13/14 services (interface + implementation)
+**Đã tạo:** 17/17 services (interface + implementation) ✅
 
 #### Business Logic to Implement
 - [ ] **Access Control**: Check user có quyền đọc sách không

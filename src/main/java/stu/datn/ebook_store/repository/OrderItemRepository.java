@@ -16,5 +16,9 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
 
     @Query("SELECT oi FROM OrderItem oi WHERE oi.order.user.userId = :userId AND oi.book.bookId = :bookId")
     List<OrderItem> findByUserAndBook(@Param("userId") String userId, @Param("bookId") String bookId);
+
+    List<OrderItem> findByOrder_OrderId(String orderId);
+
+    List<OrderItem> findByBook_BookId(String bookId);
 }
 

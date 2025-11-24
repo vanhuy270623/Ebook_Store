@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<!-- DataTables CSS -->
+	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.css">
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<!-- Header -->
+	<div th:replace="~{admin/layout/header :: header}"></div>
+
+	<!-- Sidebar -->
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<!-- Content Wrapper -->
+	<div class="content-wrapper">
+		<!-- Content Header -->
+		<section class="content-header">
+			<h1>
+				Quản lý sách
+				<small>Danh sách tất cả sách trong hệ thống</small>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li class="active">Quản lý sách</li>
+			</ol>
+		</section>
+
+		<!-- Main content -->
+		<section class="content">
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box">
+						<div class="box-header">
+							<h3 class="box-title">Danh sách sách (<span th:text="${totalBooks}">0</span> cuốn)</h3>
+							<div class="box-tools pull-right">
+								<a th:href="@{/admin/books/add}" class="btn btn-primary btn-sm">
+									<i class="fa fa-plus"></i> Thêm sách mới
+								</a>
+							</div>
+						</div>
+
+						<div class="box-body">
+							<table id="booksTable" class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>Ảnh bìa</th>
+										<th>Tên sách</th>
+										<th>Thể loại</th>
+										<th>Giá</th>
+										<th>Loại truy cập</th>
+										<th>Đánh giá</th>
+										<th>Lượt xem</th>
+										<th>Ngày tạo</th>
+										<th>Thao tác</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="book : ${books}">
+										<td>
+											<img th:src="${book.coverImageUrl}" th:alt="${book.title}"
+												 class="img-thumbnail" style="width: 50px; height: 70px;">
+										</td>
+										<td>
+											<strong th:text="${book.title}">Tên sách</strong><br>
+											<small class="text-muted" th:text="${book.isbn}">ISBN</small>
+										</td>
+										<td>
+											<span class="label label-info" th:text="${book.bookCategory?.categoryName ?: 'Chưa phân loại'}">Thể loại</span>
+										</td>
+										<td>
+											<span th:if="${book.price == 0}" class="label label-success">Miễn phí</span>
+											<span th:if="${book.price > 0}" th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + 'đ'" class="text-primary">0đ</span>
+										</td>
+										<td>
+											<span th:switch="${book.accessType}">
+												<span th:case="'FREE'" class="label label-success">Miễn phí</span>
+												<span th:case="'PURCHASE'" class="label label-primary">Mua</span>
+												<span th:case="'SUBSCRIPTION'" class="label label-warning">Gói đăng ký</span>
+												<span th:case="'BOTH'" class="label label-info">Cả hai</span>
+											</span>
+										</td>
+										<td>
+											<i class="fa fa-star text-yellow"></i>
+											<span th:text="${#numbers.formatDecimal(book.averageRating, 1, 2)}">0.0</span>
+											<small class="text-muted">(<span th:text="${book.totalReviews}">0</span>)</small>
+										</td>
+										<td>
+											<span th:text="${#numbers.formatInteger(book.viewCount, 0, 'COMMA')}">0</span>
+										</td>
+										<td>
+											<span th:text="${#temporals.format(book.createdAt, 'dd/MM/yyyy')}">01/01/2024</span>
+										</td>
+										<td>
+											<div class="btn-group">
+												<a th:href="@{/admin/books/view/{id}(id=${book.bookId})}"
+												   class="btn btn-sm btn-info" title="Xem chi tiết">
+													<i class="fa fa-search"></i>
+												</a>
+												<a th:href="@{/admin/books/edit/{id}(id=${book.bookId})}"
+												   class="btn btn-sm btn-warning" title="Chỉnh sửa">
+													<i class="fa fa-pencil"></i>
+												</a>
+												<button class="btn btn-sm btn-success" title="Quản lý file"
+														th:onclick="'manageBookAssets(\'' + ${book.bookId} + '\')'">
+													<i class="fa fa-file-pdf-o"></i>
+												</button>
+												<button class="btn btn-sm btn-danger" title="Xóa sách"
+														th:onclick="'deleteBook(\'' + ${book.bookId} + '\')'">
+													<i class="fa fa-trash-o"></i>
+												</button>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<!-- Footer -->
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<!-- Scripts -->
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<!-- DataTables -->
+<script src="/admin_template/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/admin_template/plugins/datatables/dataTables.bootstrap.min.js"></script>
+<script>
+$(document).ready(function() {
+	$('#booksTable').DataTable({
+		"paging": true,
+		"lengthChange": true,
+		"searching": true,
+		"ordering": true,
+		"info": true,
+		"autoWidth": false,
+		"pageLength": 25,
+		"language": {
+			"url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
+		}
+	});
+});
+
+function manageBookAssets(bookId) {
+	// TODO: Implement book assets management
+	alert('Chức năng quản lý file sách sẽ được phát triển sau.\nBook ID: ' + bookId);
+}
+
+function deleteBook(bookId) {
+	if(confirm('Bạn có chắc chắn muốn xóa sách này?\nHành động này không thể hoàn tác!')) {
+		$.ajax({
+			url: '/admin/books/delete/' + bookId,
+			type: 'POST',
+			success: function(response) {
+				if(response.success) {
+					alert(response.message);
+					location.reload();
+				} else {
+					alert('Lỗi: ' + response.message);
+				}
+			},
+			error: function() {
+				alert('Có lỗi xảy ra khi xóa sách!');
+			}
+		});
+	}
+}
+</script>
+</body>
+</html>

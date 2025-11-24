@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="vi">
+<body>
+<!-- ============================================
+     EBOOKSTORE NAVIGATION - Waka-Inspired Design
+     ============================================ -->
+<nav th:fragment="header" class="custom-navbar navbar navbar-expand-md navbar-dark bg-dark" aria-label="EbookStore navigation bar">
+    <div class="container">
+        <!-- Logo with Image Placeholder -->
+        <a class="navbar-brand" th:href="@{/}">
+            <!-- ✅ PLACEHOLDER: Thêm logo image của bạn vào đây -->
+            <!-- Uncomment dòng dưới và thay thế path khi có logo -->
+            <!-- <img th:src="@{/images/logo.png}" alt="EbookStore Logo" class="logo-image"> -->
+
+            <span class="logo-text">
+                Ebook<span>Store</span>
+            </span>
+        </a>
+
+        <!-- Mobile Toggle Button -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsFurni"
+                aria-controls="navbarsFurni" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navigation Links -->
+        <div class="collapse navbar-collapse" id="navbarsFurni">
+            <ul class="custom-navbar-nav navbar-nav ms-auto mb-2 mb-md-0">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/}">
+                        <i class="fa fa-home me-1"></i>
+                        Trang chủ
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/books}">
+                        <i class="fa fa-book me-1"></i>
+                        Kho sách
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/books/free}">
+                        <i class="fa fa-gift me-1"></i>
+                        Miễn phí
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/books/bestseller}">
+                        <i class="fa fa-fire me-1"></i>
+                        Bán chạy
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/books/new}">
+                        <i class="fa fa-sparkles me-1"></i>
+                        Mới nhất
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/subscription}">
+                        <i class="fa fa-star me-1"></i>
+                        Gói VIP
+                    </a>
+                </li>
+            </ul>
+
+            <!-- User Actions -->
+            <ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
+                <!-- User Menu for authenticated users -->
+                <li sec:authorize="isAuthenticated()" class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <img th:src="@{/user_template/images/user.svg}" alt="User">
+                        <span class="ms-2 d-none d-lg-inline" sec:authentication="principal.fullName">User</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
+                        <li class="dropdown-header">
+                            <strong sec:authentication="principal.fullName">Tài khoản</strong><br>
+                            <small class="text-muted" sec:authentication="principal.email">email@example.com</small>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/user/dashboard}">
+                                <i class="fa fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/user/library}">
+                                <i class="fa fa-book-open me-2"></i>Thư viện của tôi
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/user/orders}">
+                                <i class="fa fa-shopping-bag me-2"></i>Đơn hàng
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/subscription/manage}">
+                                <i class="fa fa-crown me-2"></i>Gói đăng ký
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/user/settings}">
+                                <i class="fa fa-cog me-2"></i>Cài đặt
+                            </a>
+                        </li>
+                        <li>
+                            <form th:action="@{/logout}" method="post" style="margin: 0;">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="fa fa-sign-out-alt me-2"></i>Đăng xuất
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Cart for authenticated users -->
+                <li sec:authorize="isAuthenticated()">
+                    <a class="nav-link position-relative" th:href="@{/user/cart}">
+                        <img th:src="@{/user_template/images/cart.svg}" alt="Cart">
+                        <span class="cart-count-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                              style="display: none; font-size: 10px;">0</span>
+                    </a>
+                </li>
+
+                <!-- Login/Register for guests -->
+                <li sec:authorize="!isAuthenticated()">
+                    <a class="nav-link btn btn-primary text-white px-3 rounded" th:href="@{/auth/login}">
+                        <i class="fa fa-sign-in-alt me-1"></i>
+                        Đăng nhập
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<!-- End Navigation -->
+</body>
+</html>
+

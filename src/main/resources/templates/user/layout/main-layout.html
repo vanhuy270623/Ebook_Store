@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="vi">
+
+<!--
+    MAIN LAYOUT TEMPLATE
+    Usage example in pages:
+
+    <!DOCTYPE html>
+    <html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <th:block th:replace="~{user/layout/head :: head}"></th:block>
+    </head>
+    <body>
+        <div th:replace="~{user/layout/header :: header}"></div>
+
+        <main class="content-wrapper">
+            <div class="container">
+                <!-- Your page content here -->
+            </div>
+        </main>
+
+        <div th:replace="~{user/layout/footer :: footer}"></div>
+        <th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
+    </body>
+    </html>
+-->
+
+<head th:fragment="head">
+    <th:block th:replace="~{user/layout/head :: head}"></th:block>
+</head>
+
+<body>
+    <!-- Complete Page Layout Fragment -->
+    <th:block th:fragment="layout(title, content)">
+        <!DOCTYPE html>
+        <html xmlns:th="http://www.thymeleaf.org"
+              xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+        <head>
+            <th:block th:replace="~{user/layout/head :: head}"></th:block>
+            <title th:text="${title} + ' - Ebook Store'">Ebook Store</title>
+        </head>
+        <body>
+            <!-- Header -->
+            <div th:replace="~{user/layout/header :: header}"></div>
+
+            <!-- Main Content -->
+            <main class="content-wrapper">
+                <div class="container">
+                    <th:block th:replace="${content}"></th:block>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <div th:replace="~{user/layout/footer :: footer}"></div>
+
+            <!-- Scripts -->
+            <th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
+        </body>
+        </html>
+    </th:block>
+
+    <!-- Dashboard Layout with Sidebar -->
+    <th:block th:fragment="dashboardLayout(title, content)">
+        <!DOCTYPE html>
+        <html xmlns:th="http://www.thymeleaf.org"
+              xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+        <head>
+            <th:block th:replace="~{user/layout/head :: head}"></th:block>
+            <title th:text="${title} + ' - Dashboard'">Dashboard</title>
+            <style>
+                .dashboard-wrapper {
+                    display: flex;
+                    gap: 24px;
+                    margin-top: 32px;
+                }
+
+                .dashboard-sidebar {
+                    width: 260px;
+                    flex-shrink: 0;
+                }
+
+                .dashboard-content {
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                @media (max-width: 992px) {
+                    .dashboard-wrapper {
+                        flex-direction: column;
+                    }
+
+                    .dashboard-sidebar {
+                        width: 100%;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <!-- Header -->
+            <div th:replace="~{user/layout/header :: header}"></div>
+
+            <!-- Main Content -->
+            <main class="content-wrapper">
+                <div class="container">
+                    <div class="dashboard-wrapper">
+                        <!-- Sidebar -->
+                        <aside class="dashboard-sidebar">
+                            <div class="card">
+                                <div class="card-body p-0">
+                                    <div class="list-group list-group-flush">
+                                        <a th:href="@{/user/dashboard}"
+                                           class="list-group-item list-group-item-action"
+                                           th:classappend="${#strings.contains(#request.requestURI, '/dashboard') ? 'active' : ''}">
+                                            <i class="fa fa-tachometer"></i> Dashboard
+                                        </a>
+                                        <a th:href="@{/user/library}"
+                                           class="list-group-item list-group-item-action"
+                                           th:classappend="${#strings.contains(#request.requestURI, '/library') ? 'active' : ''}">
+                                            <i class="fa fa-bookmark"></i> Thư viện
+                                        </a>
+                                        <a th:href="@{/user/orders}"
+                                           class="list-group-item list-group-item-action"
+                                           th:classappend="${#strings.contains(#request.requestURI, '/orders') ? 'active' : ''}">
+                                            <i class="fa fa-shopping-bag"></i> Đơn hàng
+                                        </a>
+                                        <a th:href="@{/user/subscription}"
+                                           class="list-group-item list-group-item-action"
+                                           th:classappend="${#strings.contains(#request.requestURI, '/subscription') ? 'active' : ''}">
+                                            <i class="fa fa-star"></i> Gói đăng ký
+                                        </a>
+                                        <a th:href="@{/user/settings}"
+                                           class="list-group-item list-group-item-action"
+                                           th:classappend="${#strings.contains(#request.requestURI, '/settings') ? 'active' : ''}">
+                                            <i class="fa fa-cog"></i> Cài đặt
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </aside>
+
+                        <!-- Content -->
+                        <div class="dashboard-content">
+                            <th:block th:replace="${content}"></th:block>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <div th:replace="~{user/layout/footer :: footer}"></div>
+
+            <!-- Scripts -->
+            <th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
+        </body>
+        </html>
+    </th:block>
+</body>
+</html>
+

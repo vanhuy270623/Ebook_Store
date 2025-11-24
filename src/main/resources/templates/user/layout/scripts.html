@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<body>
+<!-- ============================================
+     EBOOKSTORE SCRIPTS - User Template
+     ============================================ -->
+<th:block th:fragment="scripts">
+    <!-- jQuery (if needed for legacy components) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+
+    <!-- Bootstrap JS -->
+    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+
+    <!-- Tiny Slider JS -->
+    <script th:src="@{/user_template/js/tiny-slider.js}"></script>
+
+    <!-- Custom Template JS -->
+    <script th:src="@{/user_template/js/custom.js}"></script>
+
+    <!-- ✅ MAIN USER APPLICATION SCRIPT - Separated JS File -->
+    <script th:src="@{/user_template/js/user-main.js}"></script>
+
+    <!-- Page-specific scripts can be added here -->
+    <th:block th:if="${pageScripts != null}" th:utext="${pageScripts}"></th:block>
+</th:block>
+</body>
+</html>
+
+

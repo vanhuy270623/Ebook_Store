@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<body>
+    <!-- Footer using user_template style -->
+    <footer th:fragment="footer" class="footer-section">
+        <div class="container relative">
+
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="subscription-form">
+                        <h3 class="d-flex align-items-center">
+                            <span class="me-1"><img th:src="@{/user_template/images/envelope-outline.svg}" alt="Image" class="img-fluid"></span>
+                            <span>Đăng ký nhận tin</span>
+                        </h3>
+
+                        <form action="#" class="row g-3">
+                            <div class="col-auto">
+                                <input type="text" class="form-control" placeholder="Nhập email của bạn">
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-primary">
+                                    <span class="fa fa-paper-plane"></span>
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-5 mb-5">
+                <div class="col-lg-4">
+                    <div class="mb-4 footer-logo-wrap">
+                        <a href="#" class="footer-logo">
+                            <!-- ✅ PLACEHOLDER: Logo có thể thêm vào đây -->
+                            Ebook<span>Store</span>
+                        </a>
+                    </div>
+                    <p class="mb-4">EbookStore - Nền tảng đọc sách điện tử và audiobook hàng đầu Việt Nam với hàng ngàn đầu sách đa dạng thể loại.</p>
+
+                    <ul class="list-unstyled custom-social">
+                        <li><a href="#" aria-label="Facebook"><span class="fa fa-brands fa-facebook-f"></span></a></li>
+                        <li><a href="#" aria-label="Twitter"><span class="fa fa-brands fa-twitter"></span></a></li>
+                        <li><a href="#" aria-label="Instagram"><span class="fa fa-brands fa-instagram"></span></a></li>
+                        <li><a href="#" aria-label="LinkedIn"><span class="fa fa-brands fa-linkedin"></span></a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-8">
+                    <div class="row links-wrap">
+                        <div class="col-6 col-sm-6 col-md-3">
+                            <h6 class="text-white mb-3">Danh mục</h6>
+                            <ul class="list-unstyled">
+                                <li><a th:href="@{/}">Trang chủ</a></li>
+                                <li><a th:href="@{/books}">Kho sách</a></li>
+                                <li><a th:href="@{/books/free}">Sách miễn phí</a></li>
+                                <li><a th:href="@{/books/bestseller}">Bán chạy</a></li>
+                                <li><a th:href="@{/subscription}">Gói VIP</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="col-6 col-sm-6 col-md-3">
+                            <h6 class="text-white mb-3">Về chúng tôi</h6>
+                            <ul class="list-unstyled">
+                                <li><a href="#">Giới thiệu</a></li>
+                                <li><a href="#">Liên hệ</a></li>
+                                <li><a href="#">Blog</a></li>
+                                <li><a href="#">Tuyển dụng</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="col-6 col-sm-6 col-md-3">
+                            <h6 class="text-white mb-3">Hỗ trợ</h6>
+                            <ul class="list-unstyled">
+                                <li><a href="#">Trợ giúp</a></li>
+                                <li><a href="#">FAQ</a></li>
+                                <li><a href="#">Điều khoản</a></li>
+                                <li><a href="#">Chính sách</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="col-6 col-sm-6 col-md-3">
+                            <h6 class="text-white mb-3">Liên hệ</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fa fa-phone me-2"></i>1900-1234</li>
+                                <li><i class="fa fa-envelope me-2"></i>support@ebookstore.vn</li>
+                                <li><i class="fa fa-clock me-2"></i>8h - 22h hàng ngày</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="border-top copyright">
+                <div class="row pt-4">
+                    <div class="col-lg-6">
+                        <p class="mb-2 text-center text-lg-start">
+                            Copyright &copy;<script>document.write(new Date().getFullYear());</script> EbookStore. All Rights Reserved.
+                        </p>
+                    </div>
+
+                    <div class="col-lg-6 text-center text-lg-end">
+                        <ul class="list-unstyled d-inline-flex ms-auto">
+                            <li class="me-4"><a href="#">Điều khoản &amp; Điều kiện</a></li>
+                            <li><a href="#">Chính sách bảo mật</a></li>
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </footer>
+    <!-- End Footer -->
+</body>
+</html>
+                            <li><a href="/payment">Hướng dẫn thanh toán</a></li>
+                            <li><a href="/shipping">Chính sách giao hàng</a></li>
+                            <li><a href="/return">Đổi trả & Hoàn tiền</a></li>
+                            <li><a href="/feedback">Góp ý</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Download App -->
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <h5 class="footer-title">Tải ứng dụng</h5>
+                        <p class="footer-text">Đọc sách mọi lúc mọi nơi</p>
+                        <div class="app-download">
+                            <a href="#" class="app-btn">
+                                <i class="fa fa-apple"></i>
+                                <div>
+                                    <small>Download on</small>
+                                    <strong>App Store</strong>
+                                </div>
+                            </a>
+                            <a href="#" class="app-btn">
+                                <i class="fa fa-android"></i>
+                                <div>
+                                    <small>Get it on</small>
+                                    <strong>Google Play</strong>
+                                </div>
+                            </a>
+                        </div>
+                        <h5 class="footer-title mt-4">Thanh toán</h5>
+                        <div class="payment-methods">
+                            <img src="/images/payment/visa.png" alt="Visa" />
+                            <img src="/images/payment/mastercard.png" alt="Mastercard" />
+                            <img src="/images/payment/momo.png" alt="Momo" />
+                            <img src="/images/payment/vnpay.png" alt="VNPay" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="container">
+                        <p class="mb-0">&copy; 2025 Ebook Store. All rights reserved.</p>
+                    <div class="col-md-6">
+                        <p class="mb-0">&copy; 2025 WakaBooks. All rights reserved.</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <p class="mb-0">
+                            <a href="/terms">Terms</a> |
+                            <a href="/privacy">Privacy</a> |
+                            <a href="/cookies">Cookies</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        .footer-title {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-text {
+            font-size: 14px;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 10px;
+        }
+
+        .social-links a {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 50%;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .social-links a:hover {
+            background: var(--primary-color);
+            transform: translateY(-3px);
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: #A0AEC0;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-color);
+            padding-left: 5px;
+        }
+
+        .app-download {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .app-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .app-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: var(--primary-color);
+        }
+
+        .app-btn i {
+            font-size: 24px;
+        }
+
+        .app-btn small {
+            display: block;
+            font-size: 10px;
+        }
+
+        .app-btn strong {
+            display: block;
+            font-size: 14px;
+        }
+
+        .payment-methods {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .payment-methods img {
+            height: 30px;
+            background: white;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 20px 0;
+        }
+
+        .footer-bottom p {
+            font-size: 13px;
+            color: #718096;
+        }
+
+        .footer-bottom a {
+            color: #A0AEC0;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+
+        .footer-bottom a:hover {
+            color: var(--primary-color);
+        }
+    </style>
+</body>
+</html>
+

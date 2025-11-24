@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<!-- Header -->
+	<div th:replace="~{admin/layout/header :: header}"></div>
+
+	<!-- Sidebar -->
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<!-- Content Wrapper -->
+	<div class="content-wrapper">
+		<!-- Content Header -->
+		<section class="content-header">
+			<h1>
+				Chi tiết sách
+				<small th:text="${book?.title}">Tên sách</small>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/books}">Quản lý sách</a></li>
+				<li class="active">Chi tiết</li>
+			</ol>
+		</section>
+
+		<!-- Main content -->
+		<section class="content">
+			<div class="row" th:if="${book}">
+				<!-- Book Information -->
+				<div class="col-md-4">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Thông tin cơ bản</h3>
+						</div>
+						<div class="box-body box-profile">
+							<img class="profile-user-img img-responsive img-circle"
+								 th:src="${book.coverImageUrl}" th:alt="${book.title}"
+								 style="width: 200px; height: 280px; border-radius: 0;">
+
+							<h3 class="profile-username text-center" th:text="${book.title}">Tên sách</h3>
+
+							<p class="text-muted text-center" th:text="${book.bookCategory?.categoryName ?: 'Chưa phân loại'}">Thể loại</p>
+
+							<ul class="list-group list-group-unbordered">
+								<li class="list-group-item">
+									<b>Giá bán</b>
+									<span class="pull-right">
+										<span th:if="${book.price == 0}" class="label label-success">Miễn phí</span>
+										<span th:if="${book.price > 0}" th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
+									</span>
+								</li>
+								<li class="list-group-item">
+									<b>Loại truy cập</b>
+									<span class="pull-right">
+										<span th:switch="${book.accessType}">
+											<span th:case="'FREE'" class="label label-success">Miễn phí</span>
+											<span th:case="'PURCHASE'" class="label label-primary">Mua</span>
+											<span th:case="'SUBSCRIPTION'" class="label label-warning">Gói đăng ký</span>
+											<span th:case="'BOTH'" class="label label-info">Cả hai</span>
+										</span>
+									</span>
+								</li>
+								<li class="list-group-item">
+									<b>Đánh giá</b>
+									<span class="pull-right">
+										<i class="fa fa-star text-yellow"></i>
+										<span th:text="${#numbers.formatDecimal(book.averageRating, 1, 2)}">0.0</span>
+										(<span th:text="${book.totalReviews}">0</span> đánh giá)
+									</span>
+								</li>
+								<li class="list-group-item">
+									<b>Lượt xem</b>
+									<span class="pull-right" th:text="${#numbers.formatInteger(book.viewCount, 0, 'COMMA')}">0</span>
+								</li>
+								<li class="list-group-item">
+									<b>Tải về được</b>
+									<span class="pull-right">
+										<span th:if="${book.isDownloadable}" class="label label-success">Có</span>
+										<span th:if="${!book.isDownloadable}" class="label label-danger">Không</span>
+									</span>
+								</li>
+							</ul>
+
+							<div class="btn-group btn-group-justified">
+								<a class="btn btn-primary" href="#">
+									<i class="fa fa-edit"></i> Chỉnh sửa
+								</a>
+								<a class="btn btn-danger" href="#">
+									<i class="fa fa-trash"></i> Xóa
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Detailed Information -->
+				<div class="col-md-8">
+					<div class="nav-tabs-custom">
+						<ul class="nav nav-tabs">
+							<li class="active"><a href="#details" data-toggle="tab">Chi tiết</a></li>
+							<li><a href="#authors" data-toggle="tab">Tác giả</a></li>
+							<li><a href="#assets" data-toggle="tab">Tệp tin</a></li>
+							<li><a href="#reviews" data-toggle="tab">Đánh giá</a></li>
+						</ul>
+						<div class="tab-content">
+							<!-- Details Tab -->
+							<div class="active tab-pane" id="details">
+								<div class="box-body">
+									<dl class="dl-horizontal">
+										<dt>ISBN:</dt>
+										<dd th:text="${book.isbn ?: 'Chưa có'}">Chưa có</dd>
+										<dt>Nhà xuất bản:</dt>
+										<dd th:text="${book.publisher ?: 'Chưa có'}">Chưa có</dd>
+										<dt>Năm xuất bản:</dt>
+										<dd th:text="${book.publicationYear ?: 'Chưa có'}">Chưa có</dd>
+										<dt>Ngôn ngữ:</dt>
+										<dd th:text="${book.language ?: 'vi'}">vi</dd>
+										<dt>Số trang:</dt>
+										<dd th:text="${book.pages ?: 'Chưa có'}">Chưa có</dd>
+										<dt>Ngày tạo:</dt>
+										<dd th:text="${#temporals.format(book.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</dd>
+										<dt>Cập nhật cuối:</dt>
+										<dd th:text="${#temporals.format(book.updatedAt, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</dd>
+									</dl>
+
+									<h4>Mô tả:</h4>
+									<p th:text="${book.description ?: 'Chưa có mô tả'}" class="text-justify">Chưa có mô tả</p>
+								</div>
+							</div>
+
+							<!-- Authors Tab -->
+							<div class="tab-pane" id="authors">
+								<div class="box-body">
+									<h4>Tác giả</h4>
+									<div th:if="${book.authors != null and !#lists.isEmpty(book.authors)}">
+										<div class="row" th:each="author : ${book.authors}">
+											<div class="col-md-12">
+												<div class="media">
+													<div class="media-left">
+														<img th:src="${author.avatarUrl ?: '/admin_template/images/user-default.png'}"
+															 class="media-object img-circle" style="width: 60px; height: 60px;">
+													</div>
+													<div class="media-body">
+														<h5 class="media-heading" th:text="${author.name}">Tên tác giả</h5>
+														<p th:text="${author.biography ?: 'Chưa có tiểu sử'}">Tiểu sử tác giả</p>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div th:if="${book.authors == null or #lists.isEmpty(book.authors)}">
+										<p class="text-muted">Chưa có thông tin tác giả</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- Assets Tab -->
+							<div class="tab-pane" id="assets">
+								<div class="box-body">
+									<h4>Tệp tin đính kèm</h4>
+									<div th:if="${book.bookAssets != null and !#lists.isEmpty(book.bookAssets)}">
+										<table class="table table-striped">
+											<thead>
+												<tr>
+													<th>Loại tệp</th>
+													<th>Kích thước</th>
+													<th>Đường dẫn</th>
+													<th>Thao tác</th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr th:each="asset : ${book.bookAssets}">
+													<td>
+														<span class="label label-info" th:text="${asset.fileType}">PDF</span>
+													</td>
+													<td th:text="${asset.fileSize != null ? #numbers.formatDecimal(asset.fileSize / (1024*1024), 1, 2) + ' MB' : 'Chưa xác định'}">0 MB</td>
+													<td>
+														<code th:text="${asset.fileUrl}">Đường dẫn file</code>
+													</td>
+													<td>
+														<a th:href="${asset.fileUrl}" class="btn btn-sm btn-primary" target="_blank">
+															<i class="fa fa-download"></i> Tải về
+														</a>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+									<div th:if="${book.bookAssets == null or #lists.isEmpty(book.bookAssets)}">
+										<p class="text-muted">Chưa có tệp tin nào</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- Reviews Tab -->
+							<div class="tab-pane" id="reviews">
+								<div class="box-body">
+									<h4>Đánh giá từ người dùng</h4>
+									<p class="text-muted">Chức năng hiển thị đánh giá sẽ được phát triển sau.</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Error message if book not found -->
+			<div class="row" th:if="${!book}">
+				<div class="col-md-12">
+					<div class="box box-danger">
+						<div class="box-header with-border">
+							<h3 class="box-title">Lỗi</h3>
+						</div>
+						<div class="box-body">
+							<p>Không tìm thấy sách với ID này.</p>
+							<a th:href="@{/admin/books}" class="btn btn-primary">
+								<i class="fa fa-arrow-left"></i> Quay lại danh sách
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<!-- Footer -->
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<!-- Scripts -->
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script>
+function deleteBook(bookId) {
+	if(confirm('Bạn có chắc chắn muốn xóa sách này?\nHành động này không thể hoàn tác!')) {
+		$.ajax({
+			url: '/admin/books/delete/' + bookId,
+			type: 'POST',
+			success: function(response) {
+				if(response.success) {
+					alert(response.message);
+					window.location.href = '/admin/books';
+				} else {
+					alert('Lỗi: ' + response.message);
+				}
+			},
+			error: function() {
+				alert('Có lỗi xảy ra khi xóa sách!');
+			}
+		});
+	}
+}
+</script>
+</body>
+</html>

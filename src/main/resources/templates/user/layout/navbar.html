@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="vi">
+<body>
+<!-- Breadcrumb Fragment -->
+<nav th:fragment="breadcrumb(items)" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a th:href="@{/}">
+                <i class="fa fa-home"></i> Trang chủ
+            </a>
+        </li>
+        <li th:each="item, iterStat : ${items}"
+            class="breadcrumb-item"
+            th:classappend="${iterStat.last} ? 'active' : ''">
+            <a th:if="${!iterStat.last}"
+               th:href="${item.url}"
+               th:text="${item.name}">Item</a>
+            <span th:if="${iterStat.last}" th:text="${item.name}">Current</span>
+        </li>
+    </ol>
+</nav>
+
+<!-- Page Header Fragment -->
+<div th:fragment="pageHeader(title, subtitle)" class="page-header">
+    <h1 th:text="${title}">Page Title</h1>
+    <p th:if="${subtitle}" class="text-muted" th:text="${subtitle}">Subtitle</p>
+</div>
+
+<!-- Alert Fragment -->
+<div th:fragment="alert(type, message)"
+     th:class="'alert alert-' + ${type}"
+     role="alert">
+    <i th:class="'fa fa-' + ${type == 'success' ? 'check-circle' :
+                             (type == 'danger' ? 'exclamation-circle' :
+                             (type == 'warning' ? 'exclamation-triangle' : 'info-circle'))}"></i>
+    <span th:text="${message}">Alert message</span>
+</div>
+
+<!-- Empty State Fragment -->
+<div th:fragment="emptyState(icon, title, message, actionUrl, actionText)"
+     class="empty-state">
+    <div class="empty-state-icon">
+        <i th:class="'fa fa-' + ${icon}" style="font-size: 64px; color: var(--text-muted);"></i>
+    </div>
+    <h3 th:text="${title}">No items found</h3>
+    <p th:text="${message}">There are no items to display.</p>
+    <a th:if="${actionUrl}"
+       th:href="${actionUrl}"
+       class="btn btn-primary">
+        <span th:text="${actionText}">Take Action</span>
+    </a>
+</div>
+
+<!-- Loading Spinner Fragment -->
+<div th:fragment="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p class="mt-3 text-muted">Đang tải...</p>
+</div>
+
+<!-- Pagination Fragment -->
+<nav th:fragment="pagination(page)" aria-label="Page navigation" th:if="${page.totalPages > 1}">
+    <ul class="pagination justify-content-center">
+        <!-- Previous -->
+        <li class="page-item" th:classappend="${!page.hasPrevious()} ? 'disabled'">
+            <a class="page-link"
+               th:href="@{''(page=${page.number - 1}, size=${page.size})}"
+               aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+
+        <!-- Page Numbers -->
+        <li th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+            class="page-item"
+            th:classappend="${i == page.number} ? 'active'">
+            <a class="page-link"
+               th:href="@{''(page=${i}, size=${page.size})}"
+               th:text="${i + 1}">1</a>
+        </li>
+
+        <!-- Next -->
+        <li class="page-item" th:classappend="${!page.hasNext()} ? 'disabled'">
+            <a class="page-link"
+               th:href="@{''(page=${page.number + 1}, size=${page.size})}"
+               aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- Filter Sidebar Fragment -->
+<div th:fragment="filterSidebar" class="filter-sidebar">
+    <div class="filter-section">
+        <h5 class="filter-title">Danh mục</h5>
+        <div class="filter-options">
+            <label class="filter-option">
+                <input type="checkbox" name="category" value="novel">
+                <span>Tiểu thuyết</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" name="category" value="skill">
+                <span>Kỹ năng sống</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" name="category" value="business">
+                <span>Kinh doanh</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" name="category" value="comic">
+                <span>Truyện tranh</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="filter-section">
+        <h5 class="filter-title">Giá</h5>
+        <div class="filter-options">
+            <label class="filter-option">
+                <input type="radio" name="price" value="free">
+                <span>Miễn phí</span>
+            </label>
+            <label class="filter-option">
+                <input type="radio" name="price" value="0-50000">
+                <span>Dưới 50,000đ</span>
+            </label>
+            <label class="filter-option">
+                <input type="radio" name="price" value="50000-100000">
+                <span>50,000đ - 100,000đ</span>
+            </label>
+            <label class="filter-option">
+                <input type="radio" name="price" value="100000">
+                <span>Trên 100,000đ</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="filter-section">
+        <h5 class="filter-title">Định dạng</h5>
+        <div class="filter-options">
+            <label class="filter-option">
+                <input type="checkbox" name="format" value="ebook">
+                <span>Ebook</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" name="format" value="audio">
+                <span>Audiobook</span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-state-icon {
+        margin-bottom: 24px;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+    }
+
+    .empty-state p {
+        color: var(--text-muted);
+        margin-bottom: 24px;
+    }
+
+    /* Loading Container */
+    .loading-container {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    /* Pagination */
+    .pagination {
+        margin-top: 32px;
+        margin-bottom: 32px;
+    }
+
+    .page-link {
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        padding: 8px 16px;
+        margin: 0 4px;
+        border-radius: 8px;
+    }
+
+    .page-link:hover {
+        color: var(--primary-color);
+        background-color: var(--bg-secondary);
+        border-color: var(--primary-color);
+    }
+
+    .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+
+    .page-item.disabled .page-link {
+        color: var(--text-muted);
+        pointer-events: none;
+        background-color: var(--bg-secondary);
+    }
+
+    /* Filter Sidebar */
+    .filter-sidebar {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .filter-section {
+        margin-bottom: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .filter-section:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .filter-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: var(--text-primary);
+    }
+
+    .filter-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .filter-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    .filter-option input {
+        cursor: pointer;
+        accent-color: var(--primary-color);
+    }
+
+    .filter-option:hover {
+        color: var(--primary-color);
+    }
+</style>
+</body>
+</html>
+

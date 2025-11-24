@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="EbookStore - Thư viện sách điện tử hàng đầu Việt Nam">
+    <title>Trang chủ - EbookStore</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tiny Slider CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/tiny-slider.css}">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/homepage.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/homepage-animations.css}">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="/">
+                <i class="fas fa-book-reader me-2"></i>EbookStore
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/books">Sách</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/categories">Danh mục</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/subscribe">Gói VIP</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth/login">
+                            <i class="fas fa-user me-1"></i>Đăng nhập
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cart">
+                            <i class="fas fa-shopping-cart position-relative">
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">0</span>
+                            </i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Banner Section -->
+    <section class="hero-banner">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-7">
+                    <div class="hero-content">
+                        <h1 class="hero-title animate__animated animate__fadeInUp">
+                            Khám phá thế giới<br>sách điện tử
+                        </h1>
+                        <p class="hero-subtitle animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                            Hơn 10,000+ đầu sách đa thể loại - Đọc mọi lúc, mọi nơi
+                        </p>
+
+                        <!-- Search Box -->
+                        <div class="search-box animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                            <input type="text" placeholder="Tìm kiếm sách, tác giả..." id="searchInput">
+                            <button class="search-btn" onclick="searchBooks()">
+                                <i class="fas fa-search me-2"></i>Tìm kiếm
+                            </button>
+                        </div>
+
+                        <!-- Popular Tags -->
+                        <div class="hero-tags animate__animated animate__fadeInUp" style="animation-delay: 0.6s;">
+                            <span>Phổ biến:</span>
+                            <a href="/search?q=tiểu thuyết">Tiểu thuyết</a>
+                            <a href="/search?q=kỹ năng sống">Kỹ năng sống</a>
+                            <a href="/search?q=truyện tranh">Truyện tranh</a>
+                            <a href="/search?q=thiếu nhi">Thiếu nhi</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5 d-none d-lg-block">
+                    <img th:src="@{/user_template/images/product-3.png}" alt="Books" class="img-fluid animate__animated animate__fadeInRight">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Category Navigation -->
+    <section class="category-nav">
+        <div class="container">
+            <ul class="category-list">
+                <li class="category-item">
+                    <a href="/category/all" class="active">
+                        <i class="fas fa-th-large"></i>
+                        <span>Tất cả</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="/category/bcat_1">
+                        <i class="fas fa-book"></i>
+                        <span>Tiểu thuyết</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="/category/bcat_2">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Kỹ năng sống</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="/category/bcat_3">
+                        <i class="fas fa-dragon"></i>
+                        <span>Truyện tranh</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="/category/bcat_4">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Kinh tế</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="/category/bcat_5">
+                        <i class="fas fa-child"></i>
+                        <span>Thiếu nhi</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="/category/bcat_6">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>Giáo khoa</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="/category/bcat_7">
+                        <i class="fas fa-brain"></i>
+                        <span>Tâm lý</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Free Books Section -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-gift"></i>
+                    Sách miễn phí
+                </h2>
+                <a href="/books/free" class="section-link">
+                    Xem tất cả <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="row g-4" id="freeBooksContainer">
+                <!-- Free Book 1: Conan Tập 1 -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="/books/book_04" class="book-card">
+                        <div class="book-cover">
+                            <img th:src="@{/images/covers/conan-1.jpg}"
+                                 onerror="this.src='/user_template/images/product-1.png'"
+                                 alt="Conan Tập 1">
+                            <span class="book-badge free">Miễn phí</span>
+                            <div class="book-actions">
+                                <button class="action-btn" title="Yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" title="Xem nhanh">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">Conan Tập 1</h3>
+                            <p class="book-author">Aoyama Gosho</p>
+                            <div class="book-meta">
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>4.9</span>
+                                </div>
+                                <div class="book-price free">Miễn phí</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Free Book 2: Lão Hạc -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="/books/book_08" class="book-card">
+                        <div class="book-cover">
+                            <img th:src="@{/images/covers/lao-hac.jpg}"
+                                 onerror="this.src='/user_template/images/product-2.png'"
+                                 alt="Lão Hạc">
+                            <span class="book-badge free">Miễn phí</span>
+                            <div class="book-actions">
+                                <button class="action-btn" title="Yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" title="Xem nhanh">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">Lão Hạc</h3>
+                            <p class="book-author">Nam Cao</p>
+                            <div class="book-meta">
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>4.65</span>
+                                </div>
+                                <div class="book-price free">Miễn phí</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Free Book 3: Chí Phèo -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="/books/book_09" class="book-card">
+                        <div class="book-cover">
+                            <img th:src="@{/images/covers/chi-pheo.jpg}"
+                                 onerror="this.src='/user_template/images/product-3.png'"
+                                 alt="Chí Phèo">
+                            <span class="book-badge free">Miễn phí</span>
+                            <div class="book-actions">
+                                <button class="action-btn" title="Yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" title="Xem nhanh">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">Chí Phèo</h3>
+                            <p class="book-author">Nam Cao</p>
+                            <div class="book-meta">
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>4.55</span>
+                                </div>
+                                <div class="book-price free">Miễn phí</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Free Book 4: Truyện Kiều -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="/books/book_14" class="book-card">
+                        <div class="book-cover">
+                            <img th:src="@{/images/covers/truyen-kieu.jpg}"
+                                 onerror="this.src='/shared/images/book.jpg'"
+                                 alt="Truyện Kiều">
+                            <span class="book-badge free">Miễn phí</span>
+                            <div class="book-actions">
+                                <button class="action-btn" title="Yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" title="Xem nhanh">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">Truyện Kiều</h3>
+                            <p class="book-author">Nguyễn Du</p>
+                            <div class="book-meta">
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>5.0</span>
+                                </div>
+                                <div class="book-price free">Miễn phí</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trending Books Section -->
+    <section class="section bg-light">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-fire"></i>
+                    Đang thịnh hành
+                </h2>
+                <a href="/books/trending" class="section-link">
+                    Xem tất cả <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="row g-4">
+                <!-- Trending Book 1: Nhà giả kim -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="/books/book_13" class="book-card">
+                        <div class="book-cover">
+                            <img th:src="@{/images/covers/nha-gia-kim.jpg}"
+                                 onerror="this.src='/user_template/images/product-1.png'"
+                                 alt="Nhà giả kim">
+                            <span class="book-badge hot">Hot</span>
+                            <div class="book-actions">
+                                <button class="action-btn" title="Yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" title="Thêm vào giỏ">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">Nhà giả kim</h3>
+                            <p class="book-author">Paulo Coelho</p>
+                            <div class="book-meta">
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>4.85</span>
+                                </div>
+                                <div class="book-price">110.000đ</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Trending Book 2: Đắc Nhân Tâm -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="/books/book_02" class="book-card">
+                        <div class="book-cover">
+                            <img th:src="@{/images/covers/dac-nhan-tam.jpg}"
+                                 onerror="this.src='/user_template/images/product-2.png'"
+                                 alt="Đắc Nhân Tâm">
+                            <span class="book-badge hot">Hot</span>
+                            <div class="book-actions">
+                                <button class="action-btn" title="Yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" title="Thêm vào giỏ">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">Đắc Nhân Tâm</h3>
+                            <p class="book-author">Dale Carnegie</p>
+                            <div class="book-meta">
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>4.7</span>
+                                </div>
+                                <div class="book-price">120.000đ</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Trending Book 3: Doraemon -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="/books/book_05" class="book-card">
+                        <div class="book-cover">
+                            <img th:src="@{/images/covers/doraemon-1.jpg}"
+                                 onerror="this.src='/user_template/images/product-3.png'"
+                                 alt="Doraemon">
+                            <span class="book-badge hot">Hot</span>
+                            <div class="book-actions">
+                                <button class="action-btn" title="Yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" title="Xem nhanh">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">Doraemon Tập 1</h3>
+                            <p class="book-author">Fujiko F. Fujio</p>
+                            <div class="book-meta">
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>5.0</span>
+                                </div>
+                                <div class="book-price">20.000đ</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Trending Book 4: Rừng Na Uy -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="/books/book_15" class="book-card">
+                        <div class="book-cover">
+                            <img th:src="@{/images/covers/rung-na-uy.jpg}"
+                                 onerror="this.src='/shared/images/book1.jpg'"
+                                 alt="Rừng Na Uy">
+                            <span class="book-badge hot">Hot</span>
+                            <div class="book-actions">
+                                <button class="action-btn" title="Yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" title="Thêm vào giỏ">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">Rừng Na Uy</h3>
+                            <p class="book-author">Haruki Murakami</p>
+                            <div class="book-meta">
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>4.75</span>
+                                </div>
+                                <div class="book-price">135.000đ</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Promotional Banner -->
+    <section class="section">
+        <div class="container">
+            <div class="promo-banner">
+                <div class="promo-content">
+                    <h2 class="promo-title">
+                        <i class="fas fa-crown me-2"></i>
+                        Nâng cấp VIP ngay hôm nay!
+                    </h2>
+                    <p class="promo-subtitle">
+                        Đọc không giới hạn hơn 10,000+ đầu sách với giá chỉ từ 99.000đ/tháng
+                    </p>
+                    <a href="/subscribe" class="btn promo-btn">
+                        <i class="fas fa-rocket me-2"></i>Khám phá ngay
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- New Releases Section -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-sparkles"></i>
+                    Sách mới ra mắt
+                </h2>
+                <a href="/books/new" class="section-link">
+                    Xem tất cả <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="row g-4">
+                <!-- New Book 1: Mắt biếc -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="/books/book_03" class="book-card">
+                        <div class="book-cover">
+                            <img th:src="@{/images/covers/mat-biec.jpg}"
+                                 onerror="this.src='/user_template/images/product-1.png'"
+                                 alt="Mắt biếc">
+                            <span class="book-badge new">Mới</span>
+                            <div class="book-actions">
+                                <button class="action-btn" title="Yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" title="Thêm vào giỏ">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">Mắt biếc</h3>
+                            <p class="book-author">Nguyễn Nhật Ánh</p>
+                            <div class="book-meta">
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>4.85</span>
+                                </div>
+                                <div class="book-price">90.000đ</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- New Book 2: Cho tôi xin một vé đi tuổi thơ -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="/books/book_01" class="book-card">
+                        <div class="book-cover">
+                            <img th:src="@{/images/covers/ve-di-tuoi-tho.jpg}"
+                                 onerror="this.src='/user_template/images/product-2.png'"
+                                 alt="Vé đi tuổi thơ">
+                            <span class="book-badge new">Mới</span>
+                            <div class="book-actions">
+                                <button class="action-btn" title="Yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" title="Thêm vào giỏ">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">Cho tôi xin một vé đi tuổi thơ</h3>
+                            <p class="book-author">Nguyễn Nhật Ánh</p>
+                            <div class="book-meta">
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>4.8</span>
+                                </div>
+                                <div class="book-price">80.000đ</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- New Book 3: Dế Mèn phiêu lưu ký -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="/books/book_07" class="book-card">
+                        <div class="book-cover">
+                            <img th:src="@{/images/covers/de-men.jpg}"
+                                 onerror="this.src='/user_template/images/product-3.png'"
+                                 alt="Dế Mèn">
+                            <span class="book-badge new">Mới</span>
+                            <div class="book-actions">
+                                <button class="action-btn" title="Yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" title="Thêm vào giỏ">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">Dế Mèn phiêu lưu ký</h3>
+                            <p class="book-author">Tô Hoài</p>
+                            <div class="book-meta">
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>4.95</span>
+                                </div>
+                                <div class="book-price">75.000đ</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- New Book 4: Cô gái đến từ hôm qua -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="/books/book_16" class="book-card">
+                        <div class="book-cover">
+                            <img th:src="@{/images/covers/co-gai-hom-qua.jpg}"
+                                 onerror="this.src='/shared/images/book1.jpg'"
+                                 alt="Cô gái đến từ hôm qua">
+                            <span class="book-badge new">Mới</span>
+                            <div class="book-actions">
+                                <button class="action-btn" title="Yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" title="Thêm vào giỏ">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">Cô gái đến từ hôm qua</h3>
+                            <p class="book-author">Nguyễn Nhật Ánh</p>
+                            <div class="book-meta">
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>4.7</span>
+                                </div>
+                                <div class="book-price">92.000đ</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="stats-section bg-light">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-item">
+                        <div class="stat-number">
+                            <i class="fas fa-book"></i>
+                            <span data-target="10">0</span>+
+                        </div>
+                        <div class="stat-label">Đầu sách</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-item">
+                        <div class="stat-number">
+                            <i class="fas fa-users"></i>
+                            <span data-target="500">0</span>+
+                        </div>
+                        <div class="stat-label">Độc giả</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-item">
+                        <div class="stat-number">
+                            <i class="fas fa-download"></i>
+                            <span data-target="1000">0</span>+
+                        </div>
+                        <div class="stat-label">Lượt tải</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-item">
+                        <div class="stat-number">
+                            <i class="fas fa-star"></i>
+                            <span data-target="4">0</span>.<span data-target="8">0</span>
+                        </div>
+                        <div class="stat-label">Đánh giá trung bình</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white pt-5 pb-3">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <h5 class="mb-3">
+                        <i class="fas fa-book-reader me-2"></i>EbookStore
+                    </h5>
+                    <p class="text-light">
+                        Thư viện sách điện tử hàng đầu Việt Nam với hơn 10,000+ đầu sách đa dạng thể loại.
+                    </p>
+                    <div class="social-links mt-3">
+                        <a href="#" class="text-white me-3"><i class="fab fa-facebook fa-lg"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-youtube fa-lg"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5 class="mb-3">Danh mục</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/category/bcat_1" class="text-light text-decoration-none">Tiểu thuyết</a></li>
+                        <li><a href="/category/bcat_2" class="text-light text-decoration-none">Kỹ năng sống</a></li>
+                        <li><a href="/category/bcat_3" class="text-light text-decoration-none">Truyện tranh</a></li>
+                        <li><a href="/category/bcat_5" class="text-light text-decoration-none">Thiếu nhi</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <h5 class="mb-3">Hỗ trợ</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/about" class="text-light text-decoration-none">Về chúng tôi</a></li>
+                        <li><a href="/help" class="text-light text-decoration-none">Trợ giúp</a></li>
+                        <li><a href="/terms" class="text-light text-decoration-none">Điều khoản</a></li>
+                        <li><a href="/privacy" class="text-light text-decoration-none">Chính sách</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <h5 class="mb-3">Liên hệ</h5>
+                    <ul class="list-unstyled text-light">
+                        <li><i class="fas fa-map-marker-alt me-2"></i>Hà Nội, Việt Nam</li>
+                        <li><i class="fas fa-phone me-2"></i>0123-456-789</li>
+                        <li><i class="fas fa-envelope me-2"></i>support@ebookstore.vn</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="bg-light">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2025 EbookStore. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+
+    <!-- Custom JS -->
+    <script>
+        // Search functionality
+        function searchBooks() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim()) {
+                window.location.href = '/search?q=' + encodeURIComponent(query);
+            }
+        }
+
+        // Enter key search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchBooks();
+            }
+        });
+
+        // Animate statistics counter
+        function animateCounter(element) {
+            const target = parseInt(element.getAttribute('data-target'));
+            const duration = 2000;
+            const step = target / (duration / 16);
+            let current = 0;
+
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= target) {
+                    element.textContent = target;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current);
+                }
+            }, 16);
+        }
+
+        // Intersection Observer for stats animation
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const counters = entry.target.querySelectorAll('[data-target]');
+                    counters.forEach(counter => {
+                        if (counter.textContent === '0') {
+                            animateCounter(counter);
+                        }
+                    });
+                }
+            });
+        }, { threshold: 0.5 });
+
+        const statsSection = document.querySelector('.stats-section');
+        if (statsSection) {
+            statsObserver.observe(statsSection);
+        }
+
+        // Add to cart functionality
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const icon = this.querySelector('i');
+                if (icon.classList.contains('fa-cart-plus')) {
+                    alert('Đã thêm vào giỏ hàng!');
+                } else if (icon.classList.contains('fa-heart')) {
+                    icon.classList.toggle('far');
+                    icon.classList.toggle('fas');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

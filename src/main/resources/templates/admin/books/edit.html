@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<style>
+		.image-preview {
+			max-width: 200px;
+			max-height: 300px;
+			margin-top: 10px;
+		}
+		.required-field::after {
+			content: " *";
+			color: red;
+		}
+	</style>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<!-- Header -->
+	<div th:replace="~{admin/layout/header :: header}"></div>
+
+	<!-- Sidebar -->
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<!-- Content Wrapper -->
+	<div class="content-wrapper">
+		<!-- Content Header -->
+		<section class="content-header">
+			<h1>
+				Chỉnh sửa sách
+				<small th:text="${book.title}">Tên sách</small>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/books}">Quản lý sách</a></li>
+				<li class="active">Chỉnh sửa</li>
+			</ol>
+		</section>
+
+		<!-- Main content -->
+		<section class="content">
+			<div class="row">
+				<div class="col-md-12">
+					<!-- Alert messages -->
+					<div th:if="${success}" class="alert alert-success alert-dismissible">
+						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+						<i class="icon fa fa-check"></i> <span th:text="${success}"></span>
+					</div>
+					<div th:if="${error}" class="alert alert-danger alert-dismissible">
+						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+						<i class="icon fa fa-ban"></i> <span th:text="${error}"></span>
+					</div>
+
+					<!-- Form -->
+					<form th:action="@{/admin/books/edit/{id}(id=${book.bookId})}" method="post"
+						  enctype="multipart/form-data" th:object="${book}">
+						<div class="row">
+							<!-- Left Column -->
+							<div class="col-md-8">
+								<div class="box box-primary">
+									<div class="box-header with-border">
+										<h3 class="box-title">Thông tin cơ bản</h3>
+									</div>
+									<div class="box-body">
+										<!-- Title -->
+										<div class="form-group">
+											<label class="required-field">Tên sách</label>
+											<input type="text" class="form-control" th:field="*{title}"
+												   placeholder="Nhập tên sách" required>
+										</div>
+
+										<!-- Description -->
+										<div class="form-group">
+											<label>Mô tả</label>
+											<textarea class="form-control" th:field="*{description}" rows="5"
+													  placeholder="Nhập mô tả về sách"></textarea>
+										</div>
+
+										<!-- Category -->
+										<div class="form-group">
+											<label class="required-field">Thể loại</label>
+											<select class="form-control" th:field="*{bookCategoryId}" required>
+												<option value="">-- Chọn thể loại --</option>
+												<option th:each="category : ${categories}"
+														th:value="${category.categoryId}"
+														th:text="${category.categoryName}"
+														th:selected="${category.categoryId == book.bookCategoryId}"></option>
+											</select>
+										</div>
+
+										<!-- Authors -->
+										<div class="form-group">
+											<label class="required-field">Tác giả</label>
+											<select class="form-control select2" name="authorIds" multiple="multiple"
+													data-placeholder="Chọn tác giả" style="width: 100%;" required>
+												<option th:each="author : ${authors}"
+														th:value="${author.authorId}"
+														th:text="${author.name}"
+														th:selected="${currentAuthorIds.contains(author.authorId)}"></option>
+											</select>
+										</div>
+
+										<!-- Publisher -->
+										<div class="form-group">
+											<label>Nhà xuất bản</label>
+											<input type="text" class="form-control" th:field="*{publisher}"
+												   placeholder="Nhập tên nhà xuất bản">
+										</div>
+
+										<!-- Publication Year and Language -->
+										<div class="row">
+											<div class="col-md-6">
+												<div class="form-group">
+													<label>Năm xuất bản</label>
+													<input type="number" class="form-control" th:field="*{publicationYear}"
+														   placeholder="2024" min="1900" max="2100">
+												</div>
+											</div>
+											<div class="col-md-6">
+												<div class="form-group">
+													<label>Ngôn ngữ</label>
+													<select class="form-control" th:field="*{language}">
+														<option value="vi">Tiếng Việt</option>
+														<option value="en">English</option>
+														<option value="fr">Français</option>
+														<option value="zh">中文</option>
+														<option value="ja">日本語</option>
+													</select>
+												</div>
+											</div>
+										</div>
+
+										<!-- Pages and ISBN -->
+										<div class="row">
+											<div class="col-md-6">
+												<div class="form-group">
+													<label>Số trang</label>
+													<input type="number" class="form-control" th:field="*{pages}"
+														   placeholder="Nhập số trang" min="1">
+												</div>
+											</div>
+											<div class="col-md-6">
+												<div class="form-group">
+													<label>ISBN</label>
+													<input type="text" class="form-control" th:field="*{isbn}"
+														   placeholder="Nhập mã ISBN">
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Right Column -->
+							<div class="col-md-4">
+								<!-- Cover Image -->
+								<div class="box box-primary">
+									<div class="box-header with-border">
+										<h3 class="box-title">Ảnh bìa sách</h3>
+									</div>
+									<div class="box-body">
+										<div class="form-group">
+											<!-- Current image -->
+											<div th:if="${book.coverImageUrl}" class="mb-2">
+												<label>Ảnh hiện tại:</label><br>
+												<img th:src="${book.coverImageUrl}" class="img-thumbnail"
+													 style="max-width: 200px; max-height: 300px;">
+											</div>
+
+											<label>Thay đổi ảnh bìa</label>
+											<input type="file" name="coverImage" id="coverImage"
+												   accept="image/*" class="form-control">
+											<img id="imagePreview" class="image-preview img-thumbnail" style="display: none;">
+											<input type="hidden" th:field="*{coverImageUrl}">
+										</div>
+									</div>
+								</div>
+
+								<!-- Price and Access Type -->
+								<div class="box box-primary">
+									<div class="box-header with-border">
+										<h3 class="box-title">Giá và quyền truy cập</h3>
+									</div>
+									<div class="box-body">
+										<!-- Price -->
+										<div class="form-group">
+											<label class="required-field">Giá bán (VNĐ)</label>
+											<input type="number" class="form-control" th:field="*{price}"
+												   placeholder="0" min="0" step="1000" required>
+											<small class="text-muted">Nhập 0 nếu sách miễn phí</small>
+										</div>
+
+										<!-- Access Type -->
+										<div class="form-group">
+											<label class="required-field">Loại truy cập</label>
+											<select class="form-control" th:field="*{accessType}" required>
+												<option th:each="type : ${accessTypes}"
+														th:value="${type}"
+														th:text="${type}"
+														th:selected="${type == book.accessType}"></option>
+											</select>
+										</div>
+
+										<!-- Is Downloadable -->
+										<div class="form-group">
+											<div class="checkbox">
+												<label>
+													<input type="checkbox" th:field="*{isDownloadable}">
+													Cho phép tải xuống
+												</label>
+											</div>
+										</div>
+
+										<!-- Statistics -->
+										<div class="form-group">
+											<label>Thống kê</label>
+											<p class="text-muted">
+												<i class="fa fa-star text-yellow"></i>
+												Đánh giá: <span th:text="${book.averageRating}">0</span>/5
+												(<span th:text="${book.totalReviews}">0</span> đánh giá)<br>
+												<i class="fa fa-eye"></i>
+												Lượt xem: <span th:text="${book.viewCount}">0</span>
+											</p>
+										</div>
+									</div>
+								</div>
+
+								<!-- Action Buttons -->
+								<div class="box box-solid">
+									<div class="box-body">
+										<button type="submit" class="btn btn-primary btn-block">
+											<i class="fa fa-save"></i> Cập nhật sách
+										</button>
+										<a th:href="@{/admin/books}" class="btn btn-default btn-block">
+											<i class="fa fa-times"></i> Hủy bỏ
+										</a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<!-- Footer -->
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<!-- Scripts -->
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<!-- Select2 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function() {
+	// Initialize Select2
+	$('.select2').select2({
+		placeholder: "Chọn tác giả",
+		allowClear: true
+	});
+
+	// Image preview
+	$('#coverImage').change(function() {
+		const file = this.files[0];
+		if (file) {
+			const reader = new FileReader();
+			reader.onload = function(e) {
+				$('#imagePreview').attr('src', e.target.result).show();
+			}
+			reader.readAsDataURL(file);
+		}
+	});
+});
+</script>
+</body>
+</html>
+

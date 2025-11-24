@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <th:block th:replace="~{user/layout/head :: head}"></th:block>
+    <title>Trang chủ - EbookStore | Thư viện sách điện tử hàng đầu</title>
+
+    <style>
+        .hover-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2) !important;
+        }
+    </style>
+</head>
+<body>
+
+<nav th:replace="~{user/layout/header :: header}"></nav>
+
+<!-- Hero Section -->
+<div class="hero" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 100px 0;">
+    <div class="container">
+        <div class="row justify-content-between align-items-center">
+            <div class="col-lg-6 col-md-12">
+                <div class="intro-excerpt text-white">
+                    <h1 class="display-3 fw-bold mb-4">Khám phá thế giới <span class="d-block text-warning">sách điện tử</span></h1>
+                    <p class="lead mb-4 opacity-90">Hàng ngàn đầu sách Ebook và Audiobook đang chờ bạn khám phá. Đọc mọi lúc, mọi nơi trên mọi thiết bị với EbookStore.</p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a th:href="@{/books}" class="btn btn-warning btn-lg px-5 py-3 rounded-pill shadow-lg">
+                            <i class="fas fa-book me-2"></i>Khám phá ngay
+                        </a>
+                        <a th:href="@{/books?free=true}" class="btn btn-outline-light btn-lg px-5 py-3 rounded-pill">
+                            <i class="fas fa-gift me-2"></i>Sách miễn phí
+                        </a>
+                    </div>
+                    <div class="mt-5 d-flex flex-wrap gap-4 text-white">
+                        <div>
+                            <h3 class="fw-bold mb-0 display-6">10K+</h3>
+                            <small class="opacity-75">Đầu sách</small>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0 display-6">50K+</h3>
+                            <small class="opacity-75">Độc giả</small>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0 display-6">4.8★</h3>
+                            <small class="opacity-75">Đánh giá</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5 col-md-12 d-none d-lg-block">
+                <div class="position-relative">
+                    <img th:src="@{/user_template/images/couch.png}" alt="Reading" class="img-fluid" style="filter: drop-shadow(0 20px 40px rgba(0,0,0,0.3));">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Featured Books Section -->
+<div class="product-section py-5 bg-light">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-lg-8 mx-auto text-center">
+                <h2 class="section-title mb-3">
+                    <i class="fas fa-star text-warning me-2"></i>Sách nổi bật
+                </h2>
+                <p class="lead text-muted">Những cuốn sách được yêu thích nhất trên nền tảng của chúng tôi. Cập nhật liên tục với nội dung chất lượng.</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-4 col-sm-6" th:each="book, iterStat : ${featuredBooks}" th:if="${iterStat.index < 4}">
+                <a class="product-item text-decoration-none d-block" th:href="@{/books/{id}(id=${book.bookId})}">
+                    <div class="card h-100 border-0 shadow-sm hover-card" style="transition: all 0.3s;">
+                        <div class="position-relative overflow-hidden" style="height: 300px;">
+                            <img th:src="${book.coverImageUrl}" class="card-img-top h-100 w-100" th:alt="${book.title}" style="object-fit: cover;">
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <span class="badge bg-warning rounded-pill px-3 py-2">
+                                    <i class="fas fa-star me-1"></i>Nổi bật
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title text-dark mb-2" th:text="${book.title}" style="font-size: 1rem; min-height: 48px;">Book Title</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong class="text-primary fs-5" th:text="${book.isFree ? 'Miễn phí' : #numbers.formatCurrency(book.price)}">Price</strong>
+                                <span class="icon-cross">
+                                    <i class="fas fa-arrow-right text-primary"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <a th:href="@{/books?featured=true}" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow">
+                <i class="fas fa-book-open me-2"></i>Xem tất cả sách nổi bật
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Bestseller Books Section -->
+<div class="popular-product py-5">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-md-6">
+                <h2 class="section-title mb-3">
+                    <i class="fas fa-fire text-danger me-2"></i>Sách bán chạy
+                </h2>
+                <p class="text-muted">Những cuốn sách được độc giả yêu thích nhất</p>
+            </div>
+            <div class="col-md-6 text-start text-md-end align-self-center">
+                <a th:href="@{/books?bestseller=true}" class="btn btn-outline-danger rounded-pill px-4">
+                    Xem tất cả <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6" th:each="book : ${bestsellerBooks}">
+                <div class="card border-0 shadow-sm h-100 hover-card" style="transition: all 0.3s;">
+                    <div class="row g-0">
+                        <div class="col-4">
+                            <div class="position-relative" style="height: 100%;">
+                                <img th:src="${book.coverImageUrl}" alt="Image" class="img-fluid h-100 w-100 rounded-start" th:alt="${book.title}" style="object-fit: cover;">
+                                <div class="position-absolute top-0 start-0 m-2">
+                                    <span class="badge bg-danger rounded-circle" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-fire"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-8">
+                            <div class="card-body">
+                                <h5 class="card-title mb-2" th:text="${book.title}" style="font-size: 1rem;">Book Title</h5>
+                                <p class="text-muted mb-2 small" th:text="${book.author?.name}">Author</p>
+                                <div class="mb-2">
+                                    <span class="text-warning">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star-half-alt"></i>
+                                    </span>
+                                    <small class="text-muted ms-1">(4.5)</small>
+                                </div>
+                                <strong class="text-primary fs-5" th:text="${book.isFree ? 'Miễn phí' : #numbers.formatCurrency(book.price)}">Price</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Free Books Section -->
+<section class="book-section product-section py-5 bg-light">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-md-6">
+                <h2 class="section-title mb-3">
+                    <i class="fas fa-gift text-success me-2"></i>Sách Miễn Phí
+                </h2>
+                <p class="text-muted">Hàng trăm cuốn sách chất lượng hoàn toàn miễn phí</p>
+            </div>
+            <div class="col-md-6 text-start text-md-end align-self-center">
+                <a th:href="@{/books?free=true}" class="btn btn-outline-success rounded-pill px-4">
+                    Xem tất cả <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-4 col-sm-6" th:each="book : ${freeBooks}">
+                <a class="product-item text-decoration-none d-block" th:href="@{/books/{id}(id=${book.bookId})}">
+                    <div class="card h-100 border-0 shadow-sm hover-card" style="transition: all 0.3s;">
+                        <div class="position-relative overflow-hidden" style="height: 300px;">
+                            <img th:src="${book.coverImageUrl}" class="card-img-top h-100 w-100" th:alt="${book.title}" style="object-fit: cover;">
+                            <div class="position-absolute top-0 start-0 m-2">
+                                <span class="badge bg-success rounded-pill px-3 py-2">
+                                    <i class="fas fa-gift me-1"></i>Miễn phí
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title text-dark mb-2" th:text="${book.title}" style="font-size: 1rem; min-height: 48px;">Book Title</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong class="text-success fs-5">
+                                    <i class="fas fa-check-circle me-1"></i>Miễn phí
+                                </strong>
+                                <span class="icon-cross">
+                                    <i class="fas fa-arrow-right text-success"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer th:replace="~{user/layout/footer :: footer}"></footer>
+<th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
+
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>
+				Thống kê người dùng
+				<small>Tổng quan về người dùng trong hệ thống</small>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/users}">Quản lý người dùng</a></li>
+				<li class="active">Thống kê</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row">
+				<div class="col-md-4 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fa fa-users"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng số người dùng</span>
+							<span class="info-box-number" th:text="${totalUsers ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-4 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fa fa-check-circle"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Người dùng hoạt động</span>
+							<span class="info-box-number" th:text="${activeUsers ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-4 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-yellow"><i class="fa fa-certificate"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Đã xác thực email</span>
+							<span class="info-box-number" th:text="${verifiedUsers ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title"><i class="fa fa-clock-o"></i> Người dùng mới đăng ký gần đây</h3>
+							<div class="box-tools pull-right">
+								<a th:href="@{/admin/users}" class="btn btn-sm btn-default">
+									<i class="fa fa-list"></i> Xem tất cả
+								</a>
+							</div>
+						</div>
+
+						<div class="box-body">
+							<div class="table-responsive">
+								<table class="table table-bordered table-hover">
+									<thead>
+									<tr>
+										<th>Avatar</th>
+										<th>ID</th>
+										<th>Tên đăng nhập</th>
+										<th>Email</th>
+										<th>Vai trò</th>
+										<th>Trạng thái</th>
+										<th>Ngày tạo</th>
+									</tr>
+									</thead>
+									<tbody>
+									<tr th:each="user : ${recentUsers}">
+										<td class="text-center">
+											<img th:src="${user.avatarUrl != null && !user.avatarUrl.isEmpty() ? user.avatarUrl : '/admin_template/images/user-default.png'}"
+												 class="img-circle"
+												 width="40" height="40" style="object-fit: cover;"
+												 th:alt="${user.username}">
+										</td>
+										<td th:text="${user.userId}">user_id</td>
+										<td>
+											<a th:href="@{/admin/users/view/{id}(id=${user.userId})}"
+											   th:text="${user.username}">
+												username
+											</a>
+										</td>
+										<td th:text="${user.email}">email@example.com</td>
+										<td>
+                                            <span th:if="${user.role != null}">
+                                                <span th:if="${user.role.roleName.name() == 'ADMIN'}" class="label label-danger">
+                                                    <i class="fa fa-shield"></i> Admin
+                                                </span>
+                                                <span th:if="${user.role.roleName.name() == 'USER'}" class="label label-primary">
+                                                    <i class="fa fa-user"></i> User
+                                                </span>
+                                            </span>
+										</td>
+										<td>
+                                            <span th:if="${user.isActive}" class="label label-success">
+                                                <i class="fa fa-check"></i> Hoạt động
+                                            </span>
+											<span th:unless="${user.isActive}" class="label label-danger">
+                                                <i class="fa fa-ban"></i> Khóa
+                                            </span>
+										</td>
+										<td th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm')}">
+											01/01/2024 12:00
+										</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(recentUsers)}">
+										<td colspan="7" class="text-center text-muted">
+											<i class="fa fa-info-circle"></i> Chưa có người dùng nào
+										</td>
+									</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>

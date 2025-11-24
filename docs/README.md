@@ -138,30 +138,6 @@
 
 ---
 
-## 🗑️ FILES ĐÃ XÓA (Lý do)
-
-| File | Lý do xóa | Nội dung đã chuyển sang |
-|------|-----------|-------------------------|
-| `BOOK_CRUD_SUMMARY.md` | Trùng lặp | SYSTEM_FLOWS.md |
-| `CRUD_BOOK_GUIDE.md` | Trùng lặp | SYSTEM_FLOWS.md |
-| `FILE_UPLOAD_GUIDE.md` | Trùng lặp | SYSTEM_FLOWS.md |
-| `FILE_UPLOAD_QUICK_REF.md` | Trùng lặp | SYSTEM_FLOWS.md |
-| `FILE_UPLOAD_STRUCTURE.md` | Trùng lặp | SYSTEM_FLOWS.md |
-| `ICON_FIX_GUIDE.md` | Hướng dẫn tạm thời | N/A (đã fix) |
-| `LOGIC_VERIFICATION_REPORT.md` | Báo cáo tạm thời | N/A (đã verify) |
-| `QUICK_PROGRESS_SUMMARY.md` | Trùng lặp | PROJECT_PROGRESS.md |
-| `SQL_ENTITY_VERIFICATION.md` | Báo cáo tạm thời | N/A (đã verify) |
-| `SQL_PATH_UPDATE_SUMMARY.md` | Trùng lặp | SYSTEM_FLOWS.md |
-| `UPLOAD_ANALYSIS_COMPLETE.md` | Phân tích tạm thời | SYSTEM_FLOWS.md |
-
-**Tổng số file đã xóa:** 11 files  
-**Lý do chính:**
-- Tránh trùng lặp thông tin
-- Tập trung vào tài liệu có giá trị dài hạn
-- Dễ dàng maintain và update
-
----
-
 ## 🔄 LUỒNG LÀM VIỆC VỚI TÀI LIỆU
 
 ```

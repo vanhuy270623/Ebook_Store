@@ -32,11 +32,12 @@ public class SecurityConfig {
                                 "/user_template/**", "/admin_template/**", // Template resources
                                 "/shared/**", // Shared resources (CSS, JS, fonts)
                                 "/static/**", // Static resources path
-                                "/Book_Asset/image/**"// Public book images
+                                "/book_asset/image/**", // Public book images
+                                "/uploads/**" // Upload directory access
                         ).permitAll()
 
                         // === PROTECTED BOOK SOURCE FILES ===
-                        .requestMatchers("/Book_Asset/source/**").authenticated() // ⚠️ YÊU CẦU ĐĂNG NHẬP
+                        .requestMatchers("/book_asset/source/**").authenticated() // ⚠️ YÊU CẦU ĐĂNG NHẬP
 
                         // === ADMIN ACCESS ONLY ===
                         .requestMatchers("/admin/**").hasRole("ADMIN") // ⚠️ CHỈ ADMIN

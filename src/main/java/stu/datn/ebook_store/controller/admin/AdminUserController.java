@@ -126,7 +126,7 @@ public class AdminUserController {
                           RedirectAttributes redirectAttributes) {
         try {
             User adminUser = (User) authentication.getPrincipal();
-            boolean canManageAdmin = "admin_1".equals(adminUser.getUserId());
+            boolean canManageAdmin = "user_admin_01".equals(adminUser.getUserId());
             boolean isNew = user.getUserId() == null || user.getUserId().isEmpty();
 
             // Kiểm tra quyền tạo/sửa admin
@@ -231,7 +231,7 @@ public class AdminUserController {
                             RedirectAttributes redirectAttributes) {
         try {
             User adminUser = (User) authentication.getPrincipal();
-            boolean canManageAdmin = "admin_1".equals(adminUser.getUserId());
+            boolean canManageAdmin = "user_admin_01".equals(adminUser.getUserId());
 
             // Prevent deleting admin_1
             if ("admin_1".equals(id)) {

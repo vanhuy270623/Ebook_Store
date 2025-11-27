@@ -30,15 +30,22 @@
 		<!-- Main content -->
 		<section class="content">
 			<!-- Flash Messages -->
-			<div class="row" th:if="${success} or ${error}">
+			<div class="row" th:if="${success} or ${error} or ${warning}">
 				<div class="col-md-12">
 					<div class="alert alert-success alert-dismissible" th:if="${success}">
 						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-						<i class="icon fa fa-check"></i> <span th:text="${success}"></span>
+						<h4><i class="icon fa fa-check"></i> Thành công!</h4>
+						<span th:text="${success}"></span>
 					</div>
 					<div class="alert alert-danger alert-dismissible" th:if="${error}">
 						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-						<i class="icon fa fa-ban"></i> <span th:text="${error}"></span>
+						<h4><i class="icon fa fa-ban"></i> Lỗi!</h4>
+						<span th:text="${error}"></span>
+					</div>
+					<div class="alert alert-warning alert-dismissible" th:if="${warning}">
+						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+						<h4><i class="icon fa fa-warning"></i> Cảnh báo!</h4>
+						<span th:text="${warning}"></span>
 					</div>
 				</div>
 			</div>
@@ -54,94 +61,122 @@
 							</h3>
 						</div>
 
-						<form th:action="@{/admin/users/save}" th:object="${user}" method="post">
+					<form th:action="@{${isEdit ? '/admin/users/update' : '/admin/users/create'}}"
+						  th:object="${userRequest}"
+						  method="post">
 							<div class="box-body">
 								<!-- Hidden userId field for edit mode -->
-								<input type="hidden" th:field="*{userId}"/>
+								<input type="hidden" th:if="${isEdit != null && isEdit}" name="userId" th:value="${userRequest.userId}"/>
 
 								<!-- Username - Only show input for new user, readonly for edit -->
-								<div class="form-group" th:if="${isEdit == null || !isEdit}">
+								<div class="form-group" th:if="${isEdit == null || !isEdit}" th:classappend="${#fields.hasErrors('username')} ? 'has-error'">
 									<label for="username">Tên đăng nhập <span class="text-danger">*</span></label>
 									<input type="text" class="form-control" id="username" th:field="*{username}"
-										   placeholder="Nhập tên đăng nhập" required
-										   pattern="[a-zA-Z0-9_]{3,50}"
-										   title="Tên đăng nhập chỉ chứa chữ cái, số và dấu gạch dưới, từ 3-50 ký tự">
-									<p class="help-block">Tên đăng nhập sẽ được tự động sinh nếu để trống</p>
+										   placeholder="Nhập tên đăng nhập"
+										   minlength="3" maxlength="100"
+										   pattern="^[a-zA-Z0-9_]+$"
+										   required>
+									<span class="help-block" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></span>
+									<p class="help-block" th:unless="${#fields.hasErrors('username')}">Tên đăng nhập từ 3-100 ký tự, chỉ chứa chữ, số và dấu gạch dưới</p>
 								</div>
 
 								<!-- Show username as readonly in edit mode -->
 								<div class="form-group" th:if="${isEdit != null && isEdit}">
-									<label>Tên đăng nhập</label>
-									<input type="text" class="form-control" th:value="*{username}" readonly>
+									<label for="username_readonly">Tên đăng nhập</label>
+									<input type="text" class="form-control" id="username_readonly" th:value="${user.username}" readonly>
 									<p class="help-block text-muted">Tên đăng nhập không thể thay đổi</p>
 								</div>
 
 								<!-- Full Name -->
-								<div class="form-group">
+								<div class="form-group" th:classappend="${#fields.hasErrors('fullName')} ? 'has-error'">
 									<label for="fullName">Họ và tên</label>
 									<input type="text" class="form-control" id="fullName" th:field="*{fullName}"
-										   placeholder="Nhập họ và tên đầy đủ">
+										   placeholder="Nhập họ và tên đầy đủ"
+										   maxlength="255">
+									<span class="help-block" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></span>
 								</div>
 
 								<!-- Email -->
-								<div class="form-group">
+								<div class="form-group" th:classappend="${#fields.hasErrors('email')} ? 'has-error'">
 									<label for="email">Email <span class="text-danger">*</span></label>
 									<input type="email" class="form-control" id="email" th:field="*{email}"
-										   placeholder="example@email.com" required>
+										   placeholder="example@email.com"
+										   maxlength="255"
+										   required>
+									<span class="help-block" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+									<p class="help-block" th:unless="${#fields.hasErrors('email')}">Email hợp lệ, tối đa 255 ký tự</p>
 								</div>
 
 								<!-- Phone -->
-								<div class="form-group">
+								<div class="form-group" th:classappend="${#fields.hasErrors('phone')} ? 'has-error'">
 									<label for="phone">Số điện thoại</label>
 									<input type="tel" class="form-control" id="phone" th:field="*{phone}"
 										   placeholder="0123456789"
-										   pattern="[0-9]{10,11}">
+										   pattern="^[0-9]{10,11}$">
+									<span class="help-block" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></span>
+									<p class="help-block" th:unless="${#fields.hasErrors('phone')}">Số điện thoại từ 10-11 chữ số</p>
 								</div>
 
-								<!-- Password -->
-								<div class="form-group">
+								<!-- Password for Create -->
+								<div class="form-group" th:if="${isEdit == null || !isEdit}" th:classappend="${#fields.hasErrors('password')} ? 'has-error'">
 									<label for="password">
-										Mật khẩu
-										<span th:if="${isEdit == null || !isEdit}" class="text-danger">*</span>
+										Mật khẩu <span class="text-danger">*</span>
 									</label>
-									<input type="password" class="form-control" id="password" name="password"
+									<input type="password" class="form-control" id="password" th:field="*{password}"
 										   placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
-										   th:required="${isEdit == null || !isEdit}"
-										   minlength="6">
-									<p class="help-block" th:if="${isEdit == null || !isEdit}">
-										Mật khẩu mặc định là <strong>123456</strong> nếu để trống
+										   minlength="6" maxlength="100"
+										   required>
+									<span class="help-block" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+									<p class="help-block" th:unless="${#fields.hasErrors('password')}">
+										Mật khẩu phải có ít nhất 6 ký tự, tối đa 100 ký tự
 									</p>
-									<p class="help-block" th:if="${isEdit != null && isEdit}">
-										Để trống nếu không muốn thay đổi mật khẩu
+								</div>
+
+								<!-- Password for Update -->
+								<div class="form-group" th:if="${isEdit != null && isEdit}">
+									<label for="newPassword">Mật khẩu mới</label>
+									<input type="password" class="form-control" id="newPassword" name="newPassword"
+										   th:value="${userRequest.newPassword}"
+										   placeholder="Nhập mật khẩu mới (để trống nếu không đổi)"
+										   minlength="6" maxlength="100">
+									<p class="help-block">
+										Để trống nếu không muốn thay đổi mật khẩu (hoặc nhập từ 6-100 ký tự)
 									</p>
 								</div>
 
 								<!-- Role -->
-								<div class="form-group">
+								<div class="form-group" th:classappend="${#fields.hasErrors('roleId')} ? 'has-error'">
 									<label for="roleId">Vai trò <span class="text-danger">*</span></label>
-									<select name="roleId" id="roleId" class="form-control" required>
+									<select th:field="*{roleId}" id="roleId" class="form-control" required
+											th:disabled="${isEditingSelf != null && isEditingSelf}">
 										<option value="">-- Chọn vai trò --</option>
 										<option th:each="role : ${roles}"
 												th:value="${role.roleId}"
 												th:text="${role.roleName}"
-												th:selected="${user.role != null && user.role.roleId == role.roleId}"
-												th:disabled="${role.roleName.name() == 'ADMIN' && (canManageAdmin == null || !canManageAdmin)}">
+												th:disabled="${role.roleName.name() == 'ADMIN' && !canManageAdmin}">
 										</option>
 									</select>
-									<p class="help-block">
+									<span class="help-block" th:if="${#fields.hasErrors('roleId')}" th:errors="*{roleId}"></span>
+									<p class="help-block" th:if="${(isEditingSelf == null || !isEditingSelf) && !#fields.hasErrors('roleId')}">
 										<i class="fa fa-info-circle"></i>
-										Chỉ admin_1 mới có thể tạo/quản lý tài khoản admin
+										Chỉ user_admin_01 mới có thể tạo/quản lý tài khoản admin
+									</p>
+									<p class="help-block text-warning" th:if="${isEditingSelf != null && isEditingSelf}">
+										<i class="fa fa-lock"></i>
+										<strong>Bạn không thể thay đổi quyền của chính mình</strong>
 									</p>
 								</div>
 
 								<!-- Avatar URL -->
-								<div class="form-group">
+								<div class="form-group" th:classappend="${#fields.hasErrors('avatarUrl')} ? 'has-error'">
 									<label for="avatarUrl">URL Avatar</label>
 									<input type="url" class="form-control" id="avatarUrl" th:field="*{avatarUrl}"
-										   placeholder="https://example.com/avatar.jpg">
-									<p class="help-block">
+										   placeholder="https://example.com/avatar.jpg"
+										   maxlength="500">
+									<span class="help-block" th:if="${#fields.hasErrors('avatarUrl')}" th:errors="*{avatarUrl}"></span>
+									<p class="help-block" th:unless="${#fields.hasErrors('avatarUrl')}">
 										<i class="fa fa-info-circle"></i>
-										Nhập đường dẫn URL của ảnh đại diện (nếu có)
+										Nhập đường dẫn URL của ảnh đại diện (tối đa 500 ký tự)
 									</p>
 								</div>
 
@@ -159,12 +194,17 @@
 								<div class="form-group">
 									<div class="checkbox">
 										<label>
-											<input type="checkbox" th:field="*{isActive}" checked>
+											<input type="checkbox" th:field="*{isActive}"
+												   th:disabled="${isEditingSelf != null && isEditingSelf}">
 											<strong>Kích hoạt tài khoản</strong>
 										</label>
 									</div>
-									<p class="help-block text-muted">
+									<p class="help-block text-muted" th:if="${isEditingSelf == null || !isEditingSelf}">
 										Tài khoản bị vô hiệu hóa sẽ không thể đăng nhập vào hệ thống
+									</p>
+									<p class="help-block text-warning" th:if="${isEditingSelf != null && isEditingSelf}">
+										<i class="fa fa-lock"></i>
+										<strong>Bạn không thể vô hiệu hóa tài khoản của chính mình</strong>
 									</p>
 								</div>
 
@@ -201,16 +241,34 @@
 					<!-- Help Box -->
 					<div class="box box-info">
 						<div class="box-header with-border">
-							<h3 class="box-title"><i class="fa fa-question-circle"></i> Hướng dẫn</h3>
+							<h3 class="box-title"><i class="fa fa-question-circle"></i> Hướng dẫn & Quy tắc Validation</h3>
 						</div>
 						<div class="box-body">
+							<h4><i class="fa fa-exclamation-circle"></i> Trường bắt buộc</h4>
 							<ul>
-								<li>Các trường có dấu <span class="text-danger">*</span> là bắt buộc</li>
-								<li>Tên đăng nhập chỉ chứa chữ cái, số và dấu gạch dưới</li>
-								<li>Mật khẩu phải có ít nhất 6 ký tự</li>
-								<li>Email phải là định dạng hợp lệ</li>
-								<li>User ID sẽ được tự động sinh theo format: <code>user_normal_XX</code></li>
-								<li th:if="${isEdit == null || !isEdit}">Mật khẩu mặc định là <strong>123456</strong> nếu không nhập</li>
+								<li>Các trường có dấu <span class="text-danger">*</span> là bắt buộc phải nhập</li>
+								<li><strong>Username, Email, Password (khi tạo mới), Role</strong> không được để trống</li>
+							</ul>
+
+							<h4><i class="fa fa-check-circle"></i> Quy tắc Validation</h4>
+							<ul>
+								<li><strong>Tên đăng nhập:</strong> 3-100 ký tự, chỉ chứa chữ cái, số và dấu gạch dưới (_)</li>
+								<li><strong>Email:</strong> Định dạng email hợp lệ, tối đa 255 ký tự</li>
+								<li><strong>Mật khẩu:</strong> 6-100 ký tự</li>
+								<li><strong>Họ tên:</strong> Tối đa 255 ký tự</li>
+								<li><strong>Số điện thoại:</strong> Chỉ chứa số, từ 10-11 chữ số</li>
+								<li><strong>Avatar URL:</strong> Tối đa 500 ký tự</li>
+							</ul>
+
+							<h4><i class="fa fa-info-circle"></i> Lưu ý quan trọng</h4>
+							<ul>
+								<li>User ID sẽ được <strong>tự động sinh</strong> theo format: <code>user_normal_XX</code></li>
+								<li th:if="${isEdit == null || !isEdit}">Mật khẩu mặc định sẽ là <code>123456</code> nếu không nhập</li>
+								<li th:if="${isEdit != null && isEdit}">Khi sửa, để trống mật khẩu nếu không muốn thay đổi</li>
+								<li>Username và Email phải là <strong>duy nhất</strong> trong hệ thống</li>
+								<li>Chỉ <code>user_admin_01</code> có thể tạo/quản lý tài khoản ADMIN</li>
+								<li>Admin không thể thay đổi quyền hoặc vô hiệu hóa tài khoản của chính mình</li>
+								<li>Không thể xóa tài khoản <code>user_admin_01</code></li>
 							</ul>
 						</div>
 					</div>
@@ -225,34 +283,5 @@
 
 <!-- Scripts -->
 <th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
-
-<!-- Custom validation script -->
-<script>
-$(document).ready(function() {
-	// Form validation
-	$('form').on('submit', function(e) {
-		var isEdit = $('input[name="userId"]').val() !== '';
-		var password = $('#password').val();
-
-		// Validate password for new user
-		if (!isEdit && password && password.length < 6) {
-			alert('Mật khẩu phải có ít nhất 6 ký tự!');
-			e.preventDefault();
-			return false;
-		}
-
-		// Show loading
-		$('button[type="submit"]').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Đang xử lý...');
-	});
-
-	// Preview avatar
-	$('#avatarUrl').on('blur', function() {
-		var url = $(this).val();
-		if (url) {
-			// Could add avatar preview here
-		}
-	});
-});
-</script>
 </body>
 </html>

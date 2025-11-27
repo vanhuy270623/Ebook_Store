@@ -1,4 +1,4 @@
-package stu.datn.ebook_store.dto;
+package stu.datn.ebook_store.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,16 +8,19 @@ import stu.datn.ebook_store.entity.Author;
 import stu.datn.ebook_store.entity.Book;
 
 import java.math.BigDecimal;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
+/**
+ * DTO for Book response (Admin view with full details)
+ */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class BookDTO {
+public class BookResponse {
     private String bookId;
-    private String bookCategoryId;
-    private String categoryName;
     private String title;
     private String description;
     private BigDecimal price;
@@ -32,11 +35,25 @@ public class BookDTO {
     private Float averageRating;
     private Integer totalReviews;
     private Integer viewCount;
-    private Set<String> authorIds;
-    private String authorNames; // Comma separated author names
+    private String bookCategoryId;
+    private String categoryName;
+    private List<AuthorInfo> authors;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    // Inner class for author info
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AuthorInfo {
+        private String authorId;
+        private String name;
+        private String avatarUrl;
+    }
 
     // Constructor from Entity
-    public BookDTO(Book book) {
+    public BookResponse(Book book) {
         this.bookId = book.getBookId();
         this.title = book.getTitle();
         this.description = book.getDescription();
@@ -52,17 +69,22 @@ public class BookDTO {
         this.averageRating = book.getAverageRating();
         this.totalReviews = book.getTotalReviews();
         this.viewCount = book.getViewCount();
+        this.createdAt = book.getCreatedAt();
+        this.updatedAt = book.getUpdatedAt();
 
         if (book.getBookCategory() != null) {
             this.bookCategoryId = book.getBookCategory().getBookCategoryId();
             this.categoryName = book.getBookCategory().getCategoryName();
         }
 
-        if (book.getAuthors() != null && !book.getAuthors().isEmpty()) {
-            this.authorNames = String.join(", ",
-                book.getAuthors().stream()
-                    .map(Author::getName)
-                    .toList());
+        if (book.getAuthors() != null) {
+            this.authors = book.getAuthors().stream()
+                .map(author -> new AuthorInfo(
+                    author.getAuthorId(),
+                    author.getName(),
+                    author.getAvatarUrl()
+                ))
+                .collect(Collectors.toList());
         }
     }
 }

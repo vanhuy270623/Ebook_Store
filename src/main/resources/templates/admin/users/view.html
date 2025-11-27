@@ -22,6 +22,19 @@
 			</ol>
 		</section>
 
+		<section class="content-header">
+			<div class="row">
+				<div class="col-xs-12">
+					<a th:href="@{/admin/users}" class="btn btn-default">
+						<i class="fa fa-arrow-left"></i> Quay lại danh sách
+					</a>
+					<a th:href="@{/admin/users/edit/{id}(id=${user?.userId})}" class="btn btn-warning" th:if="${user}">
+						<i class="fa fa-pencil"></i> Chỉnh sửa
+					</a>
+				</div>
+			</div>
+		</section>
+
 		<section class="content">
 			<div class="row" th:if="${success} or ${error}">
 				<div class="col-md-12">
@@ -51,17 +64,26 @@
 							<h3 class="profile-username text-center" th:text="${user.fullName ?: user.username}">Tên người dùng</h3>
 
 							<p class="text-muted text-center">
-								<span th:if="${user.role != null}">
-									<span th:if="${user.role.roleName.name() == 'ADMIN'}" class="label label-danger">
-										<i class="fa fa-shield"></i> Administrator
-									</span>
-									<span th:if="${user.role.roleName.name() == 'USER'}" class="label label-primary">
-										<i class="fa fa-user"></i> Người dùng
-									</span>
+								<span th:if="${roleName == 'ADMIN'}" class="label label-danger">
+									<i class="fa fa-shield"></i> Administrator
+								</span>
+								<span th:if="${roleName == 'USER'}" class="label label-primary">
+									<i class="fa fa-user"></i> Người dùng
+								</span>
+								<span th:if="${roleName == null}" class="label label-default">
+									<i class="fa fa-question"></i> Chưa có vai trò
 								</span>
 							</p>
 
 							<ul class="list-group list-group-unbordered">
+								<li class="list-group-item">
+									<b><i class="fa fa-id-card"></i> User ID</b>
+									<span class="pull-right text-muted" th:text="${user.userId}">user_id</span>
+								</li>
+								<li class="list-group-item">
+									<b><i class="fa fa-user-circle"></i> Username</b>
+									<span class="pull-right" th:text="${user.username}">username</span>
+								</li>
 								<li class="list-group-item">
 									<b><i class="fa fa-envelope"></i> Email</b>
 									<span class="pull-right" th:text="${user.email}">email@example.com</span>
@@ -71,14 +93,24 @@
 									<span class="pull-right" th:text="${user.phone ?: 'Chưa cập nhật'}">Chưa cập nhật</span>
 								</li>
 								<li class="list-group-item">
+									<b><i class="fa fa-book"></i> Chế độ đọc</b>
+									<span class="pull-right">
+										<span th:if="${user.preferredReadingMode != null}" th:text="${user.preferredReadingMode}">AUTO</span>
+										<span th:if="${user.preferredReadingMode == null}" class="text-muted">AUTO</span>
+									</span>
+								</li>
+								<li class="list-group-item">
 									<b><i class="fa fa-calendar"></i> Ngày đăng ký</b>
-									<span class="pull-right" th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024</span>
+									<span class="pull-right">
+										<span th:if="${user.createdAt != null}" th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024</span>
+										<span th:if="${user.createdAt == null}" class="text-muted">Không xác định</span>
+									</span>
 								</li>
 								<li class="list-group-item">
 									<b><i class="fa fa-clock-o"></i> Lần cuối đăng nhập</b>
 									<span class="pull-right">
-										<span th:if="${user.lastLogin}" th:text="${#temporals.format(user.lastLogin, 'dd/MM/yyyy HH:mm')}">Never</span>
-										<span th:if="${!user.lastLogin}" class="text-muted">Chưa đăng nhập</span>
+										<span th:if="${user.lastLogin != null}" th:text="${#temporals.format(user.lastLogin, 'dd/MM/yyyy HH:mm')}">Never</span>
+										<span th:if="${user.lastLogin == null}" class="text-muted">Chưa đăng nhập</span>
 									</span>
 								</li>
 							</ul>
@@ -106,12 +138,16 @@
 								</div>
 							</div>
 
-							<div style="margin-top: 20px;" th:if="${user.role?.roleName?.name() != 'ADMIN'}">
+							<div style="margin-top: 20px;">
 								<a th:href="@{/admin/users/edit/{id}(id=${user.userId})}" class="btn btn-warning btn-block">
 									<i class="fa fa-pencil"></i> Chỉnh sửa thông tin
 								</a>
 
-								<form th:action="@{/admin/users/toggle-status/{id}(id=${user.userId})}" method="post" style="margin-top: 5px;">
+								<!-- Only show toggle status button if user is not user_admin_01 -->
+								<form th:if="${user.userId != 'user_admin_01'}"
+									  th:action="@{/admin/users/toggle-status/{id}(id=${user.userId})}"
+									  method="post"
+									  style="margin-top: 5px;">
 									<button type="submit" class="btn btn-block"
 											th:classappend="${user.isActive} ? 'btn-danger' : 'btn-success'"
 											onclick="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái tài khoản này?')">
@@ -134,23 +170,29 @@
 							<div class="active tab-pane" id="activity">
 								<div class="box-body">
 									<h4><i class="fa fa-history"></i> Lịch sử hoạt động</h4>
-									<div class="timeline">
-										<div class="time-label">
-											<span class="bg-blue" th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}">Ngày tạo</span>
-										</div>
-										<div>
-											<i class="fa fa-user-plus bg-blue"></i>
-											<div class="timeline-item">
-												<span class="time"><i class="fa fa-clock-o"></i>
-													<span th:text="${#temporals.format(user.createdAt, 'HH:mm')}">01/01/2024</span>
-												</span>
-												<h3 class="timeline-header">Tạo tài khoản</h3>
-												<div class="timeline-body">
-													Tài khoản được tạo và đăng ký thành công.
+									<div th:if="${user.createdAt != null}">
+										<ul class="timeline timeline-inverse" style="margin-left: 0;">
+											<li class="time-label">
+												<span  th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}">Ngày tạo</span>
+											</li>
+											<li>
+												<i class="fa fa-user-plus "></i>
+												<div class="timeline-item">
+													<span class="time"><i class="fa fa-clock-o"></i>
+														<span th:text="${#temporals.format(user.createdAt, 'HH:mm')}">01/01/2024</span>
+													</span>
+													<h3 class="timeline-header">Tạo tài khoản</h3>
+													<div class="timeline-body">
+														Tài khoản được tạo và đăng ký thành công.
+													</div>
 												</div>
-											</div>
-										</div>
+											</li>
+											<li>
+												<i class="fa fa-clock-o bg-gray"></i>
+											</li>
+										</ul>
 									</div>
+									<p th:if="${user.createdAt == null}" class="text-muted">Không có thông tin lịch sử hoạt động.</p>
 								</div>
 							</div>
 
@@ -165,7 +207,7 @@
 				</div>
 			</div>
 
-			<div class="row" th:if="${!user}">
+			<div class="row" th:if="${user == null}">
 				<div class="col-md-12">
 					<div class="box box-danger">
 						<div class="box-header with-border">

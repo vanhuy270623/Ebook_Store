@@ -7,7 +7,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import stu.datn.ebook_store.dto.BookDTO;
+import stu.datn.ebook_store.dto.request.BookFormRequest;
 import stu.datn.ebook_store.entity.Author;
 import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.service.BookService;
@@ -45,7 +45,7 @@ public class AdminBookController {
 
     @GetMapping("/add")
     public String addBookForm(Model model) {
-        model.addAttribute("book", new BookDTO());
+        model.addAttribute("book", new BookFormRequest());
         model.addAttribute("categories", categoryService.getAllCategories());
         model.addAttribute("authors", authorService.getAllAuthors());
         model.addAttribute("accessTypes", Book.AccessType.values());
@@ -53,7 +53,7 @@ public class AdminBookController {
     }
 
     @PostMapping("/add")
-    public String addBook(@ModelAttribute BookDTO bookDTO,
+    public String addBook(@ModelAttribute BookFormRequest bookFormRequest,
                           @RequestParam(value = "authorIds", required = false) Set<String> authorIds,
                           @RequestParam(value = "coverImage", required = false) MultipartFile coverImage,
                           RedirectAttributes redirectAttributes) {
@@ -61,10 +61,10 @@ public class AdminBookController {
             // Upload cover image if provided
             if (coverImage != null && !coverImage.isEmpty()) {
                 String imageUrl = bookService.uploadCoverImage(coverImage);
-                bookDTO.setCoverImageUrl(imageUrl);
+                bookFormRequest.setCoverImageUrl(imageUrl);
             }
 
-            bookService.createBook(bookDTO, authorIds);
+            bookService.createBook(bookFormRequest, authorIds);
             redirectAttributes.addFlashAttribute("success", "Thêm sách mới thành công!");
             return "redirect:/admin/books";
         } catch (Exception e) {
@@ -80,8 +80,8 @@ public class AdminBookController {
             return "redirect:/admin/books?error=notfound";
         }
 
-        BookDTO bookDTO = new BookDTO(book);
-        model.addAttribute("book", bookDTO);
+        BookFormRequest bookFormRequest = new BookFormRequest(book);
+        model.addAttribute("book", bookFormRequest);
         model.addAttribute("bookEntity", book);
         model.addAttribute("categories", categoryService.getAllCategories());
         model.addAttribute("authors", authorService.getAllAuthors());
@@ -98,7 +98,7 @@ public class AdminBookController {
 
     @PostMapping("/edit/{id}")
     public String editBook(@PathVariable String id,
-                           @ModelAttribute BookDTO bookDTO,
+                           @ModelAttribute BookFormRequest bookFormRequest,
                            @RequestParam(value = "authorIds", required = false) Set<String> authorIds,
                            @RequestParam(value = "coverImage", required = false) MultipartFile coverImage,
                            RedirectAttributes redirectAttributes) {
@@ -106,10 +106,10 @@ public class AdminBookController {
             // Upload cover image if provided
             if (coverImage != null && !coverImage.isEmpty()) {
                 String imageUrl = bookService.uploadCoverImage(coverImage);
-                bookDTO.setCoverImageUrl(imageUrl);
+                bookFormRequest.setCoverImageUrl(imageUrl);
             }
 
-            bookService.updateBook(id, bookDTO, authorIds);
+            bookService.updateBook(id, bookFormRequest, authorIds);
             redirectAttributes.addFlashAttribute("success", "Cập nhật sách thành công!");
             return "redirect:/admin/books";
         } catch (Exception e) {

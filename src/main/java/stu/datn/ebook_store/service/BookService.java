@@ -1,7 +1,10 @@
 package stu.datn.ebook_store.service;
 
 import org.springframework.web.multipart.MultipartFile;
-import stu.datn.ebook_store.dto.BookDTO;
+import stu.datn.ebook_store.dto.request.BookFormRequest;
+import stu.datn.ebook_store.dto.request.BookCreateRequest;
+import stu.datn.ebook_store.dto.request.BookUpdateRequest;
+import stu.datn.ebook_store.dto.response.BookResponse;
 import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.entity.BookCategory;
 
@@ -14,8 +17,16 @@ public interface BookService {
     List<Book> getAllBooks();
     Optional<Book> getBookById(String bookId);
     Book saveBook(Book book);
-    Book createBook(BookDTO bookDTO, Set<String> authorIds);
-    Book updateBook(String bookId, BookDTO bookDTO, Set<String> authorIds);
+
+    // MVC form operations
+    Book createBook(BookFormRequest bookFormRequest, Set<String> authorIds);
+    Book updateBook(String bookId, BookFormRequest bookFormRequest, Set<String> authorIds);
+
+    // REST API operations
+    BookResponse createBookFromRequest(BookCreateRequest request);
+    BookResponse updateBookFromRequest(String bookId, BookUpdateRequest request);
+    BookResponse getBookResponse(String bookId);
+
     void deleteBook(String bookId);
 
     // File upload

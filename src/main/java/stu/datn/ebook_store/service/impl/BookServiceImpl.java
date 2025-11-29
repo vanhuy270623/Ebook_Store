@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import stu.datn.ebook_store.dto.request.BookFormRequest;
 import stu.datn.ebook_store.dto.request.BookCreateRequest;
 import stu.datn.ebook_store.dto.request.BookUpdateRequest;
 import stu.datn.ebook_store.dto.response.BookResponse;
@@ -15,6 +14,8 @@ import stu.datn.ebook_store.entity.BookCategory;
 import stu.datn.ebook_store.repository.AuthorRepository;
 import stu.datn.ebook_store.repository.BookCategoryRepository;
 import stu.datn.ebook_store.repository.BookRepository;
+import stu.datn.ebook_store.repository.CartItemRepository;
+import stu.datn.ebook_store.repository.OrderItemRepository;
 import stu.datn.ebook_store.repository.ReviewRepository;
 import stu.datn.ebook_store.service.BookService;
 
@@ -37,6 +38,8 @@ public class BookServiceImpl implements BookService {
     private final ReviewRepository reviewRepository;
     private final AuthorRepository authorRepository;
     private final BookCategoryRepository categoryRepository;
+    private final CartItemRepository cartItemRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Value("${file.upload-dir:uploads/books}")
     private String uploadDir;
@@ -45,11 +48,15 @@ public class BookServiceImpl implements BookService {
     public BookServiceImpl(BookRepository bookRepository,
                           ReviewRepository reviewRepository,
                           AuthorRepository authorRepository,
-                          BookCategoryRepository categoryRepository) {
+                          BookCategoryRepository categoryRepository,
+                          CartItemRepository cartItemRepository,
+                          OrderItemRepository orderItemRepository) {
         this.bookRepository = bookRepository;
         this.reviewRepository = reviewRepository;
         this.authorRepository = authorRepository;
         this.categoryRepository = categoryRepository;
+        this.cartItemRepository = cartItemRepository;
+        this.orderItemRepository = orderItemRepository;
     }
 
     @Override
@@ -71,38 +78,97 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
+    @Transactional
     public void deleteBook(String bookId) {
-        bookRepository.deleteById(bookId);
+        // Check if book exists before deleting
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sách với ID: " + bookId));
+
+        // Proactively check if book is being used before attempting deletion
+        List<stu.datn.ebook_store.entity.OrderItem> orderItems = orderItemRepository.findByBook_BookId(bookId);
+        if (!orderItems.isEmpty()) {
+            throw new RuntimeException("Không thể xóa sách này vì nó đã có trong " + orderItems.size() + " đơn hàng. Sách này cần được giữ lại để bảo toàn lịch sử đơn hàng.");
+        }
+
+        try {
+            // Clear all relationships before deletion
+            // Clear many-to-many relationship with authors
+            if (book.getAuthors() != null && !book.getAuthors().isEmpty()) {
+                book.getAuthors().clear();
+                bookRepository.saveAndFlush(book);
+            }
+
+            // OneToMany relationships with cascade will be handled automatically
+            // (bookAssets and reviews)
+
+            // Now delete the book
+            bookRepository.delete(book);
+            bookRepository.flush();
+        } catch (Exception e) {
+            // Check if it's a foreign key constraint violation
+            String errorMessage = e.getMessage();
+            Throwable cause = e.getCause();
+
+            // Check the exception and its causes for constraint violations
+            while (cause != null) {
+                String causeMessage = cause.getMessage();
+                if (causeMessage != null) {
+                    if (causeMessage.contains("foreign key") ||
+                        causeMessage.contains("constraint") ||
+                        causeMessage.contains("ConstraintViolation") ||
+                        causeMessage.contains("cannot delete") ||
+                        causeMessage.contains("order_items") ||
+                        causeMessage.contains("cart_items") ||
+                        causeMessage.contains("reading_progress")) {
+                        throw new RuntimeException("Không thể xóa sách này vì nó đang được sử dụng trong hệ thống (giỏ hàng, đơn hàng, hoặc lịch sử đọc).");
+                    }
+                }
+                cause = cause.getCause();
+            }
+
+            // Check main error message
+            if (errorMessage != null && (errorMessage.contains("foreign key") ||
+                errorMessage.contains("constraint") ||
+                errorMessage.contains("ConstraintViolation") ||
+                errorMessage.contains("cannot delete") ||
+                errorMessage.contains("order_items") ||
+                errorMessage.contains("cart_items") ||
+                errorMessage.contains("reading_progress"))) {
+                throw new RuntimeException("Không thể xóa sách này vì nó đang được sử dụng trong hệ thống (giỏ hàng, đơn hàng, hoặc lịch sử đọc).");
+            }
+
+            throw new RuntimeException("Có lỗi xảy ra khi xóa sách: " + (errorMessage != null ? errorMessage : "Lỗi không xác định"));
+        }
     }
 
     @Override
-    public Book createBook(BookFormRequest bookFormRequest, Set<String> authorIds) {
+    public Book createBook(BookCreateRequest request) {
         Book book = new Book();
         book.setBookId(generateBookId());
 
         // Set basic properties
-        book.setTitle(bookFormRequest.getTitle());
-        book.setDescription(bookFormRequest.getDescription());
-        book.setPrice(bookFormRequest.getPrice());
-        book.setCoverImageUrl(bookFormRequest.getCoverImageUrl());
-        book.setPublisher(bookFormRequest.getPublisher());
-        book.setPublicationYear(bookFormRequest.getPublicationYear());
-        book.setLanguage(bookFormRequest.getLanguage());
-        book.setPages(bookFormRequest.getPages());
-        book.setIsbn(bookFormRequest.getIsbn());
-        book.setAccessType(bookFormRequest.getAccessType() != null ? bookFormRequest.getAccessType() : Book.AccessType.PURCHASE);
-        book.setIsDownloadable(bookFormRequest.getIsDownloadable() != null ? bookFormRequest.getIsDownloadable() : false);
+        book.setTitle(request.getTitle());
+        book.setDescription(request.getDescription());
+        book.setPrice(request.getPrice());
+        book.setCoverImageUrl(request.getCoverImageUrl());
+        book.setPublisher(request.getPublisher());
+        book.setPublicationYear(request.getPublicationYear());
+        book.setLanguage(request.getLanguage());
+        book.setPages(request.getPages());
+        book.setIsbn(request.getIsbn());
+        book.setAccessType(request.getAccessType() != null ? request.getAccessType() : Book.AccessType.PURCHASE);
+        book.setIsDownloadable(request.getIsDownloadable() != null ? request.getIsDownloadable() : false);
 
         // Set category
-        if (bookFormRequest.getBookCategoryId() != null && !bookFormRequest.getBookCategoryId().isEmpty()) {
-            categoryRepository.findById(bookFormRequest.getBookCategoryId())
+        if (request.getBookCategoryId() != null && !request.getBookCategoryId().isEmpty()) {
+            categoryRepository.findById(request.getBookCategoryId())
                 .ifPresent(book::setBookCategory);
         }
 
         // Set authors
-        if (authorIds != null && !authorIds.isEmpty()) {
+        if (request.getAuthorIds() != null && !request.getAuthorIds().isEmpty()) {
             Set<Author> authors = new HashSet<>();
-            for (String authorId : authorIds) {
+            for (String authorId : request.getAuthorIds()) {
                 authorRepository.findById(authorId).ifPresent(authors::add);
             }
             book.setAuthors(authors);
@@ -112,39 +178,39 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public Book updateBook(String bookId, BookFormRequest bookFormRequest, Set<String> authorIds) {
-        Optional<Book> bookOpt = bookRepository.findById(bookId);
+    public Book updateBook(BookUpdateRequest request) {
+        Optional<Book> bookOpt = bookRepository.findById(request.getBookId());
         if (bookOpt.isEmpty()) {
-            throw new RuntimeException("Book not found with id: " + bookId);
+            throw new RuntimeException("Book not found with id: " + request.getBookId());
         }
 
         Book book = bookOpt.get();
 
         // Update basic properties
-        book.setTitle(bookFormRequest.getTitle());
-        book.setDescription(bookFormRequest.getDescription());
-        book.setPrice(bookFormRequest.getPrice());
-        if (bookFormRequest.getCoverImageUrl() != null && !bookFormRequest.getCoverImageUrl().isEmpty()) {
-            book.setCoverImageUrl(bookFormRequest.getCoverImageUrl());
+        book.setTitle(request.getTitle());
+        book.setDescription(request.getDescription());
+        book.setPrice(request.getPrice());
+        if (request.getCoverImageUrl() != null && !request.getCoverImageUrl().isEmpty()) {
+            book.setCoverImageUrl(request.getCoverImageUrl());
         }
-        book.setPublisher(bookFormRequest.getPublisher());
-        book.setPublicationYear(bookFormRequest.getPublicationYear());
-        book.setLanguage(bookFormRequest.getLanguage());
-        book.setPages(bookFormRequest.getPages());
-        book.setIsbn(bookFormRequest.getIsbn());
-        book.setAccessType(bookFormRequest.getAccessType());
-        book.setIsDownloadable(bookFormRequest.getIsDownloadable());
+        book.setPublisher(request.getPublisher());
+        book.setPublicationYear(request.getPublicationYear());
+        book.setLanguage(request.getLanguage());
+        book.setPages(request.getPages());
+        book.setIsbn(request.getIsbn());
+        book.setAccessType(request.getAccessType());
+        book.setIsDownloadable(request.getIsDownloadable());
 
         // Update category
-        if (bookFormRequest.getBookCategoryId() != null && !bookFormRequest.getBookCategoryId().isEmpty()) {
-            categoryRepository.findById(bookFormRequest.getBookCategoryId())
+        if (request.getBookCategoryId() != null && !request.getBookCategoryId().isEmpty()) {
+            categoryRepository.findById(request.getBookCategoryId())
                 .ifPresent(book::setBookCategory);
         }
 
         // Update authors
-        if (authorIds != null) {
+        if (request.getAuthorIds() != null) {
             Set<Author> authors = new HashSet<>();
-            for (String authorId : authorIds) {
+            for (String authorId : request.getAuthorIds()) {
                 authorRepository.findById(authorId).ifPresent(authors::add);
             }
             book.setAuthors(authors);
@@ -173,8 +239,10 @@ public class BookServiceImpl implements BookService {
             Path filePath = uploadPath.resolve(filename);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Return relative URL
-            return "/uploads/books/" + filename;
+            // Return relative URL matching the resource handler mapping
+            // File saved to: F:/datn_uploads/book_asset/image/covers/[filename]
+            // URL mapping: /book_asset/image/covers/[filename]
+            return "/book_asset/image/covers/" + filename;
         } catch (IOException e) {
             throw new RuntimeException("Failed to upload file: " + e.getMessage(), e);
         }

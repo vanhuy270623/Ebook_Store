@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ sơ cá nhân - EbookStore</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" th:href="@{/user/index}">
+                <i class="fas fa-book-reader me-2"></i>EbookStore
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/user/index}">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/books">Sách</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img th:if="${user.avatarUrl != null}"
+                                 th:src="@{${user.avatarUrl}}"
+                                 alt="Avatar"
+                                 class="rounded-circle me-2"
+                                 style="width: 32px; height: 32px; object-fit: cover;">
+                            <i th:if="${user.avatarUrl == null}"
+                               class="fas fa-user-circle me-2"
+                               style="font-size: 32px;"></i>
+                            <span th:text="${user.fullName}">Người dùng</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" th:href="@{/user/dashboard}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item active" th:href="@{/user/profile}"><i class="fas fa-user-edit me-2"></i>Hồ sơ</a></li>
+                            <li><a class="dropdown-item" th:href="@{/user/orders}"><i class="fas fa-shopping-bag me-2"></i>Đơn hàng</a></li>
+                            <li><a class="dropdown-item" th:href="@{/user/reading-history}"><i class="fas fa-book me-2"></i>Lịch sử đọc</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form th:action="@{/auth/logout}" method="post" class="d-inline">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cart">
+                            <i class="fas fa-shopping-cart"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Profile Content -->
+    <section class="section py-5">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="mb-4">
+                <h1 class="h2 mb-2">
+                    <i class="fas fa-user-edit text-primary me-2"></i>
+                    Hồ sơ cá nhân
+                </h1>
+                <p class="text-muted">Quản lý thông tin tài khoản của bạn</p>
+            </div>
+
+            <!-- Alert Messages -->
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="row">
+                <!-- Profile Sidebar -->
+                <div class="col-lg-3 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <img th:if="${user.avatarUrl != null}"
+                                     th:src="@{${user.avatarUrl}}"
+                                     alt="Avatar"
+                                     class="rounded-circle"
+                                     style="width: 120px; height: 120px; object-fit: cover;">
+                                <i th:if="${user.avatarUrl == null}"
+                                   class="fas fa-user-circle text-muted"
+                                   style="font-size: 120px;"></i>
+                            </div>
+                            <h5 class="mb-1" th:text="${user.fullName}">Tên người dùng</h5>
+                            <p class="text-muted mb-3" th:text="${user.email}">email@example.com</p>
+                            <span class="badge bg-primary" th:text="${user.role.roleName}">USER</span>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm mt-3">
+                        <div class="list-group list-group-flush">
+                            <a href="#profile" class="list-group-item list-group-item-action active" data-bs-toggle="tab">
+                                <i class="fas fa-user me-2"></i> Thông tin cá nhân
+                            </a>
+                            <a href="#password" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                                <i class="fas fa-key me-2"></i> Đổi mật khẩu
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Content -->
+                <div class="col-lg-9">
+                    <div class="tab-content">
+                        <!-- Profile Information Tab -->
+                        <div class="tab-pane fade show active" id="profile">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-white py-3">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-user text-primary me-2"></i>
+                                        Thông tin cá nhân
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <form th:action="@{/user/profile/update}" method="post" th:object="${userRequest}">
+                                        <input type="hidden" th:field="*{userId}">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-user me-1"></i> Họ và tên
+                                                    <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="text" class="form-control" th:field="*{fullName}"
+                                                       placeholder="Nhập họ tên" required>
+                                            </div>
+
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-envelope me-1"></i> Email
+                                                    <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="email" class="form-control" th:field="*{email}"
+                                                       placeholder="email@example.com" required>
+                                            </div>
+
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-phone me-1"></i> Số điện thoại
+                                                </label>
+                                                <input type="tel" class="form-control" th:field="*{phone}"
+                                                       placeholder="0123456789">
+                                            </div>
+
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-image me-1"></i> URL Avatar
+                                                </label>
+                                                <input type="text" class="form-control" th:field="*{avatarUrl}"
+                                                       placeholder="https://...">
+                                            </div>
+
+                                            <div class="col-12">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save me-2"></i>Lưu thay đổi
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Account Information -->
+                            <div class="card border-0 shadow-sm mt-4">
+                                <div class="card-header bg-white py-3">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-info-circle text-primary me-2"></i>
+                                        Thông tin tài khoản
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <p class="text-muted mb-1">Tên đăng nhập</p>
+                                            <p class="mb-0 fw-bold" th:text="${user.username}">username</p>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <p class="text-muted mb-1">Ngày tạo tài khoản</p>
+                                            <p class="mb-0 fw-bold" th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024</p>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <p class="text-muted mb-1">Lần đăng nhập cuối</p>
+                                            <p class="mb-0 fw-bold" th:text="${user.lastLogin != null ? #temporals.format(user.lastLogin, 'dd/MM/yyyy HH:mm') : 'Chưa có'}">--</p>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <p class="text-muted mb-1">Trạng thái</p>
+                                            <span class="badge"
+                                                  th:classappend="${user.status == T(stu.datn.ebook_store.entity.User.UserStatus).ACTIVE} ? 'bg-success' : 'bg-danger'"
+                                                  th:text="${user.status}">
+                                                ACTIVE
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Change Password Tab -->
+                        <div class="tab-pane fade" id="password">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-white py-3">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-key text-primary me-2"></i>
+                                        Đổi mật khẩu
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <form th:action="@{/user/profile/change-password}" method="post">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                <i class="fas fa-lock me-1"></i> Mật khẩu hiện tại
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="password" class="form-control" name="currentPassword"
+                                                   placeholder="Nhập mật khẩu hiện tại" required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                <i class="fas fa-key me-1"></i> Mật khẩu mới
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="password" class="form-control" name="newPassword"
+                                                   placeholder="Nhập mật khẩu mới" required minlength="6">
+                                            <small class="text-muted">Mật khẩu phải có ít nhất 6 ký tự</small>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                <i class="fas fa-check-circle me-1"></i> Xác nhận mật khẩu mới
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="password" class="form-control" name="confirmPassword"
+                                                   placeholder="Nhập lại mật khẩu mới" required>
+                                        </div>
+
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <strong>Lưu ý:</strong> Sau khi đổi mật khẩu, bạn sẽ cần đăng nhập lại.
+                                        </div>
+
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>Đổi mật khẩu
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h5 class="mb-3"><i class="fas fa-book-reader me-2"></i>EbookStore</h5>
+                    <p class="text-white-50">Thư viện sách điện tử hàng đầu Việt Nam với hơn 10,000+ đầu sách đa thể loại.</p>
+                </div>
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h5 class="mb-3">Liên kết</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/about" class="text-white-50 text-decoration-none">Về chúng tôi</a></li>
+                        <li><a href="/contact" class="text-white-50 text-decoration-none">Liên hệ</a></li>
+                        <li><a href="/terms" class="text-white-50 text-decoration-none">Điều khoản</a></li>
+                        <li><a href="/privacy" class="text-white-50 text-decoration-none">Chính sách</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4">
+                    <h5 class="mb-3">Theo dõi</h5>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4 bg-white">
+            <div class="text-center text-white-50">
+                <p class="mb-0">&copy; 2024 EbookStore. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>
+

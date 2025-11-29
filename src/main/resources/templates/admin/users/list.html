@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
 	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
-	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.css">
+	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.min.css">
 </head>
 <body class="hold-transition skin-blue sidebar-mini">
 <div class="wrapper">
@@ -226,7 +226,8 @@
 	// Chỉ giữ lại mỗi script khởi tạo DataTable, không còn logic xử lý nút bấm
 	$(document).ready(function() {
 		$('#usersTable').DataTable({
-			"language": { "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json" }
+			"language": { "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json" },
+			"searching": false
 		});
 	});
 </script>

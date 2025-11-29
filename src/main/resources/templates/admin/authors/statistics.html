@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<!-- Header -->
+	<div th:replace="~{admin/layout/header :: header}"></div>
+
+	<!-- Sidebar -->
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<!-- Content Wrapper -->
+	<div class="content-wrapper">
+		<!-- Content Header -->
+		<section class="content-header">
+			<h1>
+				Thống kê tác giả
+				<small>Tổng quan về các tác giả</small>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/authors}">Quản lý tác giả</a></li>
+				<li class="active">Thống kê</li>
+			</ol>
+		</section>
+
+		<!-- Main content -->
+		<section class="content">
+			<!-- Info Boxes -->
+			<div class="row">
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fa fa-users"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng số tác giả</span>
+							<span class="info-box-number" th:text="${totalAuthors ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fa fa-plus"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tác giả mới hôm nay</span>
+							<span class="info-box-number" th:text="${newAuthorsToday ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-yellow"><i class="fa fa-calendar"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tuần này</span>
+							<span class="info-box-number" th:text="${authorsThisWeek ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-red"><i class="fa fa-star"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tác giả được theo dõi</span>
+							<span class="info-box-number" th:text="${followedAuthors ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Recent Authors -->
+			<div class="row">
+				<div class="col-md-12">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Tác giả gần đây</h3>
+						</div>
+						<div class="box-body">
+							<table class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>Avatar</th>
+										<th>Tên tác giả</th>
+										<th>Tiểu sử</th>
+										<th>Ngày tạo</th>
+										<th>Thao tác</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="author : ${recentAuthors}">
+										<td>
+											<img th:src="${author.avatarUrl}" class="img-thumbnail"
+												 style="width: 40px; height: 40px; border-radius: 50%;"
+												 onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect fill=%22%23ddd%22 width=%2240%22 height=%2240%22/%3E%3C/svg%3E';">
+										</td>
+										<td th:text="${author.name}">Tên</td>
+										<td th:text="${#strings.abbreviate(author.biography ?: 'N/A', 40)}">Tiểu sử</td>
+										<td th:text="${#temporals.format(author.createdAt, 'dd/MM/yyyy')}">01/01/2024</td>
+										<td>
+											<a th:href="@{/admin/authors/view/{id}(id=${author.authorId})}"
+											   class="btn btn-sm btn-info">
+												<i class="fa fa-search"></i>
+											</a>
+										</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(recentAuthors)}">
+										<td colspan="5" class="text-center text-muted">Không có dữ liệu</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Statistics Chart -->
+			<div class="row">
+				<div class="col-md-12">
+					<div class="box box-info">
+						<div class="box-header with-border">
+							<h3 class="box-title">Tổng quan theo tháng</h3>
+						</div>
+						<div class="box-body">
+							<p class="text-muted">Biểu đồ thống kê tác giả theo tháng sẽ được hiển thị tại đây</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<!-- Footer -->
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>
+

@@ -1,7 +1,6 @@
 package stu.datn.ebook_store.service;
 
 import org.springframework.web.multipart.MultipartFile;
-import stu.datn.ebook_store.dto.request.BookFormRequest;
 import stu.datn.ebook_store.dto.request.BookCreateRequest;
 import stu.datn.ebook_store.dto.request.BookUpdateRequest;
 import stu.datn.ebook_store.dto.response.BookResponse;
@@ -10,7 +9,6 @@ import stu.datn.ebook_store.entity.BookCategory;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public interface BookService {
     // Basic CRUD operations
@@ -18,11 +16,11 @@ public interface BookService {
     Optional<Book> getBookById(String bookId);
     Book saveBook(Book book);
 
-    // MVC form operations
-    Book createBook(BookFormRequest bookFormRequest, Set<String> authorIds);
-    Book updateBook(String bookId, BookFormRequest bookFormRequest, Set<String> authorIds);
+    // MVC form operations (Admin)
+    Book createBook(BookCreateRequest request);
+    Book updateBook(BookUpdateRequest request);
 
-    // REST API operations
+    // REST API operations (if needed separately)
     BookResponse createBookFromRequest(BookCreateRequest request);
     BookResponse updateBookFromRequest(String bookId, BookUpdateRequest request);
     BookResponse getBookResponse(String bookId);

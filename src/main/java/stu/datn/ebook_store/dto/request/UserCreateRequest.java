@@ -29,7 +29,6 @@ public class UserCreateRequest {
     @Size(max = 255, message = "Email không được vượt quá 255 ký tự")
     private String email;
 
-    @NotBlank(message = "Mật khẩu không được để trống")
     @Size(min = 6, max = 100, message = "Mật khẩu phải từ 6-100 ký tự")
     private String password;
 

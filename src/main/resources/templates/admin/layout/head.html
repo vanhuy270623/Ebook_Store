@@ -1,0 +1,89 @@
+<head th:fragment="head">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title th:text="${pageTitle != null ? pageTitle + ' - Ebook Store Admin' : 'Ebook Store Admin'}">Ebook Store Admin</title>
+  <!-- Desktop Only - Min width 1280px recommended -->
+  <meta content="width=1280" name="viewport">
+
+  <!-- Bootstrap 3.3.7 -->
+  <link rel="stylesheet" th:href="@{/admin_template/css/bootstrap.min.css}">
+  <!-- Font Awesome - Local -->
+  <link rel="stylesheet" th:href="@{/admin_template/css/font-awesome.min.css}">
+  <!-- Font Awesome - CDN Fallback -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha512-SfTiTlX6kk+qitfevl/7LibUOeJWlt9rbyDn92a1DqWOw9vWG2MFoays0sgObmWazO5BQPiFucnnEAjpAB+/Sw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- AdminLTE -->
+  <link rel="stylesheet" th:href="@{/admin_template/css/AdminLTE.css}">
+  <!-- AdminLTE Skins -->
+  <link rel="stylesheet" th:href="@{/admin_template/css/_all-skins.min.css}">
+  <!-- jQuery UI -->
+  <link rel="stylesheet" th:href="@{/admin_template/css/jquery-ui.css}">
+
+  <!-- Custom Admin Styles -->
+  <style>
+    /* Status Colors */
+    .status-completed { color: #00a65a; font-weight: bold; }
+    .status-pending { color: #f39c12; font-weight: bold; }
+    .status-cancelled { color: #dd4b39; font-weight: bold; }
+    .status-processing { color: #3c8dbc; font-weight: bold; }
+
+    /* Badge Styles */
+    .badge-free { background-color: #00a65a; }
+    .badge-premium { background-color: #f39c12; }
+    .badge-bestseller { background-color: #dd4b39; }
+    .badge-new { background-color: #3c8dbc; }
+
+    /* Book Cover Thumbnail */
+    .book-cover-thumb {
+      width: 50px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    /* User Avatar */
+    .user-avatar-sm {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+    }
+
+    /* Action Buttons */
+    .btn-xs {
+      padding: 2px 8px;
+      font-size: 11px;
+    }
+
+    /* Custom Box Colors */
+    .box-primary { border-top-color: #FF6B35; }
+    .box-success { border-top-color: #00a65a; }
+    .box-warning { border-top-color: #f39c12; }
+    .box-danger { border-top-color: #dd4b39; }
+
+    /* Stats Box Enhancement */
+    .small-box h3 { font-size: 32px; }
+    .small-box .icon { font-size: 70px; }
+
+    /* Fix icon alignment issues */
+    .info-box-icon {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    .info-box-icon i {
+      font-size: 24px !important;
+    }
+
+    /* Button icon spacing */
+    .btn i {
+      margin-right: 5px;
+    }
+
+    /* DataTable icon fixes */
+    .dt-buttons .btn i,
+    .dataTables_filter i,
+    .dataTables_length i {
+      margin-right: 3px;
+    }
+  </style>
+</head>

@@ -58,6 +58,11 @@ public class ReadingProgressServiceImpl implements ReadingProgressService {
     }
 
     @Override
+    public List<ReadingProgress> getReadingProgressByUserWithBookDetails(User user) {
+        return readingProgressRepository.findByUserWithBookDetails(user);
+    }
+
+    @Override
     public List<ReadingProgress> getFavoriteBooksByUser(User user) {
         return readingProgressRepository.findByUserAndIsFavoriteTrue(user);
     }

@@ -108,7 +108,8 @@
                             </a>
                         </li>
                         <li>
-                            <form th:action="@{/logout}" method="post" style="margin: 0;">
+                            <form th:action="@{/auth/logout}" method="post" style="margin: 0;">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                                 <button type="submit" class="dropdown-item text-danger">
                                     <i class="fa fa-sign-out-alt me-2"></i>Đăng xuất
                                 </button>

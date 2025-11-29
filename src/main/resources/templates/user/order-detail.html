@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết đơn hàng - EbookStore</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" th:href="@{/user/index}">
+                <i class="fas fa-book-reader me-2"></i>EbookStore
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/user/index}">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/books">Sách</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-2" style="font-size: 32px;"></i>
+                            <span>Người dùng</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" th:href="@{/user/dashboard}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" th:href="@{/user/profile}"><i class="fas fa-user-edit me-2"></i>Hồ sơ</a></li>
+                            <li><a class="dropdown-item active" th:href="@{/user/orders}"><i class="fas fa-shopping-bag me-2"></i>Đơn hàng</a></li>
+                            <li><a class="dropdown-item" th:href="@{/user/reading-history}"><i class="fas fa-book me-2"></i>Lịch sử đọc</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form th:action="@{/auth/logout}" method="post" class="d-inline">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cart">
+                            <i class="fas fa-shopping-cart"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Order Detail Content -->
+    <section class="section py-5">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/user/index}">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/user/orders}">Đơn hàng</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Chi tiết đơn hàng</li>
+                </ol>
+            </nav>
+
+            <!-- Page Header -->
+            <div class="mb-4">
+                <h1 class="h2 mb-2">
+                    <i class="fas fa-receipt text-primary me-2"></i>
+                    Chi tiết đơn hàng
+                </h1>
+            </div>
+
+            <div class="row">
+                <!-- Order Info -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle text-primary me-2"></i>
+                                Thông tin đơn hàng
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p class="text-muted mb-1">Mã đơn hàng</p>
+                                    <p class="mb-0"><span class="badge bg-secondary" th:text="${order.orderId}">ORD001</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="text-muted mb-1">Ngày đặt hàng</p>
+                                    <p class="mb-0" th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024</p>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p class="text-muted mb-1">Loại đơn hàng</p>
+                                    <p class="mb-0">
+                                        <span class="badge bg-info" th:text="${order.orderType == T(stu.datn.ebook_store.entity.Order.OrderType).BOOK} ? 'Mua sách' : 'Gói VIP'">
+                                            Mua sách
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="text-muted mb-1">Phương thức thanh toán</p>
+                                    <p class="mb-0">
+                                        <span th:if="${order.paymentMethod == T(stu.datn.ebook_store.entity.Order.PaymentMethod).CREDIT_CARD}">
+                                            <i class="fas fa-credit-card text-primary me-1"></i> Thẻ tín dụng
+                                        </span>
+                                        <span th:if="${order.paymentMethod == T(stu.datn.ebook_store.entity.Order.PaymentMethod).MOMO}">
+                                            <i class="fas fa-mobile-alt text-danger me-1"></i> MoMo
+                                        </span>
+                                        <span th:if="${order.paymentMethod == T(stu.datn.ebook_store.entity.Order.PaymentMethod).VNPAY}">
+                                            <i class="fas fa-wallet text-primary me-1"></i> VNPay
+                                        </span>
+                                        <span th:if="${order.paymentMethod == T(stu.datn.ebook_store.entity.Order.PaymentMethod).BANK_TRANSFER}">
+                                            <i class="fas fa-university text-success me-1"></i> Chuyển khoản
+                                        </span>
+                                        <span th:if="${order.paymentMethod == T(stu.datn.ebook_store.entity.Order.PaymentMethod).FREE_ACTIVATION}">
+                                            <i class="fas fa-gift text-warning me-1"></i> Miễn phí
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="text-muted mb-1">Trạng thái thanh toán</p>
+                                    <p class="mb-0">
+                                        <span class="badge"
+                                              th:classappend="${order.paymentStatus == T(stu.datn.ebook_store.entity.Order.PaymentStatus).COMPLETED} ? 'bg-success' :
+                                                              (${order.paymentStatus == T(stu.datn.ebook_store.entity.Order.PaymentStatus).PENDING} ? 'bg-warning text-dark' :
+                                                              (${order.paymentStatus == T(stu.datn.ebook_store.entity.Order.PaymentStatus).CANCELLED} ? 'bg-danger' : 'bg-secondary'))"
+                                              th:text="${order.paymentStatus == T(stu.datn.ebook_store.entity.Order.PaymentStatus).COMPLETED} ? 'Đã thanh toán' :
+                                                      (${order.paymentStatus == T(stu.datn.ebook_store.entity.Order.PaymentStatus).PENDING} ? 'Chờ thanh toán' :
+                                                      (${order.paymentStatus == T(stu.datn.ebook_store.entity.Order.PaymentStatus).CANCELLED} ? 'Đã hủy' : 'Thất bại'))">
+                                            Đã thanh toán
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6" th:if="${order.transactionId != null}">
+                                    <p class="text-muted mb-1">Mã giao dịch</p>
+                                    <p class="mb-0"><code th:text="${order.transactionId}">TXN123456</code></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order Items (for BOOK orders) -->
+                    <div th:if="${order.orderType == T(stu.datn.ebook_store.entity.Order.OrderType).BOOK}" class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-list text-primary me-2"></i>
+                                Sách trong đơn hàng
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Chi tiết các sách sẽ được hiển thị khi có dữ liệu OrderItem
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subscription Info (for SUBSCRIPTION orders) -->
+                    <div th:if="${order.orderType == T(stu.datn.ebook_store.entity.Order.OrderType).SUBSCRIPTION}" class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-crown text-primary me-2"></i>
+                                Thông tin gói VIP
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <p class="text-muted mb-1">Ngày bắt đầu</p>
+                                    <p class="mb-0" th:text="${order.startDate != null ? #temporals.format(order.startDate, 'dd/MM/yyyy HH:mm') : 'Chưa kích hoạt'}">--</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <p class="text-muted mb-1">Ngày hết hạn</p>
+                                    <p class="mb-0" th:text="${order.endDate != null ? #temporals.format(order.endDate, 'dd/MM/yyyy HH:mm') : 'Chưa có'}">--</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calculator text-primary me-2"></i>
+                                Tổng quan đơn hàng
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted">Tổng tiền:</span>
+                                <strong class="text-primary h4 mb-0" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</strong>
+                            </div>
+
+                            <hr>
+
+                            <div class="d-grid gap-2">
+                                <a th:href="@{/user/orders}" class="btn btn-outline-primary">
+                                    <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách
+                                </a>
+                                <button th:if="${order.paymentStatus == T(stu.datn.ebook_store.entity.Order.PaymentStatus).PENDING}"
+                                        class="btn btn-success">
+                                    <i class="fas fa-credit-card me-2"></i>Thanh toán ngay
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Help Card -->
+                    <div class="card border-0 shadow-sm mt-3">
+                        <div class="card-body">
+                            <h6 class="mb-3"><i class="fas fa-question-circle text-primary me-2"></i>Cần hỗ trợ?</h6>
+                            <p class="text-muted small mb-3">Liên hệ với chúng tôi nếu bạn gặp vấn đề với đơn hàng</p>
+                            <a href="/contact" class="btn btn-sm btn-outline-primary w-100">
+                                <i class="fas fa-envelope me-2"></i>Liên hệ hỗ trợ
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h5 class="mb-3"><i class="fas fa-book-reader me-2"></i>EbookStore</h5>
+                    <p class="text-white-50">Thư viện sách điện tử hàng đầu Việt Nam với hơn 10,000+ đầu sách đa thể loại.</p>
+                </div>
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h5 class="mb-3">Liên kết</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/about" class="text-white-50 text-decoration-none">Về chúng tôi</a></li>
+                        <li><a href="/contact" class="text-white-50 text-decoration-none">Liên hệ</a></li>
+                        <li><a href="/terms" class="text-white-50 text-decoration-none">Điều khoản</a></li>
+                        <li><a href="/privacy" class="text-white-50 text-decoration-none">Chính sách</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4">
+                    <h5 class="mb-3">Theo dõi</h5>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4 bg-white">
+            <div class="text-center text-white-50">
+                <p class="mb-0">&copy; 2024 EbookStore. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>
+

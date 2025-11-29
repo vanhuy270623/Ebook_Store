@@ -42,18 +42,18 @@ CREATE TABLE IF NOT EXISTS `authors` (
 --
 
 INSERT INTO `authors` (`author_id`, `name`, `biography`, `avatar_url`, `created_at`) VALUES
-('author_1', 'Nguyễn Nhật Ánh', 'Nhà văn viết cho tuổi thơ và tuổi mới lớn ăn khách nhất Việt Nam.', '/Book_Asset/image/authors/avatar.png', '2025-11-20 19:16:57'),
-('author_10', 'Paulo Coelho', 'Tác giả của Nhà Giả Kim.', '/Book_Asset/image/authors/avatar2.png', '2025-11-20 19:16:57'),
-('author_11', 'Nguyễn Du', 'Đại thi hào dân tộc.', '/Book_Asset/image/authors/avatar3.png', '2025-11-20 19:16:57'),
-('author_12', 'Haruki Murakami', 'Tiểu thuyết gia Nhật Bản đương đại nổi tiếng toàn cầu.', '/Book_Asset/image/authors/avatar5.png', '2025-11-20 19:16:57'),
-('author_2', 'Dale Carnegie', 'Tác giả Đắc Nhân Tâm.', '/Book_Asset/image/authors/avatar2.png', '2025-11-20 19:16:57'),
-('author_3', 'Aoyama Gosho', 'Tác giả Thám tử lừng danh Conan.', '/Book_Asset/image/authors/avatar3.png', '2025-11-20 19:16:57'),
-('author_4', 'Fujiko F. Fujio', 'Cha đẻ của Doraemon.', '/Book_Asset/image/authors/avatar5.png', '2025-11-20 19:16:57'),
-('author_5', 'Tô Hoài', 'Tác giả Dế Mèn phiêu lưu ký.', '/Book_Asset/image/authors/avatar.png', '2025-11-20 19:16:57'),
-('author_6', 'Nam Cao', 'Nhà văn hiện thực xuất sắc.', '/Book_Asset/image/authors/avatar2.png', '2025-11-20 19:16:57'),
-('author_7', 'Ngô Tất Tố', 'Nhà văn, nhà báo, nhà nghiên cứu.', '/Book_Asset/image/authors/avatar3.png', '2025-11-20 19:16:57'),
-('author_8', 'Vũ Trọng Phụng', 'Ông vua phóng sự đất Bắc.', '/Book_Asset/image/authors/avatar5.png', '2025-11-20 19:16:57'),
-('author_9', 'Tony Buổi Sáng', 'Tác giả ẩn danh được giới trẻ yêu thích.', '/Book_Asset/image/authors/avatar.png', '2025-11-20 19:16:57');
+('author_1', 'Nguyễn Nhật Ánh', 'Nhà văn viết cho tuổi thơ và tuổi mới lớn ăn khách nhất Việt Nam.', '/book_asset/image/authors/admin.jpg', '2025-11-20 19:16:57'),
+('author_10', 'Paulo Coelho', 'Tác giả của Nhà Giả Kim.', '/book_asset/image/authors/vana.jpg', '2025-11-20 19:16:57'),
+('author_11', 'Nguyễn Du', 'Đại thi hào dân tộc.', '/book_asset/image/authors/thib.jpg', '2025-11-20 19:16:57'),
+('author_12', 'Haruki Murakami', 'Tiểu thuyết gia Nhật Bản đương đại nổi tiếng toàn cầu.', '/book_asset/image/authors/avatar5.png', '2025-11-20 19:16:57'),
+('author_2', 'Dale Carnegie', 'Tác giả Đắc Nhân Tâm.', '/book_asset/image/authors/vana.jpg', '2025-11-20 19:16:57'),
+('author_3', 'Aoyama Gosho', 'Tác giả Thám tử lừng danh Conan.', '/book_asset/image/authors/thib.jpg', '2025-11-20 19:16:57'),
+('author_4', 'Fujiko F. Fujio', 'Cha đẻ của Doraemon.', '/book_asset/image/authors/avatar5.png', '2025-11-20 19:16:57'),
+('author_5', 'Tô Hoài', 'Tác giả Dế Mèn phiêu lưu ký.', '/book_asset/image/authors/admin.jpg', '2025-11-20 19:16:57'),
+('author_6', 'Nam Cao', 'Nhà văn hiện thực xuất sắc.', '/book_asset/image/authors/vana.jpg', '2025-11-20 19:16:57'),
+('author_7', 'Ngô Tất Tố', 'Nhà văn, nhà báo, nhà nghiên cứu.', '/book_asset/image/authors/thib.jpg', '2025-11-20 19:16:57'),
+('author_8', 'Vũ Trọng Phụng', 'Ông vua phóng sự đất Bắc.', '/book_asset/image/authors/avatar5.png', '2025-11-20 19:16:57'),
+('author_9', 'Tony Buổi Sáng', 'Tác giả ẩn danh được giới trẻ yêu thích.', '/book_asset/image/authors/admin.jpg', '2025-11-20 19:16:57');
 
 -- --------------------------------------------------------
 
@@ -80,9 +80,9 @@ CREATE TABLE IF NOT EXISTS `banner` (
 --
 
 INSERT INTO `banner` (`banner_id`, `user_id`, `title`, `image_url`, `target_url`, `position`, `is_active`, `created_at`) VALUES
-('banner_01', 'user_admin_01', 'Khuyến mãi Black Friday', '/Book_Asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', '/subscribe/sub_vip', 'HOME', 1, '2025-11-20 19:16:58'),
-('banner_02', 'user_admin_01', 'Bestseller tháng 11', '/Book_Asset/image/covers/tamly-kynangsong/datnhantam.jpg', '/books/book_13', 'HOME', 1, '2025-11-20 19:16:58'),
-('banner_03', 'user_admin_01', 'Văn học Việt Nam', '/Book_Asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', '/category/bcat_1', 'HOME', 1, '2025-11-20 19:16:58');
+('banner_01', 'user_admin_01', 'Khuyến mãi Black Friday', '/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', '/subscribe/sub_vip', 'HOME', 1, '2025-11-20 19:16:58'),
+('banner_02', 'user_admin_01', 'Bestseller tháng 11', '/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg', '/books/book_13', 'HOME', 1, '2025-11-20 19:16:58'),
+('banner_03', 'user_admin_01', 'Văn học Việt Nam', '/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', '/category/bcat_1', 'HOME', 1, '2025-11-20 19:16:58');
 
 -- --------------------------------------------------------
 
@@ -108,12 +108,12 @@ CREATE TABLE IF NOT EXISTS `bookassets` (
 --
 
 INSERT INTO `bookassets` (`book_asset_id`, `book_id`, `file_type`, `file_url`, `file_size`, `preview_url`, `created_at`) VALUES
-('asset_01', 'book_01', 'PDF', '/Book_Asset/source/khoahoc-vientuong/Cac The Gioi Song Song - Michio Kaku.pdf', 5242880, '/Book_Asset/preview/book_01.pdf', '2025-11-20 19:16:58'),
-('asset_02', 'book_02', 'PDF', '/Book_Asset/source/tamly-kynangsong/Dac nhan tam - Dale Carnegie.pdf', 3145728, NULL, '2025-11-20 19:16:58'),
-('asset_03', 'book_03', 'EPUB', '/Book_Asset/source/khoahoc-vientuong/Chien Tranh Giua Cac The Gioi - H. G. Wells.epub', 2621440, NULL, '2025-11-20 19:16:58'),
-('asset_04', 'book_04', 'PDF', '/Book_Asset/source/kienthuc-hocthuat/Bi Quyet Thuyet Trinh Cua Steve - Carmine Gallo.pdf', 1500000, NULL, '2025-11-20 19:16:58'),
-('asset_05', 'book_05', 'PDF', '/Book_Asset/source/tieuthuyet-vanhoc/Ba Nguoi Linh Ngu Lam - Alexandre Dumas.pdf', 2000000, NULL, '2025-11-20 19:16:58'),
-('asset_13', 'book_13', 'EPUB', '/Book_Asset/source/kinhte-quanly/Sieu Kinh Te Hoc Hai Huoc - STEVEN D. LEVITT.epub', 3789000, NULL, '2025-11-20 19:16:58');
+('asset_01', 'book_01', 'PDF', '/book_asset/source/khoahoc-vientuong/Cac The Gioi Song Song - Michio Kaku.pdf', 5242880, '/book_asset/preview/book_01.pdf', '2025-11-20 19:16:58'),
+('asset_02', 'book_02', 'PDF', '/book_asset/source/tamly-kynangsong/Dac nhan tam - Dale Carnegie.pdf', 3145728, NULL, '2025-11-20 19:16:58'),
+('asset_03', 'book_03', 'EPUB', '/book_asset/source/khoahoc-vientuong/Chien Tranh Giua Cac The Gioi - H. G. Wells.epub', 2621440, NULL, '2025-11-20 19:16:58'),
+('asset_04', 'book_04', 'PDF', '/book_asset/source/kienthuc-hocthuat/Bi Quyet Thuyet Trinh Cua Steve - Carmine Gallo.pdf', 1500000, NULL, '2025-11-20 19:16:58'),
+('asset_05', 'book_05', 'PDF', '/book_asset/source/tieuthuyet-vanhoc/Ba Nguoi Linh Ngu Lam - Alexandre Dumas.pdf', 2000000, NULL, '2025-11-20 19:16:58'),
+('asset_13', 'book_13', 'EPUB', '/book_asset/source/kinhte-quanly/Sieu Kinh Te Hoc Hai Huoc - STEVEN D. LEVITT.epub', 3789000, NULL, '2025-11-20 19:16:58');
 
 -- --------------------------------------------------------
 
@@ -150,26 +150,26 @@ CREATE TABLE IF NOT EXISTS `books` (
 --
 
 INSERT INTO `books` (`book_id`, `book_category_id`, `title`, `description`, `price`, `cover_image_url`, `publisher`, `publication_year`, `language`, `pages`, `isbn`, `access_type`, `is_downloadable`, `average_rating`, `total_reviews`, `view_count`, `created_at`, `updated_at`) VALUES
-('book_01', 'bcat_1', 'Cho tôi xin một vé đi tuổi thơ', 'Vé đi tuổi thơ giá bao nhiêu?', 80000.00, '/Book_Asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 'NXB Trẻ', 2010, 'vi', 280, '978-1', 'BOTH', 1, 4.8, 156, 25430, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_02', 'bcat_2', 'Đắc Nhân Tâm', 'Nghệ thuật thu phục lòng người', 120000.00, '/Book_Asset/image/covers/tamly-kynangsong/datnhantam.jpg', 'NXB Tổng Hợp', 2015, 'vi', 320, '978-2', 'PURCHASE', 1, 4.7, 243, 38920, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_03', 'bcat_1', 'Mắt biếc', 'Chuyện tình đơn phương', 90000.00, '/Book_Asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 'NXB Trẻ', 2008, 'vi', 252, '978-3', 'BOTH', 1, 4.85, 189, 32100, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_04', 'bcat_3', 'Conan Tập 1', 'Thám tử bị teo nhỏ', 0.00, '/Book_Asset/image/covers/kienthuc-hocthuat/bi-quyet-thuyet-trinh-cua-steve-jobs.jpg', 'NXB Kim Đồng', 2000, 'vi', 180, '978-4', 'FREE', 1, 4.9, 523, 45670, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_05', 'bcat_3', 'Doraemon Tập 1', 'Mèo máy tương lai', 20000.00, '/Book_Asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 'NXB Kim Đồng', 1995, 'vi', 196, '978-5', 'SUBSCRIPTION', 0, 5, 678, 52340, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_06', 'bcat_1', 'Tôi thấy hoa vàng trên cỏ xanh', 'Tuổi thơ êm đềm', 85000.00, '/Book_Asset/image/covers/kienthuc-hocthuat/phi-ly-tri.jpg', 'NXB Trẻ', 2011, 'vi', 312, '978-6', 'PURCHASE', 0, 4.75, 298, 42100, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_07', 'bcat_5', 'Dế Mèn phiêu lưu ký', 'Bài học đường đời đầu tiên', 75000.00, '/Book_Asset/image/covers/kienthuc-hocthuat/steve-jobs-thien-tai-gan-do.jpg', 'NXB Kim Đồng', 1941, 'vi', 264, '978-7', 'BOTH', 1, 4.95, 412, 38920, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_08', 'bcat_1', 'Lão Hạc', 'Bi kịch người nông dân', 0.00, '/Book_Asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 'NXB Văn học', 1943, 'vi', 128, '978-8', 'FREE', 1, 4.65, 289, 28450, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_09', 'bcat_1', 'Chí Phèo', 'Ai cho tôi lương thiện?', 0.00, '/Book_Asset/image/covers/tamly-kynangsong/datnhantam.jpg', 'NXB Văn học', 1941, 'vi', 96, '978-9', 'FREE', 1, 4.55, 234, 22340, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_10', 'bcat_1', 'Tắt đèn', 'Chị Dậu bán chó', 65000.00, '/Book_Asset/image/covers/kienthuc-hocthuat/tu-duy-phan-bien.jpg', 'NXB Văn học', 1937, 'vi', 248, '978-10', 'SUBSCRIPTION', 0, 4.7, 187, 19280, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_11', 'bcat_1', 'Số đỏ', 'Xuân Tóc Đỏ', 78000.00, '/Book_Asset/image/covers/kinhte-quanly/sieukinhtehochaihuoc.jpg', 'NXB Văn học', 1936, 'vi', 312, '978-11', 'BOTH', 1, 4.6, 298, 25670, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_12', 'bcat_2', 'Trên đường băng', 'Hộ chiếu công dân toàn cầu', 95000.00, '/Book_Asset/image/covers/tamly-kynangsong/40-guong-thanh-cong.jpg', 'NXB Thế Giới', 2015, 'vi', 288, '978-12', 'PURCHASE', 1, 4.4, 345, 31200, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_13', 'bcat_1', 'Nhà giả kim', 'Kho báu ở ngay bên ta', 110000.00, '/Book_Asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 'NXB Hội Nhà Văn', 2013, 'vi', 224, '978-13', 'BOTH', 1, 4.85, 567, 48920, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_14', 'bcat_1', 'Truyện Kiều', 'Trăm năm trong cõi người ta', 0.00, '/Book_Asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 'NXB Văn học', 1820, 'vi', 368, '978-14', 'FREE', 1, 5, 892, 67890, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_15', 'bcat_1', 'Rừng Na Uy', 'Nỗi buồn tuổi trẻ', 135000.00, '/Book_Asset/image/covers/kienthuc-hocthuat/phi-ly-tri.jpg', 'NXB Hội Nhà Văn', 2017, 'vi', 456, '978-15', 'BOTH', 1, 4.75, 678, 52340, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_16', 'bcat_1', 'Cô gái đến từ hôm qua', 'Mối tình thơ dại', 92000.00, '/Book_Asset/image/covers/kienthuc-hocthuat/steve-jobs-thien-tai-gan-do.jpg', 'NXB Trẻ', 2016, 'vi', 336, '978-16', 'BOTH', 1, 4.7, 423, 39870, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_17', 'bcat_2', 'Bạn đắt giá bao nhiêu?', 'Phụ nữ hiện đại', 88000.00, '/Book_Asset/image/covers/tamly-kynangsong/40-guong-thanh-cong.jpg', 'NXB Thế Giới', 2013, 'vi', 256, '978-17', 'PURCHASE', 1, 4.35, 289, 27890, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_18', 'bcat_3', 'Conan Tập 2', 'Vụ án mới', 25000.00, '/Book_Asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 'NXB Kim Đồng', 2000, 'vi', 180, '978-18', 'SUBSCRIPTION', 0, 4.88, 456, 41230, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_19', 'bcat_3', 'Doraemon Tập 2', 'Bảo bối thần kỳ', 20000.00, '/Book_Asset/image/covers/kinhte-quanly/sieukinhtehochaihuoc.jpg', 'NXB Kim Đồng', 1995, 'vi', 196, '978-19', 'SUBSCRIPTION', 0, 5, 589, 49870, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_20', 'bcat_1', 'Kafka bên bờ biển', 'Hành trình siêu thực', 145000.00, '/Book_Asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 'NXB Hội Nhà Văn', 2018, 'vi', 528, '978-20', 'BOTH', 1, 4.8, 512, 44560, '2025-11-20 19:16:58', '2025-11-20 19:16:58');
+('book_01', 'bcat_1', 'Cho tôi xin một vé đi tuổi thơ', 'Vé đi tuổi thơ giá bao nhiêu?', 80000.00, '/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 'NXB Trẻ', 2010, 'vi', 280, '978-1', 'BOTH', 1, 4.8, 156, 25430, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_02', 'bcat_2', 'Đắc Nhân Tâm', 'Nghệ thuật thu phục lòng người', 120000.00, '/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg', 'NXB Tổng Hợp', 2015, 'vi', 320, '978-2', 'PURCHASE', 1, 4.7, 243, 38920, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_03', 'bcat_1', 'Mắt biếc', 'Chuyện tình đơn phương', 90000.00, '/book_asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 'NXB Trẻ', 2008, 'vi', 252, '978-3', 'BOTH', 1, 4.85, 189, 32100, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_04', 'bcat_3', 'Conan Tập 1', 'Thám tử bị teo nhỏ', 0.00, '/book_asset/image/covers/kienthuc-hocthuat/bi-quyet-thuyet-trinh-cua-steve-jobs.jpg', 'NXB Kim Đồng', 2000, 'vi', 180, '978-4', 'FREE', 1, 4.9, 523, 45670, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_05', 'bcat_3', 'Doraemon Tập 1', 'Mèo máy tương lai', 20000.00, '/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 'NXB Kim Đồng', 1995, 'vi', 196, '978-5', 'SUBSCRIPTION', 0, 5, 678, 52340, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_06', 'bcat_1', 'Tôi thấy hoa vàng trên cỏ xanh', 'Tuổi thơ êm đềm', 85000.00, '/book_asset/image/covers/kienthuc-hocthuat/phi-ly-tri.jpg', 'NXB Trẻ', 2011, 'vi', 312, '978-6', 'PURCHASE', 0, 4.75, 298, 42100, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_07', 'bcat_5', 'Dế Mèn phiêu lưu ký', 'Bài học đường đời đầu tiên', 75000.00, '/book_asset/image/covers/kienthuc-hocthuat/steve-jobs-thien-tai-gan-do.jpg', 'NXB Kim Đồng', 1941, 'vi', 264, '978-7', 'BOTH', 1, 4.95, 412, 38920, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_08', 'bcat_1', 'Lão Hạc', 'Bi kịch người nông dân', 0.00, '/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 'NXB Văn học', 1943, 'vi', 128, '978-8', 'FREE', 1, 4.65, 289, 28450, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_09', 'bcat_1', 'Chí Phèo', 'Ai cho tôi lương thiện?', 0.00, '/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg', 'NXB Văn học', 1941, 'vi', 96, '978-9', 'FREE', 1, 4.55, 234, 22340, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_10', 'bcat_1', 'Tắt đèn', 'Chị Dậu bán chó', 65000.00, '/book_asset/image/covers/kienthuc-hocthuat/tu-duy-phan-bien.jpg', 'NXB Văn học', 1937, 'vi', 248, '978-10', 'SUBSCRIPTION', 0, 4.7, 187, 19280, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_11', 'bcat_1', 'Số đỏ', 'Xuân Tóc Đỏ', 78000.00, '/book_asset/image/covers/kinhte-quanly/sieukinhtehochaihuoc.jpg', 'NXB Văn học', 1936, 'vi', 312, '978-11', 'BOTH', 1, 4.6, 298, 25670, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_12', 'bcat_2', 'Trên đường băng', 'Hộ chiếu công dân toàn cầu', 95000.00, '/book_asset/image/covers/tamly-kynangsong/40-guong-thanh-cong.jpg', 'NXB Thế Giới', 2015, 'vi', 288, '978-12', 'PURCHASE', 1, 4.4, 345, 31200, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_13', 'bcat_1', 'Nhà giả kim', 'Kho báu ở ngay bên ta', 110000.00, '/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 'NXB Hội Nhà Văn', 2013, 'vi', 224, '978-13', 'BOTH', 1, 4.85, 567, 48920, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_14', 'bcat_1', 'Truyện Kiều', 'Trăm năm trong cõi người ta', 0.00, '/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 'NXB Văn học', 1820, 'vi', 368, '978-14', 'FREE', 1, 5, 892, 67890, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_15', 'bcat_1', 'Rừng Na Uy', 'Nỗi buồn tuổi trẻ', 135000.00, '/book_asset/image/covers/kienthuc-hocthuat/phi-ly-tri.jpg', 'NXB Hội Nhà Văn', 2017, 'vi', 456, '978-15', 'BOTH', 1, 4.75, 678, 52340, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_16', 'bcat_1', 'Cô gái đến từ hôm qua', 'Mối tình thơ dại', 92000.00, '/book_asset/image/covers/kienthuc-hocthuat/steve-jobs-thien-tai-gan-do.jpg', 'NXB Trẻ', 2016, 'vi', 336, '978-16', 'BOTH', 1, 4.7, 423, 39870, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_17', 'bcat_2', 'Bạn đắt giá bao nhiêu?', 'Phụ nữ hiện đại', 88000.00, '/book_asset/image/covers/tamly-kynangsong/40-guong-thanh-cong.jpg', 'NXB Thế Giới', 2013, 'vi', 256, '978-17', 'PURCHASE', 1, 4.35, 289, 27890, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_18', 'bcat_3', 'Conan Tập 2', 'Vụ án mới', 25000.00, '/book_asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 'NXB Kim Đồng', 2000, 'vi', 180, '978-18', 'SUBSCRIPTION', 0, 4.88, 456, 41230, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_19', 'bcat_3', 'Doraemon Tập 2', 'Bảo bối thần kỳ', 20000.00, '/book_asset/image/covers/kinhte-quanly/sieukinhtehochaihuoc.jpg', 'NXB Kim Đồng', 1995, 'vi', 196, '978-19', 'SUBSCRIPTION', 0, 5, 589, 49870, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_20', 'bcat_1', 'Kafka bên bờ biển', 'Hành trình siêu thực', 145000.00, '/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 'NXB Hội Nhà Văn', 2018, 'vi', 528, '978-20', 'BOTH', 1, 4.8, 512, 44560, '2025-11-20 19:16:58', '2025-11-20 19:16:58');
 
 -- --------------------------------------------------------
 
@@ -234,13 +234,13 @@ CREATE TABLE IF NOT EXISTS `book_category` (
 --
 
 INSERT INTO `book_category` (`book_category_id`, `category_name`, `description`, `icon_url`, `display_order`, `is_active`, `created_at`) VALUES
-('bcat_1', 'Tiểu thuyết', 'Văn học trong và ngoài nước', '/Book_Asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 1, 1, '2025-11-20 19:16:58'),
-('bcat_2', 'Kỹ năng sống', 'Self-help và phát triển bản thân', '/Book_Asset/image/covers/tamly-kynangsong/datnhantam.jpg', 2, 1, '2025-11-20 19:16:58'),
-('bcat_3', 'Truyện tranh', 'Manga, Comic', '/Book_Asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 3, 1, '2025-11-20 19:16:58'),
-('bcat_4', 'Kinh tế', 'Kinh doanh và tài chính', '/Book_Asset/image/covers/kinhte-quanly/sieukinhtehochaihuoc.jpg', 4, 1, '2025-11-20 19:16:58'),
-('bcat_5', 'Thiếu nhi', 'Sách dành cho trẻ em', '/Book_Asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 5, 1, '2025-11-20 19:16:58'),
-('bcat_6', 'Giáo khoa', 'Sách học tập', '/Book_Asset/image/covers/kienthuc-hocthuat/tu-duy-phan-bien.jpg', 6, 1, '2025-11-20 19:16:58'),
-('bcat_7', 'Tâm lý', 'Tâm lý học ứng dụng', '/Book_Asset/image/covers/tamly-kynangsong/40-guong-thanh-cong.jpg', 7, 1, '2025-11-20 19:16:58');
+('bcat_1', 'Tiểu thuyết', 'Văn học trong và ngoài nước', '/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 1, 1, '2025-11-20 19:16:58'),
+('bcat_2', 'Kỹ năng sống', 'Self-help và phát triển bản thân', '/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg', 2, 1, '2025-11-20 19:16:58'),
+('bcat_3', 'Truyện tranh', 'Manga, Comic', '/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 3, 1, '2025-11-20 19:16:58'),
+('bcat_4', 'Kinh tế', 'Kinh doanh và tài chính', '/book_asset/image/covers/kinhte-quanly/sieukinhtehochaihuoc.jpg', 4, 1, '2025-11-20 19:16:58'),
+('bcat_5', 'Thiếu nhi', 'Sách dành cho trẻ em', '/book_asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 5, 1, '2025-11-20 19:16:58'),
+('bcat_6', 'Giáo khoa', 'Sách học tập', '/book_asset/image/covers/kienthuc-hocthuat/tu-duy-phan-bien.jpg', 6, 1, '2025-11-20 19:16:58'),
+('bcat_7', 'Tâm lý', 'Tâm lý học ứng dụng', '/book_asset/image/covers/tamly-kynangsong/40-guong-thanh-cong.jpg', 7, 1, '2025-11-20 19:16:58');
 
 -- --------------------------------------------------------
 
@@ -419,8 +419,8 @@ CREATE TABLE IF NOT EXISTS `post` (
 --
 
 INSERT INTO `post` (`post_id`, `user_id`, `category_id`, `title`, `slug`, `excerpt`, `content`, `thumbnail_url`, `is_published`, `view_count`, `created_at`, `updated_at`) VALUES
-('post_01', 'user_admin_01', 'pcat_1', 'Chào mừng Ebook Store', 'chao-mung', 'Ra mắt nền tảng đọc sách', 'Nội dung chi tiết bài viết chào mừng...', '/Book_Asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 1, 1523, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('post_02', 'user_admin_01', 'pcat_2', 'Top 10 sách hay 2025', 'top-10-sach', 'Review sách hay', 'Nội dung review...', '/Book_Asset/image/covers/tamly-kynangsong/datnhantam.jpg', 1, 2834, '2025-11-20 19:16:58', '2025-11-20 19:16:58');
+('post_01', 'user_admin_01', 'pcat_1', 'Chào mừng Ebook Store', 'chao-mung', 'Ra mắt nền tảng đọc sách', 'Nội dung chi tiết bài viết chào mừng...', '/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 1, 1523, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('post_02', 'user_admin_01', 'pcat_2', 'Top 10 sách hay 2025', 'top-10-sach', 'Review sách hay', 'Nội dung review...', '/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg', 1, 2834, '2025-11-20 19:16:58', '2025-11-20 19:16:58');
 
 -- --------------------------------------------------------
 
@@ -571,10 +571,10 @@ CREATE TABLE IF NOT EXISTS `users` (
 --
 
 INSERT INTO `users` (`user_id`, `role_id`, `username`, `email`, `password_hash`, `full_name`, `phone`, `avatar_url`, `is_active`, `is_verified`, `preferred_reading_mode`, `last_login`, `created_at`, `updated_at`) VALUES
-('user_admin_01', 'role_admin', 'admin', 'admin@ebook.com', '$2a$10$FtNONIM6oxPVPAC8hXsCBu3iR9IoFy8ANRw.Smj1nfi17UKJtIh9y', 'Quản Trị Viên', '0901234567', '/Book_Asset/image/avatars/admin.jpg', 1, 1, 'DARK', '2025-11-21 02:39:25', '2025-11-20 19:16:58', '2025-11-21 02:39:25'),
-('user_normal_01', 'role_user', 'vana', 'vana@gmail.com', '$2a$10$hash_user1', 'Nguyễn Văn A', '0912345678', '/Book_Asset/image/avatars/vana.jpg', 1, 1, 'AUTO', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('user_normal_02', 'role_user', 'thib', 'thib@gmail.com', '$2a$10$hash_user2', 'Trần Thị B', '0923456789', '/Book_Asset/image/avatars/thib.jpg', 1, 1, 'LIGHT', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('user_normal_03', 'role_user', 'minhc', 'minhc@gmail.com', '$2a$10$hash_user3', 'Lê Minh C', '0934567890', '/Book_Asset/image/avatars/minhc.jpg', 1, 1, 'AUTO', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58');
+('user_admin_01', 'role_admin', 'admin', 'admin@ebook.com', '$2a$10$FtNONIM6oxPVPAC8hXsCBu3iR9IoFy8ANRw.Smj1nfi17UKJtIh9y', 'Quản Trị Viên', '0901234567', '/book_asset/image/avatars/admin.jpg', 1, 1, 'DARK', '2025-11-21 02:39:25', '2025-11-20 19:16:58', '2025-11-21 02:39:25'),
+('user_normal_01', 'role_user', 'vana', 'vana@gmail.com', '$2a$10$hash_user1', 'Nguyễn Văn A', '0912345678', '/book_asset/image/avatars/vana.jpg', 1, 1, 'AUTO', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('user_normal_02', 'role_user', 'thib', 'thib@gmail.com', '$2a$10$hash_user2', 'Trần Thị B', '0923456789', '/book_asset/image/avatars/thib.jpg', 1, 1, 'LIGHT', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('user_normal_03', 'role_user', 'minhc', 'minhc@gmail.com', '$2a$10$hash_user3', 'Lê Minh C', '0934567890', '/book_asset/image/avatars/minhc.jpg', 1, 1, 'AUTO', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58');
 
 -- --------------------------------------------------------
 

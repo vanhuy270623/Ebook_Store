@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${book.title} + ' - EbookStore'">Chi tiết sách - EbookStore</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/homepage.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" th:href="@{/user/index}">
+                <i class="fas fa-book-reader me-2"></i>EbookStore
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/user/index}">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/books">Sách</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-2" style="font-size: 32px;"></i>
+                            <span>Người dùng</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" th:href="@{/user/dashboard}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" th:href="@{/user/profile}"><i class="fas fa-user-edit me-2"></i>Hồ sơ</a></li>
+                            <li><a class="dropdown-item" th:href="@{/user/orders}"><i class="fas fa-shopping-bag me-2"></i>Đơn hàng</a></li>
+                            <li><a class="dropdown-item" th:href="@{/user/reading-history}"><i class="fas fa-book me-2"></i>Lịch sử đọc</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form th:action="@{/auth/logout}" method="post" class="d-inline">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cart">
+                            <i class="fas fa-shopping-cart"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Book Detail Content -->
+    <section class="section py-5">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/user/index}">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/books">Sách</a></li>
+                    <li class="breadcrumb-item active" aria-current="page" th:text="${book.title}">Chi tiết sách</li>
+                </ol>
+            </nav>
+
+            <div class="row">
+                <!-- Book Cover & Actions -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <img th:if="${book.coverImageUrl != null}"
+                                 th:src="@{${book.coverImageUrl}}"
+                                 th:alt="${book.title}"
+                                 class="img-fluid rounded mb-3"
+                                 style="width: 100%; height: auto;">
+                            <div th:if="${book.coverImageUrl == null}"
+                                 class="bg-secondary rounded d-flex align-items-center justify-content-center mb-3"
+                                 style="width: 100%; height: 400px;">
+                                <i class="fas fa-book fa-5x text-white"></i>
+                            </div>
+
+                            <!-- Price & Actions -->
+                            <div class="mb-3">
+                                <div th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).FREE}" class="h3 text-success mb-3">
+                                    <i class="fas fa-gift me-2"></i>Miễn phí
+                                </div>
+                                <div th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).PURCHASE}" class="h3 text-primary mb-3">
+                                    <span th:text="${book.price != null ? #numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT') + 'đ' : 'Liên hệ'}">0đ</span>
+                                </div>
+                                <div th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).SUBSCRIPTION}" class="h3 text-warning mb-3">
+                                    <i class="fas fa-crown me-2"></i>VIP
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-grid gap-2">
+                                <form th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).FREE}" method="get" action="#">
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="fas fa-book-reader me-2"></i>Đọc ngay
+                                    </button>
+                                </form>
+                                <form th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).PURCHASE}"
+                                      th:action="@{/cart/add/{id}(id=${book.bookId})}" method="post">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-cart-plus me-2"></i>Thêm vào giỏ
+                                    </button>
+                                </form>
+                                <form th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).SUBSCRIPTION}" method="get" action="/subscribe">
+                                    <button type="submit" class="btn btn-warning w-100">
+                                        <i class="fas fa-crown me-2"></i>Nâng cấp VIP
+                                    </button>
+                                </form>
+                                <button class="btn btn-outline-danger">
+                                    <i class="far fa-heart me-2"></i>Yêu thích
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Book Stats -->
+                    <div class="card border-0 shadow-sm mt-3">
+                        <div class="card-body">
+                            <h6 class="mb-3"><i class="fas fa-chart-line text-primary me-2"></i>Thống kê</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted"><i class="fas fa-eye me-2"></i>Lượt xem:</span>
+                                <strong th:text="${book.viewCount != null ? book.viewCount : 0}">0</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted"><i class="fas fa-star me-2"></i>Đánh giá:</span>
+                                <strong th:text="${book.averageRating != null ? #numbers.formatDecimal(book.averageRating, 1, 1) + '/5' : '0/5'}">0/5</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted"><i class="fas fa-file-alt me-2"></i>Trang:</span>
+                                <strong th:text="${book.pageCount != null ? book.pageCount : 'N/A'}">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Book Information -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body">
+                            <h1 class="h2 mb-3" th:text="${book.title}">Tên sách</h1>
+
+                            <!-- Author & Category -->
+                            <div class="mb-3">
+                                <span class="text-muted">Tác giả: </span>
+                                <a href="#" class="text-decoration-none" th:text="${book.firstAuthorName}">Tác giả</a>
+                                <span class="mx-2">|</span>
+                                <span class="text-muted">Thể loại: </span>
+                                <span class="badge bg-primary" th:text="${book.bookCategory != null ? book.bookCategory.categoryName : 'Khác'}">Thể loại</span>
+                            </div>
+
+                            <!-- Rating -->
+                            <div class="mb-3">
+                                <span class="text-warning">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                </span>
+                                <span class="ms-2" th:text="${book.averageRating != null ? #numbers.formatDecimal(book.averageRating, 1, 1) : '0.0'}">0.0</span>
+                                <span class="text-muted ms-1">(0 đánh giá)</span>
+                            </div>
+
+                            <hr>
+
+                            <!-- Description -->
+                            <div class="mb-4">
+                                <h5 class="mb-3"><i class="fas fa-info-circle text-primary me-2"></i>Mô tả</h5>
+                                <div class="text-muted" th:utext="${book.description != null ? book.description : 'Chưa có mô tả'}">
+                                    Chưa có mô tả
+                                </div>
+                            </div>
+
+                            <!-- Book Details -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="mb-3"><i class="fas fa-list text-primary me-2"></i>Thông tin chi tiết</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td class="text-muted">Nhà xuất bản:</td>
+                                            <td th:text="${book.publisher != null ? book.publisher : 'N/A'}">N/A</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Năm xuất bản:</td>
+                                            <td th:text="${book.publicationYear != null ? book.publicationYear : 'N/A'}">N/A</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Ngôn ngữ:</td>
+                                            <td th:text="${book.language != null ? book.language : 'Tiếng Việt'}">Tiếng Việt</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">ISBN:</td>
+                                            <td th:text="${book.isbn != null ? book.isbn : 'N/A'}">N/A</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Related Books -->
+                    <div th:if="${!relatedBooks.isEmpty()}" class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-book text-primary me-2"></i>
+                                Sách liên quan
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div th:each="related : ${relatedBooks}" class="col-lg-3 col-md-6">
+                                    <a th:href="@{/books/view/{id}(id=${related.bookId})}" class="text-decoration-none">
+                                        <div class="card border-0 h-100 hover-shadow">
+                                            <img th:if="${related.coverImageUrl != null}"
+                                                 th:src="@{${related.coverImageUrl}}"
+                                                 th:alt="${related.title}"
+                                                 class="card-img-top"
+                                                 style="height: 200px; object-fit: cover;">
+                                            <div class="card-body p-2">
+                                                <h6 class="card-title small mb-1" th:text="${related.title}">Tên sách</h6>
+                                                <p class="card-text text-muted small mb-0" th:text="${related.author != null ? related.author.fullName : 'Không rõ'}">Tác giả</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h5 class="mb-3"><i class="fas fa-book-reader me-2"></i>EbookStore</h5>
+                    <p class="text-white-50">Thư viện sách điện tử hàng đầu Việt Nam với hơn 10,000+ đầu sách đa thể loại.</p>
+                </div>
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h5 class="mb-3">Liên kết</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/about" class="text-white-50 text-decoration-none">Về chúng tôi</a></li>
+                        <li><a href="/contact" class="text-white-50 text-decoration-none">Liên hệ</a></li>
+                        <li><a href="/terms" class="text-white-50 text-decoration-none">Điều khoản</a></li>
+                        <li><a href="/privacy" class="text-white-50 text-decoration-none">Chính sách</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4">
+                    <h5 class="mb-3">Theo dõi</h5>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4 bg-white">
+            <div class="text-center text-white-50">
+                <p class="mb-0">&copy; 2024 EbookStore. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+    <style>
+        .hover-shadow {
+            transition: box-shadow 0.3s;
+        }
+        .hover-shadow:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
+        }
+    </style>
+</body>
+</html>
+

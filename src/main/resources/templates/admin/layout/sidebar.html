@@ -1,0 +1,147 @@
+<!-- File: admin/layout/sidebar.html -->
+<aside class="main-sidebar" th:fragment="sidebar" xmlns:sec="http://www.w3.org/1999/xhtml">
+	<section class="sidebar">
+		<!-- Sidebar user panel -->
+		<div class="user-panel">
+			<div class="pull-left image">
+				<img th:src="${user?.avatarUrl != null ? user.avatarUrl : '/admin_template/images/user.png'}"
+				     class="img-circle" alt="User Image">
+			</div>
+			<div class="pull-left info">
+				<p sec:authentication="name">Admin</p>
+				<a href="#"><i class="fa fa-circle text-success"></i> Online</a>
+			</div>
+		</div>
+
+		<!-- Sidebar Menu -->
+		<ul class="sidebar-menu" data-widget="tree">
+			<li class="header">MENU CHÍNH</li>
+
+			<!-- Dashboard -->
+			<li class="active">
+				<a th:href="@{/admin/dashboard}">
+					<i class="fa fa-tachometer"></i>
+					<span>Dashboard</span>
+				</a>
+			</li>
+
+			<!-- Quản lý sách -->
+			<li class="treeview">
+				<a href="#">
+					<i class="fa fa-book"></i>
+					<span>Quản lý sách</span>
+					<span class="pull-right-container">
+						<i class="fa fa-angle-left pull-right"></i>
+					</span>
+				</a>
+				<ul class="treeview-menu">
+					<li><a th:href="@{/admin/books}"><i class="fa fa-list"></i> Danh sách sách</a></li>
+					<li><a th:href="@{/admin/books/statistics}"><i class="fa fa-bar-chart"></i> Thống kê sách</a></li>
+					<li><a th:href="@{/admin/books/add}"><i class="fa fa-plus"></i> Thêm sách mới</a></li>
+					<li><a th:href="@{/admin/books/assets}"><i class="fa fa-file-archive-o"></i> Quản lý file</a></li>
+				</ul>
+			</li>
+
+			<!-- Quản lý đơn hàng -->
+			<li class="treeview">
+				<a href="#">
+					<i class="fa fa-shopping-bag"></i>
+					<span>Đơn hàng</span>
+					<span class="pull-right-container">
+						<i class="fa fa-angle-left pull-right"></i>
+					</span>
+				</a>
+				<ul class="treeview-menu">
+					<li><a th:href="@{/admin/orders}"><i class="fa fa-list-alt"></i> Tất cả đơn hàng</a></li>
+					<li><a th:href="@{/admin/orders(status='PENDING')}"><i class="fa fa-clock-o"></i> Chờ xử lý</a></li>
+					<li><a th:href="@{/admin/orders(status='COMPLETED')}"><i class="fa fa-check-circle"></i> Đã hoàn thành</a></li>
+				</ul>
+			</li>
+
+			<!-- Quản lý người dùng -->
+			<li class="treeview">
+				<a href="#">
+					<i class="fa fa-users"></i>
+					<span>Người dùng</span>
+					<span class="pull-right-container">
+						<i class="fa fa-angle-left pull-right"></i>
+					</span>
+				</a>
+				<ul class="treeview-menu">
+					<li><a th:href="@{/admin/users}"><i class="fa fa-user"></i> Danh sách user</a></li>
+					<li><a th:href="@{/admin/users/statistics}"><i class="fa fa-pie-chart"></i> Thống kê user</a></li>
+					<li><a th:href="@{/admin/subscriptions}"><i class="fa fa-diamond"></i> Gói đăng ký</a></li>
+				</ul>
+			</li>
+
+			<li class="header">NỘI DUNG</li>
+
+			<!-- Quản lý danh mục -->
+			<li>
+				<a th:href="@{/admin/categories}">
+					<i class="fa fa-tags"></i>
+					<span>Danh mục sách</span>
+				</a>
+			</li>
+
+			<!-- Quản lý tác giả -->
+			<li>
+				<a th:href="@{/admin/authors}">
+					<i class="fa fa-pencil-square-o"></i>
+					<span>Tác giả</span>
+				</a>
+			</li>
+
+			<!-- Quản lý Banner -->
+			<li>
+				<a th:href="@{/admin/banners}">
+					<i class="fa fa-picture-o"></i>
+					<span>Banner</span>
+				</a>
+			</li>
+
+			<!-- Bài viết/Tin tức -->
+			<li>
+				<a th:href="@{/admin/posts}">
+					<i class="fa fa-newspaper-o"></i>
+					<span>Bài viết</span>
+				</a>
+			</li>
+
+			<!-- Đánh giá -->
+			<li>
+				<a th:href="@{/admin/reviews}">
+					<i class="fa fa-star"></i>
+					<span>Đánh giá</span>
+				</a>
+			</li>
+
+			<li class="header">CÀI ĐẶT</li>
+
+			<!-- Báo cáo thống kê -->
+			<li class="treeview">
+				<a href="#">
+					<i class="fa fa-bar-chart"></i>
+					<span>Báo cáo</span>
+					<span class="pull-right-container">
+						<i class="fa fa-angle-left pull-right"></i>
+					</span>
+				</a>
+				<ul class="treeview-menu">
+					<li><a th:href="@{/admin_template/reports/sales}"><i class="fa fa-money"></i> Doanh thu</a></li>
+					<li><a th:href="@{/admin_template/reports/books}"><i class="fa fa-trophy"></i> Sách bán chạy</a></li>
+					<li><a th:href="@{/admin_template/reports/users}"><i class="fa fa-group"></i> Người dùng</a></li>
+				</ul>
+			</li>
+
+			<!-- Cài đặt hệ thống -->
+			<li>
+				<a th:href="@{/admin_template/settings}">
+					<i class="fa fa-cog"></i>
+					<span>Cài đặt</span>
+				</a>
+			</li>
+
+		</ul>
+	</section>
+</aside>

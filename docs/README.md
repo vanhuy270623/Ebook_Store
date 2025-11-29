@@ -1,24 +1,26 @@
 # 📚 Tài Liệu Backend - Ebook Store
 
-**Ngày cập nhật:** 28/11/2025  
-**Phiên bản:** 2.0  
-**Trạng thái:** ✅ Complete & Organized
+**Ngày cập nhật:** 30/11/2025  
+**Phiên bản:** 3.0  
+**Trạng thái:** ✅ Restructured with Debug Endpoints
 
 ---
 
 ## 🎯 Tổng Quan
 
-Thư mục này chứa **tài liệu kỹ thuật được tổ chức lại** về dự án Ebook Store. Sau khi dọn dẹp (28/11/2025), tài liệu hiện tại tập trung vào các nội dung quan trọng nhất:
+Thư mục này chứa **tài liệu kỹ thuật hoàn chỉnh** về dự án Ebook Store. Sau khi tái cấu trúc (30/11/2025), tài liệu được tổ chức theo từng luồng nghiệp vụ chi tiết với debugging endpoints:
 
-- ✅ **Progress Reports** - Theo dõi tiến độ dự án theo thời gian
-- ✅ **Flow Documents** - Hiểu luồng xử lý và kiến trúc hệ thống
-- ✅ **Core Documentation** - Thông tin cơ bản và tóm tắt trạng thái
+- ✅ **Flow Documents** - 4 luồng chính với hướng dẫn debug chi tiết
+- ✅ **Progress Reports** - Theo dõi tiến độ dự án theo thời gian  
+- ✅ **Core Documentation** - Architecture, Database, API, Security
+- ✅ **TODO & Planning** - Nhiệm vụ hiện tại và kế hoạch
 
 **Lợi ích:**
-- 📊 Giảm 73% số lượng file (từ 44 → 13 files)
-- 🎯 Tập trung vào tài liệu quan trọng
+- 🎯 Tập trung vào 4 luồng nghiệp vụ chính
+- 🔧 Debug endpoints cho mỗi luồng
+- 📊 Sequence diagrams & SQL queries chi tiết
+- 🧪 Test scenarios & troubleshooting guides
 - 📚 Dễ tìm kiếm và maintain
-- ✨ Structure rõ ràng và professional
 
 ---
 
@@ -49,24 +51,283 @@ Thư mục này chứa **tài liệu kỹ thuật được tổ chức lại** v
 **Ngày:** 24/11/2025
 
 #### 5. **PROGRESS_REPORT_28_11_2025.md** ⭐ LATEST
-**Nội dung:** DTOs layer hoàn thành 100% (35 DTOs)  
-**Tiến độ tổng thể:** **65%**  
-- Backend Core: 95% ✅  
-- DTOs Layer: 100% ✅  
-- Controllers: 50% 🔄  
-- Frontend: 45% 🔄  
-
-**Ngày:** 28/11/2025  
-**🌟 Highly Recommended:** Đọc để biết trạng thái hiện tại
+**Nội dung:** Documentation cleanup & reorganization  
+**Tiến độ:** Documentation 100%  
+**Ngày:** 28/11/2025
 
 ---
 
-### 🔄 Flow Documents (4 files)
+### 📚 Technical Documentation (7 files) ⭐ MỚI
 
-#### 6. **FLOW_AUTHENTICATION.md**
-**Nội dung:**
-- Luồng đăng ký (Register) chi tiết
-- Luồng đăng nhập (Login) với Spring Security
+#### 1. **[README_TECHNICAL.md](README_TECHNICAL.md)** - BẮT ĐẦU TẠI ĐÂY
+**Tài liệu tổng hợp toàn diện**
+- Quick start guide
+- Architecture overview
+- Links đến tất cả tài liệu khác
+- Common issues & solutions
+
+#### 2. **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)**
+**Cấu trúc dự án chi tiết**
+- Cấu trúc thư mục và packages
+- Entity, Repository, Service, Controller layers
+- File upload configuration
+- Build và run instructions
+
+#### 3. **[ARCHITECTURE.md](ARCHITECTURE.md)**
+**Kiến trúc hệ thống**
+- Layered Architecture (4 layers)
+- Design Patterns (MVC, Repository, DTO, etc.)
+- Data Flow diagrams
+- Transaction management
+- Scalability considerations
+
+#### 4. **[DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)**
+**Schema cơ sở dữ liệu**
+- Entity Relationship Diagram
+- 19 bảng database với chi tiết đầy đủ
+- Relationships & Constraints
+- Indexes và Foreign Keys
+- Sample data
+
+#### 5. **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)**
+**Tài liệu API endpoints**
+- 50+ API endpoints
+- Authentication APIs (Login, Register, Logout)
+- User APIs (Profile, Cart, Orders)
+- Admin APIs (CRUD cho tất cả entities)
+- Request/Response formats
+- Error codes
+
+#### 6. **[SECURITY_CONFIG.md](SECURITY_CONFIG.md)**
+**Cấu hình bảo mật**
+- Spring Security 6 configuration
+- Authentication & Authorization flows
+- Role-based access control (USER, ADMIN)
+- CSRF protection
+- Password hashing (BCrypt)
+- Session management
+
+#### 7. **[SERVICE_LAYER.md](SERVICE_LAYER.md)**
+**Tầng Business Logic**
+- 18 Service interfaces
+- Service responsibilities
+- Transaction management (@Transactional)
+- Exception handling
+- Data transformation (Entity ↔ DTO)
+
+#### 8. **[FRONTEND_STRUCTURE.md](FRONTEND_STRUCTURE.md)**
+**Cấu trúc Frontend**
+- Thymeleaf templates
+- Layout structure (Admin + User)
+- Common Thymeleaf patterns
+- Static resources (CSS, JS, Images)
+- AJAX integration
+- Responsive design
+
+---
+
+---
+
+### 🔄 Flow Documentation (4 files + Index) ⭐ RESTRUCTURED
+
+#### **[README_FLOWS.md](README_FLOWS.md)** - 📖 BẮT ĐẦU TẠI ĐÂY
+**Tổng hợp tất cả flows với quick navigation & debugging guide**
+
+#### 1. **[FLOW_01_AUTHENTICATION.md](FLOW_01_AUTHENTICATION.md)** 🔐
+**Luồng Xác Thực Người Dùng**
+- Flow 1.1: Đăng ký (Registration)
+- Flow 1.2: Đăng nhập (Login)
+- Flow 1.3: Đăng xuất (Logout)
+- Session management
+- **Debug endpoints**: Test registration, login verification, session check
+- Test scenarios & troubleshooting
+
+#### 2. **[FLOW_02_ADMIN_BOOK_MANAGEMENT.md](FLOW_02_ADMIN_BOOK_MANAGEMENT.md)** 📚
+**Luồng Quản Lý Sách (Admin)**
+- Flow 2.1: List Books
+- Flow 2.2: Create Book (với upload files)
+- Flow 2.3: Edit Book
+- Flow 2.4: Delete Book
+- Flow 2.5: File Upload (cover, source, preview)
+- **Debug endpoints**: Book detail, file upload test, stock verification
+- SQL queries & validation rules
+
+#### 3. **[FLOW_03_SHOPPING_CART_CHECKOUT.md](FLOW_03_SHOPPING_CART_CHECKOUT.md)** 🛒
+**Luồng Giỏ Hàng & Thanh Toán**
+- Flow 3.1: Browse & Search Books
+- Flow 3.2: Add to Cart
+- Flow 3.3: View Cart
+- Flow 3.4: Update Cart (remove, update quantity)
+- Flow 3.5: Apply Coupon (validation & calculation)
+- Flow 3.6: Checkout Process
+- Flow 3.7: Payment Integration (COD, VNPAY, MOMO)
+- **Debug endpoints**: Cart info, coupon test, order tracking, payment verification
+- Complete shopping journey with error handling
+
+#### 4. **[FLOW_04_USER_ACCOUNT_MANAGEMENT.md](FLOW_04_USER_ACCOUNT_MANAGEMENT.md)** 👤
+**Luồng Quản Lý Tài Khoản Người Dùng**
+- Flow 4.1: View Profile
+- Flow 4.2: Update Profile
+- Flow 4.3: Change Password
+- Flow 4.4: Upload Avatar
+- Flow 4.5: Order History
+- Flow 4.6: Reading History
+- **Debug endpoints**: User info, password validation, avatar upload test
+- Security best practices & validation
+
+---
+
+## 📖 Danh Sách Tài Liệu Đầy Đủ
+
+### 📈 Progress Reports (6 files)
+
+1. **PROGRESS_REPORT_21_11_2025.md** - Khởi đầu dự án
+2. **PROGRESS_REPORT_23_11_2025.md** - Repository layer complete
+3. **PROGRESS_REPORT_24_11_2025.md** - Services & DTOs
+4. **PROGRESS_REPORT_24_11_2025_DOCS.md** - Documentation phase
+5. **PROGRESS_REPORT_28_11_2025.md** - Documentation cleanup
+6. **FINAL_DAY_SUMMARY_30_11_2025.md** ⭐ - Latest complete summary
+
+---
+
+### 📚 Core Technical Documentation (8 files)
+
+1. **README_TECHNICAL.md** - BẮT ĐẦU TẠI ĐÂY (Main technical entry point)
+2. **PROJECT_STRUCTURE.md** - Cấu trúc dự án & packages
+3. **ARCHITECTURE.md** - System architecture & design patterns
+4. **DATABASE_SCHEMA.md** - Database design (19 tables)
+5. **API_DOCUMENTATION.md** - 50+ API endpoints
+6. **SECURITY_CONFIG.md** - Spring Security configuration
+7. **SERVICE_LAYER.md** - Business logic layer (18 services)
+8. **FRONTEND_STRUCTURE.md** - Thymeleaf templates structure
+
+---
+
+### 🔄 Flow Documentation (5 files)
+
+1. **README_FLOWS.md** - Flow index with debugging guide ⭐
+2. **FLOW_01_AUTHENTICATION.md** - Authentication flow 🔐
+3. **FLOW_02_ADMIN_BOOK_MANAGEMENT.md** - Admin book CRUD 📚
+4. **FLOW_03_SHOPPING_CART_CHECKOUT.md** - Shopping & payment 🛒
+5. **FLOW_04_USER_ACCOUNT_MANAGEMENT.md** - User account features 👤
+
+---
+
+### 🗂️ Reference Documentation (3 files)
+
+1. **ADMIN_ENDPOINTS_REFERENCE.md** - Complete admin endpoints reference
+2. **TODO.md** - Current tasks & roadmap ⭐
+3. **PROJECT_PROGRESS.md** - Overall project status
+4. **DOCUMENTATION_INDEX.md** - Documentation navigation
+
+---
+
+## 🚀 Quick Start
+
+### Cho Developer Mới
+
+1. **Đọc tổng quan**: Bắt đầu với [README_TECHNICAL.md](README_TECHNICAL.md)
+2. **Hiểu kiến trúc**: Đọc [ARCHITECTURE.md](ARCHITECTURE.md)
+3. **Setup database**: Xem [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)
+4. **Tìm hiểu flows**: Đọc [README_FLOWS.md](README_FLOWS.md)
+5. **Debug & test**: Sử dụng debug endpoints trong mỗi flow
+
+### Cho Testing/QA
+
+1. Đọc từng flow document để hiểu business logic
+2. Sử dụng debug endpoints để verify data
+3. Follow test scenarios trong mỗi flow
+4. Check SQL queries để verify database state
+
+### Cho Project Manager
+
+1. Xem [TODO.md](TODO.md) để biết current tasks
+2. Xem Progress Reports để track timeline
+3. Check [PROJECT_PROGRESS.md](PROJECT_PROGRESS.md) for overview
+
+---
+
+## 🔧 Debugging Quick Reference
+
+### Global Debug Endpoints
+
+All debug endpoints are documented in each flow. Quick access:
+
+```bash
+# Check authentication
+curl http://localhost:8080/debug/current-user -H "Cookie: JSESSIONID=xxx"
+
+# Check cart
+curl http://localhost:8080/debug/cart -H "Cookie: JSESSIONID=xxx"
+
+# Check book details
+curl http://localhost:8080/debug/book/1
+
+# Check user info
+curl http://localhost:8080/debug/user-info -H "Cookie: JSESSIONID=xxx"
+```
+
+See [README_FLOWS.md](README_FLOWS.md) for complete debugging guide.
+
+---
+
+## 📊 Project Statistics
+
+- **Total Documentation Files**: 23 files (structured)
+- **Flow Documents**: 4 main flows + 1 index
+- **Progress Reports**: 6 reports
+- **Core Documentation**: 8 technical docs
+- **Lines of Documentation**: 10,000+ lines
+- **Debug Endpoints**: 20+ endpoints
+- **Test Scenarios**: 50+ scenarios
+
+---
+
+## 🎯 Documentation Goals (Achieved)
+
+- ✅ Clear structure and navigation
+- ✅ Comprehensive flow documentation with debug endpoints
+- ✅ SQL queries for each operation
+- ✅ Test scenarios and troubleshooting guides
+- ✅ Easy to maintain and update
+- ✅ Beginner-friendly with examples
+- ✅ Production-ready debugging tools
+
+---
+
+## 📝 Maintenance
+
+### Khi thêm feature mới:
+1. Update relevant flow document
+2. Add debug endpoints
+3. Add test scenarios
+4. Update SQL queries if needed
+5. Add to TODO.md
+
+### Khi sửa bug:
+1. Document the issue in flow's "Common Issues" section
+2. Update troubleshooting guide
+3. Add prevention tips
+
+---
+
+## 🆘 Getting Help
+
+1. **Check flow documentation** for specific feature
+2. **Use debug endpoints** to gather information
+3. **Check TODO.md** for known issues
+4. **Review progress reports** for recent changes
+5. **Check logs** with DEBUG level enabled
+
+---
+
+**Last Updated**: 30/11/2025  
+**Version**: 3.0  
+**Status**: ✅ Complete with Debug Endpoints
+
+---
+
+*Happy coding! 🚀*
 - Luồng đăng xuất (Logout)
 - Session Management
 - Security Integration

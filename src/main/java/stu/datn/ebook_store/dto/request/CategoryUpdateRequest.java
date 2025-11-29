@@ -23,7 +23,14 @@ public class CategoryUpdateRequest {
     @Size(max = 255, message = "Tên danh mục không được vượt quá 255 ký tự")
     private String categoryName;
 
-    @Size(max = 1000, message = "Mô tả không được vượt quá 1000 ký tự")
+    @Size(max = 5000, message = "Mô tả không được vượt quá 5000 ký tự")
     private String description;
+
+    @Size(max = 500, message = "URL icon không được vượt quá 500 ký tự")
+    private String iconUrl;
+
+    private Integer displayOrder;
+
+    private Boolean isActive;
 }
 

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Chi tiết đánh giá <small th:text="${review.title ?: 'Không có tiêu đề'}">Tiêu đề</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/reviews}">Quản lý đánh giá</a></li>
+				<li class="active">Chi tiết</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row">
+				<div class="col-md-8">
+					<div class="box box-primary">
+						<div class="box-body">
+							<div class="form-group">
+								<label>Sách</label>
+								<p class="form-control-static">
+									<a th:href="@{/admin/books/view/{id}(id=${review.book?.bookId})}" th:text="${review.book?.title ?: 'N/A'}">Tên sách</a>
+								</p>
+							</div>
+
+							<div class="form-group">
+								<label>Người dùng</label>
+								<p class="form-control-static" th:text="${review.user?.fullName ?: 'Ẩn danh'}">User</p>
+							</div>
+
+							<div class="form-group">
+								<label>Đánh giá</label>
+								<p class="form-control-static">
+									<span class="fa fa-star" th:each="i : ${#numbers.sequence(1, review.rating ?: 0)}" style="color: #FFB81C;"></span>
+									<span th:text="'(' + ${review.rating ?: 0} + '/5 sao)'"></span>
+								</p>
+							</div>
+
+							<div class="form-group">
+								<label>Tiêu đề</label>
+								<p class="form-control-static" th:text="${review.title ?: 'Không có'}">Tiêu đề</p>
+							</div>
+
+							<div class="form-group">
+								<label>Nội dung</label>
+								<p class="form-control-static" th:text="${review.comment}">Nội dung</p>
+							</div>
+
+							<div class="form-group">
+								<label>Ngày</label>
+								<p class="form-control-static" th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-4">
+					<div class="box box-warning">
+						<div class="box-header">
+							<h3 class="box-title">Trạng thái</h3>
+						</div>
+						<div class="box-body">
+							<p>
+								<span class="label label-success" th:if="${review.isApproved}">Đã duyệt</span>
+								<span class="label label-warning" th:unless="${review.isApproved}">Chờ duyệt</span>
+							</p>
+
+							<th:block th:if="${!review.isApproved}">
+								<form th:action="@{/admin/reviews/approve/{id}(id=${review.reviewId})}" method="post">
+									<button type="submit" class="btn btn-success btn-block"><i class="fa fa-check"></i> Duyệt</button>
+								</form>
+							</th:block>
+
+							<form th:action="@{/admin/reviews/delete/{id}(id=${review.reviewId})}" method="post" onsubmit="return confirm('Xóa?');">
+								<button type="submit" class="btn btn-danger btn-block"><i class="fa fa-trash"></i> Xóa</button>
+							</form>
+
+							<a th:href="@{/admin/reviews}" class="btn btn-secondary btn-block"><i class="fa fa-arrow-left"></i> Quay lại</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>
+

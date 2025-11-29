@@ -14,6 +14,7 @@ public interface ReadingProgressService {
     ReadingProgress saveReadingProgress(ReadingProgress readingProgress);
     void deleteReadingProgress(String progressId);
     List<ReadingProgress> getReadingProgressByUser(User user);
+    List<ReadingProgress> getReadingProgressByUserWithBookDetails(User user);
     List<ReadingProgress> getFavoriteBooksByUser(User user);
     List<ReadingProgress> getRecentReadingByUser(User user);
     List<ReadingProgress> getCompletedBooksByUser(User user);

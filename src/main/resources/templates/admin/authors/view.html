@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<!-- Header -->
+	<div th:replace="~{admin/layout/header :: header}"></div>
+
+	<!-- Sidebar -->
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<!-- Content Wrapper -->
+	<div class="content-wrapper">
+		<!-- Content Header -->
+		<section class="content-header">
+			<h1>
+				Chi tiết tác giả
+				<small th:text="${author.authorName}">Tên tác giả</small>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/authors}">Quản lý tác giả</a></li>
+				<li class="active">Chi tiết</li>
+			</ol>
+		</section>
+
+		<!-- Main content -->
+		<section class="content">
+			<div class="row">
+				<!-- Left Column -->
+				<div class="col-md-3">
+					<div class="box box-primary">
+						<div class="box-body box-profile">
+							<img th:src="${author.avatarUrl}" class="profile-user-img img-responsive img-circle"
+								 th:alt="${author.authorName}"
+								 onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22200%22/%3E%3C/svg%3E';">
+
+							<h3 class="profile-username text-center" th:text="${author.authorName}">Tên tác giả</h3>
+							<p class="text-muted text-center" th:text="'ID: ' + ${author.authorId}">ID</p>
+
+							<ul class="list-group list-group-unbordered">
+								<li class="list-group-item">
+									<b>Ngày tạo</b>
+									<a class="pull-right" th:text="${#temporals.format(author.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024</a>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+
+				<!-- Right Column -->
+				<div class="col-md-9">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Thông tin chi tiết</h3>
+						</div>
+						<div class="box-body">
+							<div class="form-group">
+								<label>Tên tác giả</label>
+								<p class="form-control-static" th:text="${author.name}">Tên</p>
+							</div>
+
+							<div class="form-group">
+								<label>Tiểu sử</label>
+								<p class="form-control-static" th:text="${author.biography ?: 'Chưa có tiểu sử'}">Tiểu sử</p>
+							</div>
+
+							<div class="form-group">
+								<label>Avatar URL</label>
+								<p class="form-control-static">
+									<a th:href="${author.avatarUrl}" target="_blank"
+									   th:text="${#strings.abbreviate(author.avatarUrl ?: 'N/A', 50)}"></a>
+								</p>
+							</div>
+						</div>
+					</div>
+
+					<!-- Action Buttons -->
+					<div class="box">
+						<div class="box-footer">
+							<a th:href="@{/admin/authors/edit/{id}(id=${author.authorId})}"
+							   class="btn btn-warning">
+								<i class="fa fa-pencil"></i> Chỉnh sửa
+							</a>
+							<form th:action="@{/admin/authors/delete/{id}(id=${author.authorId})}"
+								  method="post" style="display:inline;"
+								  onsubmit="return confirm('Bạn có chắc chắn muốn xóa?');">
+								<button type="submit" class="btn btn-danger">
+									<i class="fa fa-trash"></i> Xóa
+								</button>
+							</form>
+							<a th:href="@{/admin/authors}" class="btn btn-secondary">
+								<i class="fa fa-arrow-left"></i> Quay lại
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<!-- Footer -->
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>
+

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.min.css">
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Quản lý danh mục <small>Danh sách tất cả danh mục</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li class="active">Quản lý danh mục</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row" th:if="${success} or ${error}">
+				<div class="col-md-12">
+					<div class="alert alert-success alert-dismissible" th:if="${success}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-check"></i> Thành công!</h4>
+						<span th:text="${success}"></span>
+					</div>
+					<div class="alert alert-danger alert-dismissible" th:if="${error}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-ban"></i> Lỗi!</h4>
+						<span th:text="${error}"></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box box-solid">
+						<div class="box-body">
+							<form method="get" action="/admin/categories" class="form-inline">
+								<div class="form-group">
+									<input type="text" name="search" class="form-control"
+										   placeholder="Tìm kiếm..."
+										   th:value="${search}" style="width: 300px;">
+								</div>
+								<button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+								<a th:href="@{/admin/categories}" class="btn btn-default"><i class="fa fa-refresh"></i></a>
+								<a th:href="@{/admin/categories/add}" class="btn btn-success pull-right"><i class="fa fa-plus"></i>Thêm danh mục mới</a>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box">
+						<div class="box-header">
+							<h3 class="box-title">Danh sách danh mục (<span th:text="${totalCategories ?: 0}">0</span>)</h3>
+						</div>
+						<div class="box-body">
+							<table id="categoriesTable" class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>ID</th>
+										<th>Tên danh mục</th>
+										<th>Thứ tự</th>
+										<th>Trạng thái</th>
+										<th>Ngày tạo</th>
+										<th>Thao tác</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="category : ${categories}">
+										<td th:text="${category.categoryId}">ID</td>
+										<td th:text="${category.categoryName}">Tên</td>
+										<td th:text="${category.displayOrder}">0</td>
+										<td>
+											<span th:if="${category.isActive}" class="label label-success">Hoạt động</span>
+											<span th:unless="${category.isActive}" class="label label-default">Không hoạt động</span>
+										</td>
+										<td th:text="${#temporals.format(category.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024</td>
+										<td>
+											<div class="btn-group">
+												<a th:href="@{/admin/categories/view/{id}(id=${category.categoryId})}" class="btn btn-sm btn-info"><i class="fa fa-search"></i></a>
+												<a th:href="@{/admin/categories/edit/{id}(id=${category.categoryId})}" class="btn btn-sm btn-warning"><i class="fa fa-pencil"></i></a>
+												<form th:action="@{/admin/categories/delete/{id}(id=${category.categoryId})}" method="post" style="display:inline;" onsubmit="return confirm('Xóa?');">
+													<button type="submit" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
+												</form>
+											</div>
+										</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(categories)}">
+										<td colspan="6" class="text-center text-muted">Không có dữ liệu</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script src="/admin_template/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/admin_template/plugins/datatables/dataTables.bootstrap.min.js"></script>
+<script>
+	$(function () {
+		$('#categoriesTable').DataTable({
+			"responsive": true,
+			"lengthChange": false,
+			"searching": false,
+			"language": {
+				"url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
+			}
+		});
+	});
+</script>
+</body>
+</html>
+

@@ -6,6 +6,10 @@
     <meta name="description" content="EbookStore - Thư viện sách điện tử hàng đầu Việt Nam">
     <title>Trang chủ - EbookStore</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="alternate icon" type="image/png" th:href="@{/shared/images/book.png}">
+
     <!-- Bootstrap 5 CSS -->
     <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
 
@@ -19,6 +23,7 @@
     <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
     <link rel="stylesheet" th:href="@{/user_template/css/homepage.css}">
     <link rel="stylesheet" th:href="@{/user_template/css/homepage-animations.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
 </head>
 <body>
 
@@ -45,11 +50,61 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/subscribe">Gói VIP</a>
                     </li>
-                    <li class="nav-item">
+
+                    <!-- User Dropdown - Show when logged in -->
+                    <li class="nav-item dropdown" th:if="${user != null}">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img th:if="${user.avatarUrl != null}"
+                                 th:src="@{${user.avatarUrl}}"
+                                 alt="Avatar"
+                                 class="rounded-circle me-2"
+                                 style="width: 32px; height: 32px; object-fit: cover;">
+                            <i th:if="${user.avatarUrl == null}"
+                               class="fas fa-user-circle me-2"
+                               style="font-size: 32px;"></i>
+                            <span th:text="${user.fullName}">Người dùng</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" th:href="@{/user/dashboard}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/user/profile}">
+                                    <i class="fas fa-user-edit me-2"></i>Hồ sơ
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/user/orders}">
+                                    <i class="fas fa-shopping-bag me-2"></i>Đơn hàng
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/user/library}">
+                                    <i class="fas fa-book me-2"></i>Thư viện
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form th:action="@{/auth/logout}" method="post" class="d-inline">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Login button - Show when NOT logged in -->
+                    <li class="nav-item" th:if="${user == null}">
                         <a class="nav-link" href="/auth/login">
                             <i class="fas fa-user me-1"></i>Đăng nhập
                         </a>
                     </li>
+
                     <li class="nav-item">
                         <a class="nav-link" href="/cart">
                             <i class="fas fa-shopping-cart position-relative">
@@ -62,6 +117,7 @@
         </div>
     </nav>
 
+
     <!-- Hero Banner Section -->
     <section class="hero-banner">
         <div class="container">
@@ -69,7 +125,8 @@
                 <div class="col-lg-7">
                     <div class="hero-content">
                         <h1 class="hero-title animate__animated animate__fadeInUp">
-                            Khám phá thế giới<br>sách điện tử
+                            <span th:if="${user != null}">Xin chào, <span th:text="${user.fullName}">Người dùng</span>!</span>
+                            <span th:if="${user == null}">Khám phá thế giới<br>sách điện tử</span>
                         </h1>
                         <p class="hero-subtitle animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
                             Hơn 10,000+ đầu sách đa thể loại - Đọc mọi lúc, mọi nơi
@@ -94,7 +151,7 @@
                     </div>
                 </div>
                 <div class="col-lg-5 d-none d-lg-block">
-                    <img th:src="@{/user_template/images/product-3.png}" alt="Books" class="img-fluid animate__animated animate__fadeInRight">
+                    <img th:src="@{/shared/images/book.png}" alt="Books" class="img-fluid animate__animated animate__fadeInRight">
                 </div>
             </div>
         </div>

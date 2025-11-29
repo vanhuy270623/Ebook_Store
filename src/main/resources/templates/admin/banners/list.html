@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.min.css">
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Quản lý banner <small>Danh sách tất cả banner</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li class="active">Quản lý banner</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row" th:if="${success} or ${error}">
+				<div class="col-md-12">
+					<div class="alert alert-success alert-dismissible" th:if="${success}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-check"></i> Thành công!</h4>
+						<span th:text="${success}"></span>
+					</div>
+					<div class="alert alert-danger alert-dismissible" th:if="${error}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-ban"></i> Lỗi!</h4>
+						<span th:text="${error}"></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box box-solid">
+						<div class="box-body">
+							<form method="get" action="/admin/banners" class="form-inline">
+								<div class="form-group">
+									<input type="text" name="search" class="form-control"
+										   placeholder="Tìm kiếm..."
+										   th:value="${search}" style="width: 300px;">
+								</div>
+								<button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+								<a th:href="@{/admin/banners}" class="btn btn-default"><i class="fa fa-refresh"></i></a>
+								<a th:href="@{/admin/banners/add}" class="btn btn-success pull-right"><i class="fa fa-plus"></i>Thêm banner mới</a>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box">
+						<div class="box-header">
+							<h3 class="box-title">Danh sách banner (<span th:text="${totalBanners ?: 0}">0</span>)</h3>
+						</div>
+						<div class="box-body">
+							<table id="bannersTable" class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>Hình ảnh</th>
+										<th>Tiêu đề</th>
+										<th>Vị trí</th>
+										<th>Trạng thái</th>
+										<th>Ngày tạo</th>
+										<th>Thao tác</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="banner : ${banners}">
+										<td>
+											<img th:src="${banner.imageUrl}" style="width: 80px; height: 60px; object-fit: cover;"
+												 onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2260%22%3E%3Crect fill=%22%23ddd%22 width=%2280%22 height=%2260%22/%3E%3C/svg%3E';">
+										</td>
+										<td th:text="${banner.title}">Tiêu đề</td>
+										<td th:text="${banner.position ?: 'N/A'}">Vị trí</td>
+										<td>
+											<span class="label label-success" th:if="${banner.isActive}">Hoạt động</span>
+											<span class="label label-danger" th:unless="${banner.isActive}">Ngừng</span>
+										</td>
+										<td th:text="${#temporals.format(banner.createdAt, 'dd/MM/yyyy')}">01/01/2024</td>
+										<td>
+											<a th:href="@{/admin/banners/view/{id}(id=${banner.bannerId})}" class="btn btn-sm btn-info"><i class="fa fa-search"></i></a>
+											<a th:href="@{/admin/banners/edit/{id}(id=${banner.bannerId})}" class="btn btn-sm btn-warning"><i class="fa fa-pencil"></i></a>
+											<form th:action="@{/admin/banners/delete/{id}(id=${banner.bannerId})}" method="post" style="display:inline;" onsubmit="return confirm('Xóa?');">
+												<button type="submit" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
+											</form>
+										</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(banners)}">
+										<td colspan="6" class="text-center text-muted">Không có dữ liệu</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script src="/admin_template/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/admin_template/plugins/datatables/dataTables.bootstrap.min.js"></script>
+<script>
+	$(function () {
+		$('#bannersTable').DataTable({
+			"responsive": true,
+			"searching": false,
+			"language": {
+				"url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
+			}
+		});
+	});
+</script>
+</body>
+</html>
+

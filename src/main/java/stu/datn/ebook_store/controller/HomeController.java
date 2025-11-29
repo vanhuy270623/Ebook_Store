@@ -1,13 +1,15 @@
 package stu.datn.ebook_store.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.service.BookService;
 
-import java.util.List;
+import java.util.*;
 
 @Controller
 public class HomeController {
@@ -17,6 +19,14 @@ public class HomeController {
 
     @GetMapping("/")
     public String home(Model model) {
+        // Authentication info
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth != null && auth.isAuthenticated() &&
+            auth.getPrincipal() instanceof stu.datn.ebook_store.entity.User user) {
+            model.addAttribute("user", user);
+        }
+
         try {
             // Get free books (ACCESS_TYPE = 'FREE')
             List<Book> freeBooks = bookService.getBooksByAccessType(Book.AccessType.FREE);

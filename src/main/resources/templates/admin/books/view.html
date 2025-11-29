@@ -36,9 +36,11 @@
 							<h3 class="box-title">Thông tin cơ bản</h3>
 						</div>
 						<div class="box-body box-profile">
-							<img class="profile-user-img img-responsive img-circle"
-								 th:src="${book.coverImageUrl}" th:alt="${book.title}"
-								 style="width: 200px; height: 280px; border-radius: 0;">
+							<img class="profile-user-img img-responsive"
+								 th:src="${book.coverImageUrl != null && !book.coverImageUrl.isEmpty() ? book.coverImageUrl : '/admin_template/images/default-book.jpg'}"
+								 th:alt="${book.title}"
+								 onerror="if(this.src!='/admin_template/images/default-book.jpg'){this.onerror=null; this.src='/admin_template/images/default-book.jpg';}"
+								 style="width: 200px; height: 280px; border-radius: 8px; object-fit: cover; display: block; margin: 0 auto;">
 
 							<h3 class="profile-username text-center" th:text="${book.title}">Tên sách</h3>
 
@@ -85,10 +87,10 @@
 							</ul>
 
 							<div class="btn-group btn-group-justified">
-								<a class="btn btn-primary" href="#">
+								<a class="btn btn-primary" th:href="@{/admin/books/edit/{id}(id=${book.bookId})}">
 									<i class="fa fa-edit"></i> Chỉnh sửa
 								</a>
-								<a class="btn btn-danger" href="#">
+								<a class="btn btn-danger btn-delete-book" href="javascript:void(0);" th:data-book-id="${book.bookId}">
 									<i class="fa fa-trash"></i> Xóa
 								</a>
 							</div>
@@ -140,8 +142,10 @@
 											<div class="col-md-12">
 												<div class="media">
 													<div class="media-left">
-														<img th:src="${author.avatarUrl ?: '/admin_template/images/user-default.png'}"
-															 class="media-object img-circle" style="width: 60px; height: 60px;">
+														<img th:src="${author.avatarUrl != null && !author.avatarUrl.isEmpty() ? author.avatarUrl : '/admin_template/images/user.png'}"
+															 class="media-object img-circle" style="width: 60px; height: 60px; object-fit: cover;"
+															 th:alt="${author.name}"
+															 onerror="if(this.src!='/admin_template/images/user.png'){this.onerror=null; this.src='/admin_template/images/user.png'};">
 													</div>
 													<div class="media-body">
 														<h5 class="media-heading" th:text="${author.name}">Tên tác giả</h5>
@@ -233,24 +237,100 @@
 <!-- Scripts -->
 <th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
 <script>
+// Event listener for delete button
+$(document).ready(function() {
+	$('.btn-delete-book').on('click', function() {
+		console.log('Delete button clicked in view page');
+		var bookId = $(this).data('book-id');
+		console.log('Book ID:', bookId);
+		deleteBook(bookId);
+	});
+});
+
 function deleteBook(bookId) {
+	console.log('deleteBook function called with ID:', bookId);
 	if(confirm('Bạn có chắc chắn muốn xóa sách này?\nHành động này không thể hoàn tác!')) {
+		console.log('User confirmed delete. Sending AJAX request...');
+
+		// Get CSRF token from cookie
+		var token = getCookie('XSRF-TOKEN');
+		console.log('CSRF Token:', token);
+
 		$.ajax({
 			url: '/admin/books/delete/' + bookId,
 			type: 'POST',
+			dataType: 'json',
+			xhrFields: {
+				withCredentials: true  // IMPORTANT: Send cookies with request!
+			},
+			headers: {
+				'X-XSRF-TOKEN': token,
+				'X-Requested-With': 'XMLHttpRequest'
+			},
+			beforeSend: function() {
+				console.log('Sending DELETE request to:', '/admin/books/delete/' + bookId);
+			},
 			success: function(response) {
+				console.log('Success response:', response);
+
+				// Check if response is HTML (login page redirect)
+				if(typeof response === 'string' && response.includes('<!DOCTYPE html>')) {
+					alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
+					window.location.href = '/auth/login';
+					return;
+				}
+
 				if(response.success) {
 					alert(response.message);
 					window.location.href = '/admin/books';
 				} else {
-					alert('Lỗi: ' + response.message);
+					alert('Lỗi: ' + (response.message || 'Có lỗi xảy ra khi xóa sách'));
 				}
 			},
-			error: function() {
-				alert('Có lỗi xảy ra khi xóa sách!');
+			error: function(xhr, status, error) {
+				console.error('Error occurred:', {xhr: xhr, status: status, error: error});
+				console.error('Response Text:', xhr.responseText);
+				console.error('Response JSON:', xhr.responseJSON);
+				console.error('Status Code:', xhr.status);
+
+				// Check for 401 Unauthorized (session expired)
+				if(xhr.status === 401) {
+					var message = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!';
+					if(xhr.responseJSON && xhr.responseJSON.message) {
+						message = xhr.responseJSON.message;
+					}
+					alert(message);
+					window.location.href = '/auth/login';
+					return;
+				}
+
+				// Check if redirected to login page (HTML response)
+				if(xhr.responseText && xhr.responseText.includes('<!DOCTYPE html>')) {
+					alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
+					window.location.href = '/auth/login';
+					return;
+				}
+
+				var errorMessage = 'Có lỗi xảy ra khi xóa sách!';
+				if(xhr.responseJSON && xhr.responseJSON.message) {
+					errorMessage = xhr.responseJSON.message;
+				} else if(xhr.status === 403) {
+					errorMessage = 'Lỗi bảo mật: Không có quyền thực hiện thao tác này!';
+				}
+				alert(errorMessage);
 			}
 		});
+	} else {
+		console.log('User cancelled delete');
 	}
+}
+
+// Helper function to get cookie value
+function getCookie(name) {
+	var value = "; " + document.cookie;
+	var parts = value.split("; " + name + "=");
+	if (parts.length == 2) return parts.pop().split(";").shift();
+	return null;
 }
 </script>
 </body>

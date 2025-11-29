@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<!-- DataTables CSS -->
+	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.min.css">
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<!-- Header -->
+	<div th:replace="~{admin/layout/header :: header}"></div>
+
+	<!-- Sidebar -->
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<!-- Content Wrapper -->
+	<div class="content-wrapper">
+		<!-- Content Header -->
+		<section class="content-header">
+			<h1>
+				Quản lý tác giả
+				<small>Danh sách tất cả tác giả trong hệ thống</small>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li class="active">Quản lý tác giả</li>
+			</ol>
+		</section>
+
+		<!-- Main content -->
+		<section class="content">
+			<!-- Flash Messages -->
+			<div class="row" th:if="${success} or ${error} or ${warning}">
+				<div class="col-md-12">
+					<div class="alert alert-success alert-dismissible" th:if="${success}">
+						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+						<h4><i class="icon fa fa-check"></i> Thành công!</h4>
+						<span th:text="${success}"></span>
+					</div>
+					<div class="alert alert-danger alert-dismissible" th:if="${error}">
+						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+						<h4><i class="icon fa fa-ban"></i> Lỗi!</h4>
+						<span th:text="${error}"></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box box-solid">
+						<div class="box-body">
+							<form method="get" action="/admin/authors" class="form-inline">
+								<div class="form-group">
+									<input type="text" name="search" class="form-control"
+										   placeholder="Tìm kiếm..."
+										   th:value="${search}" style="width: 300px;">
+								</div>
+								<button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+								<a th:href="@{/admin/authors}" class="btn btn-default"><i class="fa fa-refresh"></i></a>
+								<a th:href="@{/admin/authors/add}" class="btn btn-success pull-right"><i class="fa fa-plus"></i>Thêm tác giả mới</a>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box">
+						<div class="box-header">
+							<h3 class="box-title">Danh sách tác giả (<span th:text="${totalAuthors ?: 0}">0</span> người)</h3>
+						</div>
+
+						<div class="box-body">
+
+							<table id="authorsTable" class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>Avatar</th>
+										<th>Tên tác giả</th>
+										<th>Tiểu sử</th>
+										<th>Ngày tạo</th>
+										<th>Thao tác</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="author : ${authors}">
+										<td>
+											<img th:src="${author.avatarUrl}" th:alt="${author.name}"
+												 class="img-thumbnail" style="width: 50px; height: 50px; border-radius: 50%;"
+												 onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2250%22%3E%3Crect fill=%22%23ddd%22 width=%2250%22 height=%2250%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%228%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EAvatar%3C/text%3E%3C/svg%3E';">
+										</td>
+										<td th:text="${author.name}">Tên tác giả</td>
+										<td>
+											<span th:if="${author.biography != null and !#strings.isEmpty(author.biography)}"
+												  th:text="${#strings.length(author.biography) > 50 ? #strings.substring(author.biography, 0, 50) + '...' : author.biography}">
+												Tiểu sử
+											</span>
+											<span th:if="${author.biography == null or #strings.isEmpty(author.biography)}">N/A</span>
+										</td>
+										<td th:text="${#temporals.format(author.createdAt, 'dd/MM/yyyy')}">01/01/2024</td>
+										<td>
+											<div class="btn-group">
+												<a th:href="@{/admin/authors/view/{id}(id=${author.authorId})}"
+												   class="btn btn-sm btn-info" title="Xem chi tiết">
+													<i class="fa fa-search"></i>
+												</a>
+												<a th:href="@{/admin/authors/edit/{id}(id=${author.authorId})}"
+												   class="btn btn-sm btn-warning" title="Chỉnh sửa">
+													<i class="fa fa-pencil"></i>
+												</a>
+												<form th:action="@{/admin/authors/delete/{id}(id=${author.authorId})}"
+													  method="post" style="display:inline;"
+													  onsubmit="return confirm('Bạn có chắc chắn muốn xóa?');">
+													<button type="submit" class="btn btn-sm btn-danger" title="Xóa">
+														<i class="fa fa-trash"></i>
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(authors)}">
+										<td colspan="5" class="text-center text-muted">Không có tác giả nào</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<!-- Footer -->
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script src="/admin_template/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/admin_template/plugins/datatables/dataTables.bootstrap.min.js"></script>
+<script>
+	$(function () {
+		$('#authorsTable').DataTable({
+			"responsive": true,
+			"lengthChange": false,
+			"autoWidth": false,
+			"searching": false,
+			"language": {
+				"url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
+			}
+		});
+	});
+</script>
+</body>
+</html>
+

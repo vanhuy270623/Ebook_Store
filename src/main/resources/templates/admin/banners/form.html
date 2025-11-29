@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<style>
+		.image-preview { max-width: 300px; max-height: 200px; margin-top: 10px; display: none; }
+	</style>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1><span th:if="${isEdit}">Chỉnh sửa banner</span><span th:unless="${isEdit}">Thêm banner mới</span></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/banners}">Quản lý banner</a></li>
+				<li class="active" th:text="${isEdit} ? 'Chỉnh sửa' : 'Thêm mới'"></li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row" th:if="${error}">
+				<div class="col-md-12">
+					<div class="alert alert-danger alert-dismissible">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<span th:text="${error}"></span>
+					</div>
+				</div>
+			</div>
+
+			<form th:action="@{${isEdit ? '/admin/banners/update' : '/admin/banners/create'}}" th:object="${bannerRequest}" method="post" enctype="multipart/form-data">
+				<input type="hidden" th:if="${isEdit}" th:field="*{bannerId}"/>
+				<div class="row">
+					<div class="col-md-8">
+						<div class="box box-primary">
+							<div class="box-body">
+								<div class="form-group">
+									<label for="title">Tiêu đề <span style="color:red;">*</span></label>
+									<input type="text" class="form-control" id="title" th:field="*{title}" placeholder="Tiêu đề banner" maxlength="255" required>
+								</div>
+
+								<div class="form-group">
+									<label for="targetUrl">URL đích</label>
+									<input type="url" class="form-control" id="targetUrl" th:field="*{targetUrl}" placeholder="https://..." maxlength="500">
+								</div>
+
+								<div class="form-group">
+									<label for="position">Vị trí <span style="color:red;">*</span></label>
+									<select class="form-control" id="position" th:field="*{position}" required>
+										<option value="HOME">Trang chủ (HOME)</option>
+										<option value="CATEGORY">Danh mục (CATEGORY)</option>
+										<option value="DETAIL">Chi tiết (DETAIL)</option>
+									</select>
+								</div>
+
+								<div class="form-group">
+									<label>
+										<input type="checkbox" th:field="*{isActive}" />
+										Kích hoạt
+									</label>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-md-4">
+						<div class="box box-info">
+							<div class="box-header">
+								<h3 class="box-title">Hình ảnh</h3>
+							</div>
+							<div class="box-body">
+								<div th:if="${isEdit && banner != null && banner.imageUrl}">
+									<img th:src="${banner.imageUrl}" style="max-width: 100%;">
+									<p class="text-muted text-center">Hình ảnh hiện tại</p>
+								</div>
+
+								<div class="form-group">
+									<label for="imageFile">Tải lên hình ảnh</label>
+									<input type="file" id="imageFile" class="form-control" accept="image/*" onchange="previewImage(this)">
+									<img id="imagePreview" class="image-preview" alt="Preview">
+								</div>
+
+								<div class="form-group">
+									<label for="imageUrl">Hoặc nhập URL</label>
+									<input type="text" class="form-control" id="imageUrl" th:field="*{imageUrl}" maxlength="500">
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="box-footer">
+					<button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Lưu</button>
+					<a th:href="@{/admin/banners}" class="btn btn-secondary"><i class="fa fa-times"></i> Hủy</a>
+				</div>
+			</form>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script>
+	function previewImage(input) {
+		if (input.files && input.files[0]) {
+			var reader = new FileReader();
+			reader.onload = function(e) {
+				document.getElementById('imagePreview').src = e.target.result;
+				document.getElementById('imagePreview').style.display = 'block';
+			};
+			reader.readAsDataURL(input.files[0]);
+		}
+	}
+</script>
+</body>
+</html>
+

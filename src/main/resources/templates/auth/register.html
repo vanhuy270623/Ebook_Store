@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng ký - Ebook Store</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+  <link rel="alternate icon" type="image/png" th:href="@{/shared/images/book.png}">
+
+  <link rel="stylesheet" th:href="@{/admin_template/css/bootstrap.min.css}">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" th:href="@{/shared/css/auth.css}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <div class="header-container">
+        <a th:href="@{/}" class="header-logo">
+          <i class="fa fa-book-open"></i>
+          <span>Ebook Store</span>
+        </a>
+        <div class="header-links">
+          <a th:href="@{/}">Trang chủ</a>
+          <a th:href="@{/auth/login}" class="header-login-link">Đăng nhập</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-wrapper">
+    <div class="container">
+      <div class="auth-form-container">
+        <div class="card card-wrapper">
+          <div class="card-body-wrapper">
+            <!-- Header -->
+            <div class="auth-header">
+              <h1 class="page-title">Tạo tài khoản</h1>
+              <p class="page-subtitle">Tham gia Ebook Store ngay hôm nay!</p>
+            </div>
+
+            <!-- Error Message -->
+            <div th:if="${errorMessage}" class="alert-error">
+              <i class="fa fa-exclamation-circle"></i>
+              <span th:text="${errorMessage}"></span>
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Form -->
+            <form th:action="@{/auth/register}" th:object="${registerDto}" method="post" id="registerForm" class="auth-form">
+              <!-- CSRF Token for Spring Security -->
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+              <div class="form-group">
+                <label class="form-label">Tên đăng nhập</label>
+                <input type="text" th:field="*{username}" class="form-control" placeholder="Nhập tên đăng nhập (tối thiểu 3 ký tự)" minlength="3" required>
+                <small class="form-help-text">Tên đăng nhập dùng để đăng nhập hệ thống</small>
+                <div class="form-error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" th:field="*{email}" class="form-control" placeholder="example@email.com" required>
+                <small class="form-help-text">Email để nhận thông báo và khôi phục tài khoản</small>
+                <div class="form-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Mật khẩu</label>
+                <input type="password" th:field="*{password}" class="form-control" placeholder="Tối thiểu 6 ký tự" minlength="6" required>
+                <small class="form-help-text">Sử dụng ít nhất 6 ký tự, kết hợp chữ và số</small>
+                <div class="form-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+              </div>
+
+              <div class="terms-wrapper">
+                <label class="terms-label">
+                  <input type="checkbox" id="terms" required>
+                  <span>
+                    Tôi đồng ý với
+                    <a href="#">Điều khoản sử dụng</a> và
+                    <a href="#">Chính sách bảo mật</a>
+                  </span>
+                </label>
+              </div>
+
+              <button type="submit" class="btn btn-primary">
+                <i class="fa fa-user-plus"></i> Đăng ký miễn phí
+              </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="auth-divider">
+              <div class="auth-divider-line"></div>
+              <span>hoặc</span>
+              <div class="auth-divider-line"></div>
+            </div>
+
+            <!-- Social Register -->
+            <div class="auth-social">
+              <button type="button" class="btn-social">
+                <i class="fa fa-google icon-google"></i>
+                Đăng ký với Google
+              </button>
+              <button type="button" class="btn-social">
+                <i class="fa fa-facebook icon-facebook"></i>
+                Đăng ký với Facebook
+              </button>
+            </div>
+
+            <!-- Footer Links -->
+            <div class="auth-footer">
+              <p>
+                Đã có tài khoản?
+                <a th:href="@{/auth/login}">Đăng nhập ngay</a>
+              </p>
+              <p>
+                <a th:href="@{/}" class="home-link">
+                  <i class="fa fa-home"></i> Về trang chủ
+                </a>
+              </p>
+            </div>
+
+            <!-- Benefits Box -->
+            <div class="benefits-box">
+              <strong class="benefits-title">
+                <i class="fa fa-gift"></i> Ưu đãi khi đăng ký:
+              </strong>
+              <div class="benefits-list">
+                <div>✓ Gói FREE vĩnh viễn</div>
+                <div>✓ Đọc sách miễn phí không giới hạn</div>
+                <div>✓ Truy cập hơn 20,000+ đầu sách</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script th:src="@{/shared/js/auth.js}"></script>
+</body>
+</html>
+

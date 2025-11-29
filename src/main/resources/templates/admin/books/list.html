@@ -3,7 +3,7 @@
 <head>
 	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
 	<!-- DataTables CSS -->
-	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.css">
+	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.min.css">
 </head>
 <body class="hold-transition skin-blue sidebar-mini">
 <div class="wrapper">
@@ -31,14 +31,28 @@
 		<section class="content">
 			<div class="row">
 				<div class="col-xs-12">
+					<div class="box box-solid">
+						<div class="box-body">
+							<form method="get" action="/admin/books" class="form-inline">
+								<div class="form-group">
+									<input type="text" name="search" class="form-control"
+										   placeholder="Tìm kiếm..."
+										   th:value="${search}" style="width: 300px;">
+								</div>
+								<button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+								<a th:href="@{/admin/books}" class="btn btn-default"><i class="fa fa-refresh"></i></a>
+								<a th:href="@{/admin/books/add}" class="btn btn-success pull-right"><i class="fa fa-plus"></i>Thêm sách mới</a>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
 					<div class="box">
 						<div class="box-header">
 							<h3 class="box-title">Danh sách sách (<span th:text="${totalBooks}">0</span> cuốn)</h3>
-							<div class="box-tools pull-right">
-								<a th:href="@{/admin/books/add}" class="btn btn-primary btn-sm">
-									<i class="fa fa-plus"></i> Thêm sách mới
-								</a>
-							</div>
 						</div>
 
 						<div class="box-body">
@@ -60,7 +74,8 @@
 									<tr th:each="book : ${books}">
 										<td>
 											<img th:src="${book.coverImageUrl}" th:alt="${book.title}"
-												 class="img-thumbnail" style="width: 50px; height: 70px;">
+												 class="img-thumbnail" style="width: 50px; height: 70px; object-fit: cover;"
+												 onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2270%22%3E%3Crect fill=%22%23ddd%22 width=%2250%22 height=%2270%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%228%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E';">
 										</td>
 										<td>
 											<strong th:text="${book.title}">Tên sách</strong><br>
@@ -98,18 +113,18 @@
 												   class="btn btn-sm btn-info" title="Xem chi tiết">
 													<i class="fa fa-search"></i>
 												</a>
-												<a th:href="@{/admin/books/edit/{id}(id=${book.bookId})}"
-												   class="btn btn-sm btn-warning" title="Chỉnh sửa">
-													<i class="fa fa-pencil"></i>
-												</a>
-												<button class="btn btn-sm btn-success" title="Quản lý file"
-														th:onclick="'manageBookAssets(\'' + ${book.bookId} + '\')'">
-													<i class="fa fa-file-pdf-o"></i>
-												</button>
-												<button class="btn btn-sm btn-danger" title="Xóa sách"
-														th:onclick="'deleteBook(\'' + ${book.bookId} + '\')'">
-													<i class="fa fa-trash-o"></i>
-												</button>
+											<a th:href="@{/admin/books/edit/{id}(id=${book.bookId})}"
+											   class="btn btn-sm btn-warning" title="Chỉnh sửa">
+												<i class="fa fa-pencil"></i>
+											</a>
+											<button class="btn btn-sm btn-success btn-manage-assets" title="Quản lý file"
+													th:data-book-id="${book.bookId}">
+												<i class="fa fa-file-pdf-o"></i>
+											</button>
+											<button class="btn btn-sm btn-danger btn-delete-book" title="Xóa sách"
+													th:data-book-id="${book.bookId}">
+												<i class="fa fa-trash-o"></i>
+											</button>
 											</div>
 										</td>
 									</tr>
@@ -136,7 +151,7 @@ $(document).ready(function() {
 	$('#booksTable').DataTable({
 		"paging": true,
 		"lengthChange": true,
-		"searching": true,
+		"searching": false,
 		"ordering": true,
 		"info": true,
 		"autoWidth": false,
@@ -145,6 +160,12 @@ $(document).ready(function() {
 			"url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
 		}
 	});
+
+	// Add event listeners for manage assets buttons
+	$(document).on('click', '.btn-manage-assets', function() {
+	var bookId = $(this).data('book-id');
+	deleteBook(bookId);
+});
 });
 
 function manageBookAssets(bookId) {
@@ -154,22 +175,81 @@ function manageBookAssets(bookId) {
 
 function deleteBook(bookId) {
 	if(confirm('Bạn có chắc chắn muốn xóa sách này?\nHành động này không thể hoàn tác!')) {
+		// Get CSRF token from cookie
+		var token = getCookie('XSRF-TOKEN');
+
 		$.ajax({
 			url: '/admin/books/delete/' + bookId,
 			type: 'POST',
-			success: function(response) {
-				if(response.success) {
+			xhrFields: {
+				withCredentials: true
+			},
+			headers: {
+				'X-XSRF-TOKEN': token,
+				'X-Requested-With': 'XMLHttpRequest'
+			},
+			success: function(response, textStatus, xhr) {
+				// Check if response is HTML (login page redirect)
+				if(typeof response === 'string' && response.includes('<!DOCTYPE html>')) {
+					alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
+					window.location.href = '/auth/login';
+					return;
+				}
+
+				// Parse response if string
+				if(typeof response === 'string') {
+					try {
+						response = JSON.parse(response);
+					} catch(e) {
+						alert('Lỗi: Không thể xử lý phản hồi từ server');
+						return;
+					}
+				}
+
+				if(response && response.success) {
 					alert(response.message);
 					location.reload();
 				} else {
-					alert('Lỗi: ' + response.message);
+					alert('Lỗi: ' + (response && response.message ? response.message : 'Có lỗi xảy ra khi xóa sách'));
 				}
 			},
-			error: function() {
-				alert('Có lỗi xảy ra khi xóa sách!');
+			error: function(xhr, status, error) {
+				// Check for 401 Unauthorized (session expired)
+				if(xhr.status === 401) {
+					var message = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!';
+					if(xhr.responseJSON && xhr.responseJSON.message) {
+						message = xhr.responseJSON.message;
+					}
+					alert(message);
+					window.location.href = '/auth/login';
+					return;
+				}
+
+				// Check if redirected to login page (HTML response)
+				if(xhr.responseText && xhr.responseText.includes('<!DOCTYPE html>')) {
+					alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
+					window.location.href = '/auth/login';
+					return;
+				}
+
+				var errorMessage = 'Có lỗi xảy ra khi xóa sách!';
+				if(xhr.responseJSON && xhr.responseJSON.message) {
+					errorMessage = xhr.responseJSON.message;
+				} else if(xhr.status === 403) {
+					errorMessage = 'Lỗi bảo mật: Không có quyền thực hiện thao tác này!';
+				}
+				alert(errorMessage);
 			}
 		});
 	}
+}
+
+// Helper function to get cookie value
+function getCookie(name) {
+	var value = "; " + document.cookie;
+	var parts = value.split("; " + name + "=");
+	if (parts.length == 2) return parts.pop().split(";").shift();
+	return null;
 }
 </script>
 </body>

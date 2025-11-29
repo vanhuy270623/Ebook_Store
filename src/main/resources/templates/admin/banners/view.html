@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Chi tiết banner <small th:text="${banner.title}">Tiêu đề</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/banners}">Quản lý banner</a></li>
+				<li class="active">Chi tiết</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row">
+				<div class="col-md-8">
+					<div class="box box-primary">
+						<div class="box-body">
+							<img th:src="${banner.imageUrl}" style="max-width: 100%; margin-bottom: 20px;">
+							<div class="form-group">
+								<label>Tiêu đề</label>
+								<p class="form-control-static" th:text="${banner.title}">Tiêu đề</p>
+							</div>
+							<div class="form-group">
+								<label>URL hình ảnh</label>
+								<p class="form-control-static">
+									<a th:href="${banner.imageUrl}" target="_blank" th:text="${#strings.abbreviate(banner.imageUrl, 60)}">URL</a>
+								</p>
+							</div>
+							<div class="form-group">
+								<label>URL đích</label>
+								<p class="form-control-static">
+									<a th:href="${banner.targetUrl}" target="_blank" th:text="${banner.targetUrl ?: 'Không có'}">URL</a>
+								</p>
+							</div>
+							<div class="form-group">
+								<label>Vị trí</label>
+								<p class="form-control-static" th:text="${banner.position ?: 'N/A'}">Vị trí</p>
+							</div>
+							<div class="form-group">
+								<label>Trạng thái</label>
+								<p class="form-control-static">
+									<span class="label label-success" th:if="${banner.isActive}">Hoạt động</span>
+									<span class="label label-danger" th:unless="${banner.isActive}">Ngừng</span>
+								</p>
+							</div>
+						</div>
+						<div class="box-footer">
+							<a th:href="@{/admin/banners/edit/{id}(id=${banner.bannerId})}" class="btn btn-warning"><i class="fa fa-pencil"></i> Sửa</a>
+							<form th:action="@{/admin/banners/delete/{id}(id=${banner.bannerId})}" method="post" style="display:inline;" onsubmit="return confirm('Xóa?');">
+								<button type="submit" class="btn btn-danger"><i class="fa fa-trash"></i> Xóa</button>
+							</form>
+							<a th:href="@{/admin/banners}" class="btn btn-secondary"><i class="fa fa-arrow-left"></i> Quay lại</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>
+

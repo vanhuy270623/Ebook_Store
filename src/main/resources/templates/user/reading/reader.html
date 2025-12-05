@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${book.title + ' - Reader'}">Universal Reader</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .reader-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .reader-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .book-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .book-cover {
+            width: 50px;
+            height: 75px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .book-details h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .book-details p {
+            margin: 4px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .book-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .reader-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-light {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .format-selector {
+            background: white;
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .format-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .format-description {
+            color: #666;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        .format-options {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .format-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .format-card:hover {
+            border-color: #007bff;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,123,255,0.15);
+        }
+
+        .format-card.available {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .format-card.unavailable {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #f8f9fa;
+        }
+
+        .format-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .format-card.available .format-icon {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .format-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .format-details {
+            font-size: 14px;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        .reading-history {
+            background: #f8f9fa;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .history-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .progress-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .last-read {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+
+        .no-progress {
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .reader-header {
+                padding: 12px 16px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .book-info {
+                width: 100%;
+            }
+
+            .reader-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .format-options {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .format-card {
+                min-width: 280px;
+            }
+
+            .format-selector, .reading-history {
+                padding: 20px 16px;
+            }
+        }
+
+        /* Loading animation */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .loading .format-card {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="reader-container">
+        <!-- Header -->
+        <div class="reader-header">
+            <div class="book-info">
+                <img th:src="@{/uploads/covers/{cover}(cover=${book.coverImage ?: 'default-cover.jpg'})}"
+                     alt="Book Cover" class="book-cover"
+                     th:onerror="this.src='@{/images/default-cover.jpg}'">
+                <div class="book-details">
+                    <h3 th:text="${book.title}">Tên Sách</h3>
+                    <p th:text="${book.author?.name ?: 'Unknown Author'}">Tác Giả</p>
+                    <div class="book-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-eye"></i>
+                            <span th:text="${book.viewCount ?: 0} + ' lượt xem'">0 lượt xem</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-star"></i>
+                            <span th:text="${book.averageRating ?: 0} + '/5'">0/5</span>
+                        </div>
+                        <div class="stat-item" th:if="${book.pages}">
+                            <i class="fas fa-file-alt"></i>
+                            <span th:text="${book.pages} + ' trang'">0 trang</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reader-actions">
+                <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Quay lại
+                </a>
+                <button class="btn btn-light" onclick="showBookmarks()">
+                    <i class="fas fa-bookmark"></i> Bookmarks
+                </button>
+                <button class="btn btn-light" onclick="shareBook()">
+                    <i class="fas fa-share"></i> Chia sẻ
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Format Selector -->
+            <div class="format-selector">
+                <h2 class="format-title">Chọn định dạng để đọc</h2>
+                <p class="format-description">
+                    Sách này có thể đọc ở nhiều định dạng khác nhau. Hãy chọn định dạng phù hợp với thiết bị và sở thích của bạn.
+                </p>
+
+                <div class="format-options" id="formatOptions">
+                    <!-- PDF Option -->
+                    <div class="format-card" id="pdfCard" onclick="openReader('pdf')">
+                        <i class="fas fa-file-pdf format-icon"></i>
+                        <div class="format-name">PDF Reader</div>
+                        <div class="format-details">
+                            Định dạng gốc với layout cố định<br>
+                            Phù hợp với máy tính và tablet
+                        </div>
+                    </div>
+
+                    <!-- EPUB Option -->
+                    <div class="format-card" id="epubCard" onclick="openReader('epub')">
+                        <i class="fas fa-book-open format-icon"></i>
+                        <div class="format-name">EPUB Reader</div>
+                        <div class="format-details">
+                            Định dạng linh hoạt, có thể tùy chỉnh<br>
+                            Phù hợp với điện thoại và e-reader
+                        </div>
+                    </div>
+
+                    <!-- Auto-detect Option -->
+                    <div class="format-card available" onclick="openReader('auto')">
+                        <i class="fas fa-magic format-icon"></i>
+                        <div class="format-name">Auto Reader</div>
+                        <div class="format-details">
+                            Tự động chọn định dạng tốt nhất<br>
+                            Khuyên dùng cho lần đầu đọc
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reading History -->
+            <div class="reading-history" th:if="${progress}">
+                <h3 class="history-title">
+                    <i class="fas fa-history"></i> Lịch sử đọc
+                </h3>
+                <div class="progress-card">
+                    <div class="progress-info">
+                        <span>Tiến độ đọc</span>
+                        <span th:text="${progress.progressPercentage != null ? #numbers.formatDecimal(progress.progressPercentage, 1, 1) + '%' : '0%'}">0%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" th:style="'width: ' + (${progress.progressPercentage ?: 0}) + '%'"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span th:if="${progress.currentPage}">
+                            Trang <span th:text="${progress.currentPage}">1</span>/<span th:text="${progress.totalPages ?: 'N/A'}">N/A</span>
+                        </span>
+                        <span th:if="${progress.lastReadDate}">
+                            <i class="fas fa-clock"></i>
+                            <span th:text="${#temporals.format(progress.lastReadDate, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</span>
+                        </span>
+                    </div>
+                    <div class="last-read" th:if="${progress.startDate}">
+                        Bắt đầu đọc từ <span th:text="${#temporals.format(progress.startDate, 'dd/MM/yyyy')}">01/01/2024</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reading-history" th:unless="${progress}">
+                <h3 class="history-title">
+                    <i class="fas fa-book"></i> Sách mới
+                </h3>
+                <div class="progress-card">
+                    <div class="no-progress">
+                        <i class="fas fa-star" style="color: #ffd700; margin-right: 8px;"></i>
+                        Bạn chưa đọc cuốn sách này. Hãy bắt đầu cuộc phiêu lưu!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+    <script th:inline="javascript">
+        // Variables from Thymeleaf
+        const bookId = /*[[${book.bookId}]]*/ 1;
+        const availableAssets = /*[[${@bookAssetService.getBookAssetsByBookId(book.bookId)}]]*/ [];
+
+        // Check available formats when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAvailableFormats();
+        });
+
+        function checkAvailableFormats() {
+            // This would typically be done server-side, but for demo purposes:
+            const pdfCard = document.getElementById('pdfCard');
+            const epubCard = document.getElementById('epubCard');
+
+            // Assume both formats are available for now
+            // In real implementation, check availableAssets array
+            let hasPDF = false;
+            let hasEPUB = false;
+
+            // Check asset types (this would be populated from Thymeleaf)
+            if (availableAssets && availableAssets.length > 0) {
+                availableAssets.forEach(asset => {
+                    if (asset.assetType === 'PDF') hasPDF = true;
+                    if (asset.assetType === 'EPUB') hasEPUB = true;
+                });
+            } else {
+                // Default for demo - assume PDF is available
+                hasPDF = true;
+            }
+
+            if (hasPDF) {
+                pdfCard.classList.add('available');
+            } else {
+                pdfCard.classList.add('unavailable');
+                pdfCard.onclick = () => alert('File PDF không khả dụng cho sách này');
+            }
+
+            if (hasEPUB) {
+                epubCard.classList.add('available');
+            } else {
+                epubCard.classList.add('unavailable');
+                epubCard.onclick = () => alert('File EPUB không khả dụng cho sách này');
+            }
+        }
+
+        function openReader(format) {
+            // Add loading state
+            document.getElementById('formatOptions').classList.add('loading');
+
+            let url;
+            switch(format) {
+                case 'pdf':
+                    url = `/reading/pdf/${bookId}`;
+                    break;
+                case 'epub':
+                    url = `/reading/epub/${bookId}`;
+                    break;
+                case 'auto':
+                default:
+                    url = `/reading/book/${bookId}`;
+                    break;
+            }
+
+            // Navigate to reader
+            window.location.href = url;
+        }
+
+        function showBookmarks() {
+            const bookmarks = getBookmarks();
+            if (bookmarks.length === 0) {
+                alert('Bạn chưa có bookmark nào cho cuốn sách này.');
+                return;
+            }
+
+            let message = 'Bookmarks của bạn:\n\n';
+            bookmarks.forEach((bookmark, index) => {
+                const date = new Date(bookmark.timestamp).toLocaleDateString('vi-VN');
+                message += `${index + 1}. `;
+                if (bookmark.page) {
+                    message += `Trang ${bookmark.page}`;
+                } else if (bookmark.percentage) {
+                    message += `${bookmark.percentage}%`;
+                }
+                message += ` - ${date}`;
+                if (bookmark.note) {
+                    message += `\n   "${bookmark.note}"`;
+                }
+                message += '\n\n';
+            });
+
+            alert(message);
+        }
+
+        function getBookmarks() {
+            try {
+                const stored = localStorage.getItem(`bookmarks_${bookId}`);
+                return stored ? JSON.parse(stored) : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function shareBook() {
+            if (navigator.share) {
+                navigator.share({
+                    title: /*[[${book.title}]]*/ 'Tên sách',
+                    text: 'Tôi đang đọc cuốn sách này, rất hay!',
+                    url: window.location.href
+                });
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                const url = window.location.href;
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('Đã copy link sách vào clipboard!');
+                }).catch(() => {
+                    prompt('Copy link này để chia sẻ:', url);
+                });
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName.toLowerCase() === 'input') return;
+
+            switch(e.key) {
+                case '1':
+                    openReader('pdf');
+                    break;
+                case '2':
+                    openReader('epub');
+                    break;
+                case '3':
+                case 'Enter':
+                    openReader('auto');
+                    break;
+                case 'b':
+                    showBookmarks();
+                    break;
+                case 'Escape':
+                    window.history.back();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
+

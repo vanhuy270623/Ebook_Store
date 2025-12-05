@@ -24,4 +24,10 @@ public interface UserService {
     void deleteUser(String userId);
     void toggleUserStatus(String userId);
     java.util.List<User> searchUsers(String keyword);
+
+    // Soft deletion methods
+    void softDeleteUser(String userId);
+    void restoreUser(String userId);
+    java.util.List<User> getDeletedUsers();
+    java.util.List<User> getAllUsersIncludingDeleted();
 }

@@ -20,6 +20,7 @@
             this.setupSearch();
             this.setupNotifications();
             this.setupLazyLoading();
+            this.setupCartCounter(); // Thêm setup cart counter
             console.log('EbookStore User Interface initialized');
         },
 
@@ -341,6 +342,48 @@
                 clearTimeout(timeout);
                 timeout = setTimeout(later, wait);
             };
+        },
+
+        // ============================================
+        // CART COUNTER - Cập nhật số lượng giỏ hàng
+        // ============================================
+        setupCartCounter: function() {
+            const cartBadge = document.getElementById('cartCountBadge');
+            if (!cartBadge) return; // Chỉ chạy nếu có badge trong header
+
+            // Hàm cập nhật số lượng giỏ hàng
+            const updateCartCount = () => {
+                fetch('/cart/count')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const count = data.count || 0;
+                            const displayCount = data.displayCount || '0';
+
+                            if (count > 0) {
+                                cartBadge.textContent = displayCount;
+                                cartBadge.style.display = 'inline-block';
+                            } else {
+                                cartBadge.style.display = 'none';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching cart count:', error);
+                    });
+            };
+
+            // Cập nhật ngay khi load trang
+            updateCartCount();
+
+            // Cập nhật mỗi 30 giây để đồng bộ nếu user mở nhiều tab
+            setInterval(updateCartCount, 30000);
+
+            // Lắng nghe sự kiện tùy chỉnh để cập nhật ngay lập tức
+            document.addEventListener('cartUpdated', updateCartCount);
+
+            // Expose hàm để có thể gọi từ bên ngoài
+            window.updateCartCount = updateCartCount;
         }
     };
 

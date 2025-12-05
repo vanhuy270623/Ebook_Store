@@ -3,6 +3,30 @@
 <head>
 	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
 	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.min.css">
+	<style>
+		/* Style for deleted users */
+		tr.danger {
+			background-color: #f2dede !important;
+		}
+		tr.danger td {
+			opacity: 0.85;
+		}
+		tr.danger:hover {
+			background-color: #ebcccc !important;
+		}
+		.deleted-badge {
+			animation: pulse 2s infinite;
+		}
+		@keyframes pulse {
+			0%, 100% { opacity: 1; }
+			50% { opacity: 0.7; }
+		}
+		/* Info tooltip style */
+		.soft-delete-info {
+			cursor: help;
+			border-bottom: 1px dashed #999;
+		}
+	</style>
 </head>
 <body class="hold-transition skin-blue sidebar-mini">
 <div class="wrapper">
@@ -55,6 +79,17 @@
 								</div>
 								<button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> Tìm kiếm</button>
 								<a th:href="@{/admin/users}" class="btn btn-default"><i class="fa fa-refresh"></i> Làm mới</a>
+
+								<!-- Toggle hiển thị user đã xóa (chỉ root admin) -->
+								<div class="form-group" th:if="${isRootAdmin}" style="margin-left: 10px;">
+									<label class="checkbox-inline">
+										<input type="checkbox" name="showDeleted" value="true"
+											   th:checked="${showDeleted}"
+											   onchange="this.form.submit()">
+										<i class="fa fa-trash"></i> Hiển thị người dùng đã xóa
+									</label>
+								</div>
+
 								<a th:href="@{/admin/users/add}" class="btn btn-success pull-right"><i class="fa fa-plus"></i> Thêm người dùng mới</a>
 							</form>
 						</div>
@@ -67,6 +102,13 @@
 					<div class="box">
 						<div class="box-header">
 							<h3 class="box-title">Danh sách người dùng</h3>
+							<!-- Info box về soft deletion -->
+							<div class="pull-right" th:if="${isRootAdmin}">
+								<span class="label label-info" style="font-size: 12px; padding: 5px 10px;">
+									<i class="fa fa-info-circle"></i>
+									Xóa mềm: Dữ liệu được bảo toàn và có thể khôi phục
+								</span>
+							</div>
 						</div>
 
 						<div class="box-body">
@@ -78,12 +120,13 @@
 									<th>Email & Trạng thái</th>
 									<th>Vai trò</th>
 									<th>Ngày tạo</th>
+									<th th:if="${showDeleted}">Trạng thái xóa</th>
 									<th>Thao tác</th>
 								</tr>
 								</thead>
 								<tbody>
 								<tr th:if="${users == null || users.isEmpty()}">
-									<td colspan="6" class="text-center" style="padding: 30px;">
+									<td th:colspan="${showDeleted ? 7 : 6}" class="text-center" style="padding: 30px;">
 										<i class="fa fa-users" style="font-size: 48px; color: #ccc; margin-bottom: 10px;"></i>
 										<h4 style="color: #999; margin: 10px 0;">Không tìm thấy người dùng</h4>
 										<p style="color: #bbb;" th:if="${search != null && !search.isEmpty()}">
@@ -91,14 +134,20 @@
 										</p>
 									</td>
 								</tr>
-								<tr th:each="user : ${users}">
+								<tr th:each="user : ${users}"
+									th:classappend="${user.deletedAt != null ? 'danger' : ''}">
 									<td>
 										<img th:src="${user.avatarUrl != null && !user.avatarUrl.isEmpty() ? user.avatarUrl : '/admin_template/images/user-default.png'}"
-											 class="img-circle" style="width: 40px; height: 40px; object-fit: cover;">
+											 class="img-circle" style="width: 90px; height: 90px; object-fit: cover;"
+											 th:style="${user.deletedAt != null ? 'width: 90px; height: 90px; object-fit: cover; opacity: 0.5;' : 'width: 90px; height: 90px; object-fit: cover;'}">
 									</td>
 
 									<td>
-										<strong th:text="${user.fullName ?: user.username}">Name</strong><br>
+										<strong th:text="${user.fullName ?: user.username}">Name</strong>
+										<span th:if="${user.deletedAt != null}" class="label label-danger" style="margin-left: 5px;">
+											<i class="fa fa-trash"></i> Đã xóa
+										</span>
+										<br>
 										<small class="text-muted">@<span th:text="${user.username}">user</span></small>
 									</td>
 
@@ -117,93 +166,115 @@
 
 									<td th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}">Date</td>
 
+									<!-- Cột trạng thái xóa - chỉ hiển thị khi showDeleted = true -->
+									<td th:if="${showDeleted}">
+										<span th:if="${user.deletedAt != null}" class="text-danger">
+											<i class="fa fa-trash-o"></i>
+											<span th:text="${#temporals.format(user.deletedAt, 'dd/MM/yyyy HH:mm')}"></span>
+										</span>
+										<span th:if="${user.deletedAt == null}" class="text-muted">
+											<i class="fa fa-check-circle"></i> Đang hoạt động
+										</span>
+									</td>
+
 									<td>
-										<!-- Nút Xem - Hiển thị cho tất cả -->
-										<a th:href="@{/admin/users/view/{id}(id=${user.userId})}"
-										   class="btn btn-sm btn-info" title="Xem">
-											<i class="fa fa-eye"></i>
-										</a>
+										<!-- Nếu user đã bị xóa, chỉ hiển thị nút khôi phục cho root admin -->
+										<th:block th:if="${user.deletedAt != null}">
+											<th:block th:if="${isRootAdmin}">
+												<!-- Nút Khôi phục -->
+												<form th:action="@{/admin/users/restore/{id}(id=${user.userId})}"
+													  method="post" style="display: inline-block;">
+													<button type="submit" class="btn btn-sm btn-success" title="Khôi phục người dùng"
+															onclick="return confirm('Bạn có chắc muốn khôi phục người dùng này?')">
+														<i class="fa fa-undo"></i> Khôi phục
+													</button>
+												</form>
+											</th:block>
+											<th:block th:if="${!isRootAdmin}">
+												<span class="text-muted"><i class="fa fa-ban"></i> Đã xóa</span>
+											</th:block>
+										</th:block>
 
-										<!--
-											Logic hiển thị các nút:
-											1. Admin gốc (user_admin_01):
-											   - Hiển thị tất cả nút với mọi user
-											   - NHƯNG không hiển thị nút khóa và xóa đối với chính mình
-											2. Admin thường:
-											   - Với người dùng bình thường (không phải admin): Hiển thị tất cả nút
-											   - Với chính mình: Chỉ hiển thị nút xem
-											   - Với admin khác: Chỉ hiển thị nút xem
-										-->
-
-										<!-- Nút Sửa -->
-										<th:block th:if="${isRootAdmin}">
-											<!-- Admin gốc thấy nút sửa với mọi user -->
-											<a th:href="@{/admin/users/edit/{id}(id=${user.userId})}"
-											   class="btn btn-sm btn-primary" title="Sửa">
-												<i class="fa fa-pencil"></i>
+										<!-- Nếu user chưa bị xóa, hiển thị các nút thông thường -->
+										<th:block th:if="${user.deletedAt == null}">
+											<!-- Nút Xem - Hiển thị cho tất cả -->
+											<a th:href="@{/admin/users/view/{id}(id=${user.userId})}"
+											   class="btn btn-sm btn-info" title="Xem">
+												<i class="fa fa-eye"></i>
 											</a>
-										</th:block>
-										<th:block th:if="${!isRootAdmin}">
-											<!-- Admin thường chỉ thấy nút sửa với user thường (không phải admin và không phải chính mình) -->
-											<a th:if="${user.role != null && user.role.roleName.name() != 'ADMIN' && user.userId != currentAdminId}"
-											   th:href="@{/admin/users/edit/{id}(id=${user.userId})}"
-											   class="btn btn-sm btn-primary" title="Sửa">
-												<i class="fa fa-pencil"></i>
-											</a>
-										</th:block>
 
-										<!-- Nút Khóa/Kích hoạt -->
-										<th:block th:if="${isRootAdmin}">
-											<!-- Admin gốc thấy nút khóa với mọi user NGOẠI TRỪ chính mình -->
-											<form th:if="${user.userId != currentAdminId}"
-												  th:action="@{/admin/users/toggle-status/{id}(id=${user.userId})}"
-												  method="post" style="display: inline-block;">
-												<button type="submit" class="btn btn-sm"
-														th:classappend="${user.isActive} ? 'btn-warning' : 'btn-success'"
-														th:title="${user.isActive} ? 'Khóa tài khoản' : 'Kích hoạt'"
-														onclick="return confirm('Bạn có chắc muốn thay đổi trạng thái tài khoản này?')">
-													<i class="fa" th:classappend="${user.isActive} ? 'fa-lock' : 'fa-unlock'"></i>
-												</button>
-											</form>
-										</th:block>
-										<th:block th:if="${!isRootAdmin}">
-											<!-- Admin thường chỉ thấy nút khóa với user thường (không phải admin và không phải chính mình) -->
-											<form th:if="${user.role != null && user.role.roleName.name() != 'ADMIN' && user.userId != currentAdminId}"
-												  th:action="@{/admin/users/toggle-status/{id}(id=${user.userId})}"
-												  method="post" style="display: inline-block;">
-												<button type="submit" class="btn btn-sm"
-														th:classappend="${user.isActive} ? 'btn-warning' : 'btn-success'"
-														th:title="${user.isActive} ? 'Khóa tài khoản' : 'Kích hoạt'"
-														onclick="return confirm('Bạn có chắc muốn thay đổi trạng thái tài khoản này?')">
-													<i class="fa" th:classappend="${user.isActive} ? 'fa-lock' : 'fa-unlock'"></i>
-												</button>
-											</form>
-										</th:block>
+											<!-- Nút Sửa -->
+											<th:block th:if="${isRootAdmin}">
+												<!-- Admin gốc thấy nút sửa với mọi user -->
+												<a th:href="@{/admin/users/edit/{id}(id=${user.userId})}"
+												   class="btn btn-sm btn-primary" title="Sửa">
+													<i class="fa fa-pencil"></i>
+												</a>
+											</th:block>
+											<th:block th:if="${!isRootAdmin}">
+												<!-- Admin thường chỉ thấy nút sửa với user thường  -->
+												<a th:if="${user.role != null && user.role.roleName.name() != 'ADMIN'}"
+												   th:href="@{/admin/users/edit/{id}(id=${user.userId})}"
+												   class="btn btn-sm btn-primary" title="Sửa">
+													<i class="fa fa-pencil"></i>
+												</a>
+											</th:block>
 
-										<!-- Nút Xóa -->
-										<th:block th:if="${isRootAdmin}">
-											<!-- Admin gốc thấy nút xóa với tất cả user NGOẠI TRỪ chính mình -->
-											<form th:if="${user.userId != currentAdminId}"
-												  th:action="@{/admin/users/delete/{id}(id=${user.userId})}"
-												  method="post" style="display: inline-block;">
-												<button type="submit" class="btn btn-sm btn-danger" title="Xóa"
-														th:data-confirm-message="|Bạn có chắc muốn xóa user ${user.username}?|"
-														onclick="return confirm(this.getAttribute('data-confirm-message'))">
-													<i class="fa fa-trash-o"></i>
-												</button>
-											</form>
-										</th:block>
-										<th:block th:if="${!isRootAdmin}">
-											<!-- Admin thường chỉ thấy nút xóa với user thường (không phải admin và không phải chính mình) -->
-											<form th:if="${user.role != null && user.role.roleName.name() != 'ADMIN' && user.userId != currentAdminId}"
-												  th:action="@{/admin/users/delete/{id}(id=${user.userId})}"
-												  method="post" style="display: inline-block;">
-												<button type="submit" class="btn btn-sm btn-danger" title="Xóa"
-														th:data-confirm-message="|Bạn có chắc muốn xóa user ${user.username}?|"
-														onclick="return confirm(this.getAttribute('data-confirm-message'))">
-													<i class="fa fa-trash-o"></i>
-												</button>
-											</form>
+											<!-- Nút Khóa/Kích hoạt -->
+											<th:block th:if="${isRootAdmin}">
+												<!-- Admin gốc thấy nút khóa với mọi user NGOẠI TRỪ chính mình -->
+												<form th:if="${user.userId != currentAdminId}"
+													  th:action="@{/admin/users/toggle-status/{id}(id=${user.userId})}"
+													  method="post" style="display: inline-block;">
+													<button type="submit" class="btn btn-sm"
+															th:classappend="${user.isActive} ? 'btn-warning' : 'btn-success'"
+															th:title="${user.isActive} ? 'Khóa tài khoản' : 'Kích hoạt'"
+															onclick="return confirm('Bạn có chắc muốn thay đổi trạng thái tài khoản này?')">
+														<i class="fa" th:classappend="${user.isActive} ? 'fa-lock' : 'fa-unlock'"></i>
+													</button>
+												</form>
+											</th:block>
+											<th:block th:if="${!isRootAdmin}">
+												<!-- Admin thường chỉ thấy nút khóa với user thường -->
+												<form th:if="${user.role != null && user.role.roleName.name() != 'ADMIN' && user.userId != currentAdminId}"
+													  th:action="@{/admin/users/toggle-status/{id}(id=${user.userId})}"
+													  method="post" style="display: inline-block;">
+													<button type="submit" class="btn btn-sm"
+															th:classappend="${user.isActive} ? 'btn-warning' : 'btn-success'"
+															th:title="${user.isActive} ? 'Khóa tài khoản' : 'Kích hoạt'"
+															onclick="return confirm('Bạn có chắc muốn thay đổi trạng thái tài khoản này?')">
+														<i class="fa" th:classappend="${user.isActive} ? 'fa-lock' : 'fa-unlock'"></i>
+													</button>
+												</form>
+											</th:block>
+
+											<!-- Nút Xóa (Soft Delete) -->
+											<th:block th:if="${isRootAdmin}">
+												<!-- Admin gốc thấy nút xóa với tất cả user NGOẠI TRỪ chính mình -->
+												<form th:if="${user.userId != currentAdminId}"
+													  th:action="@{/admin/users/delete/{id}(id=${user.userId})}"
+													  method="post" style="display: inline-block;">
+													<button type="submit" class="btn btn-sm btn-danger"
+															title="Xóa (Dữ liệu được bảo toàn và có thể khôi phục)"
+															th:data-confirm-message="|Bạn có chắc muốn xóa user ${user.username}?\n\nLưu ý: Đây là xóa mềm, dữ liệu vẫn được lưu trữ và có thể khôi phục sau này.|"
+															onclick="return confirm(this.getAttribute('data-confirm-message'))">
+														<i class="fa fa-trash-o"></i>
+													</button>
+												</form>
+											</th:block>
+											<th:block th:if="${!isRootAdmin}">
+												<!-- Admin thường chỉ thấy nút xóa với user thường -->
+												<form th:if="${user.role != null && user.role.roleName.name() != 'ADMIN' && user.userId != currentAdminId}"
+													  th:action="@{/admin/users/delete/{id}(id=${user.userId})}"
+													  method="post" style="display: inline-block;">
+													<button type="submit" class="btn btn-sm btn-danger"
+															title="Xóa (Dữ liệu được bảo toàn và có thể khôi phục)"
+															th:data-confirm-message="|Bạn có chắc muốn xóa user ${user.username}?\n\nLưu ý: Đây là xóa mềm, dữ liệu vẫn được lưu trữ và có thể khôi phục sau này.|"
+															onclick="return confirm(this.getAttribute('data-confirm-message'))">
+														<i class="fa fa-trash-o"></i>
+													</button>
+												</form>
+											</th:block>
 										</th:block>
 									</td>
 								</tr>

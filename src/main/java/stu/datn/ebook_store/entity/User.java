@@ -59,6 +59,9 @@ public class User implements Serializable {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @PrePersist
     protected void onCreate() {
         if (this.isActive == null) {
@@ -77,6 +80,29 @@ public class User implements Serializable {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    // Helper method to check if user is deleted
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
+
+    // Soft delete method
+    public void markAsDeleted() {
+        this.deletedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // Restore method
+    public void restore() {
+        this.deletedAt = null;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // Override toString to display username instead of object reference
+    @Override
+    public String toString() {
+        return this.username != null ? this.username : this.userId;
     }
 
     public enum ReadingMode {

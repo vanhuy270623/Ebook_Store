@@ -30,12 +30,12 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * Xác thực đăng nhập người dùng
+     * Xác thực đăng nhập người dùng (chỉ user chưa bị xóa)
      */
     @Override
     public User authenticateUser(String username, String password) throws Exception {
-        // Tìm user theo username
-        User user = userRepository.findByUsername(username)
+        // Tìm user theo username (chỉ tìm user chưa bị xóa)
+        User user = userRepository.findActiveByUsername(username)
                 .orElseThrow(() -> new Exception("Tên đăng nhập hoặc mật khẩu không đúng"));
 
         // Kiểm tra tài khoản có bị khóa không
@@ -52,11 +52,11 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * Cập nhật thời gian đăng nhập cuối cùng
+     * Cập nhật thời gian đăng nhập cuối cùng (chỉ cho user chưa bị xóa)
      */
     @Override
     public void updateLastLogin(String userId) {
-        userRepository.findById(userId).ifPresent(user -> {
+        userRepository.findActiveById(userId).ifPresent(user -> {
             user.setLastLogin(LocalDateTime.now());
             userRepository.save(user);
         });
@@ -67,13 +67,13 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void registerUser(RegisterDto registerDto) throws Exception {
-        // 1. Kiểm tra username đã tồn tại chưa
-        if (userRepository.findByUsername(registerDto.getUsername()).isPresent()) {
+        // 1. Kiểm tra username đã tồn tại chưa (chỉ kiểm tra user chưa bị xóa)
+        if (userRepository.findActiveByUsername(registerDto.getUsername()).isPresent()) {
             throw new Exception("Username đã tồn tại");
         }
 
-        // 2. Kiểm tra email đã tồn tại chưa
-        if (userRepository.findByEmail(registerDto.getEmail()).isPresent()) {
+        // 2. Kiểm tra email đã tồn tại chưa (chỉ kiểm tra user chưa bị xóa)
+        if (userRepository.findActiveByEmail(registerDto.getEmail()).isPresent()) {
             throw new Exception("Email đã được sử dụng");
         }
 
@@ -100,74 +100,74 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * Kiểm tra username đã tồn tại chưa
+     * Kiểm tra username đã tồn tại chưa (chỉ kiểm tra user chưa bị xóa)
      */
     @Override
     public boolean checkUsernameExists(String username) {
-        return userRepository.findByUsername(username).isPresent();
+        return userRepository.findActiveByUsername(username).isPresent();
     }
 
     /**
-     * Kiểm tra email đã tồn tại chưa
+     * Kiểm tra email đã tồn tại chưa (chỉ kiểm tra user chưa bị xóa)
      */
     @Override
     public boolean checkEmailExists(String email) {
-        return userRepository.findByEmail(email).isPresent();
+        return userRepository.findActiveByEmail(email).isPresent();
     }
 
     /**
      * Sinh User ID tự động theo format "user_normal_XX"
      */
     private String generateNextUserId() {
-        long userCount = userRepository.count();
+        long userCount = userRepository.countActive();
         int nextNumber = (int) userCount + 1;
         return String.format("user_normal_%02d", nextNumber);
     }
 
     @Override
     public long getTotalUsersCount() {
-        return userRepository.count();
+        return userRepository.countActive();
     }
 
     @Override
     public long getActiveUsersCount() {
-        return userRepository.countByIsActive(true);
+        return userRepository.countActiveByIsActive(true);
     }
 
     @Override
     @Transactional(readOnly = true)
     public long getVerifiedUsersCount() {
-        return userRepository.countByIsVerified(true);
+        return userRepository.countActiveByIsVerified(true);
     }
 
     @Override
     @Transactional(readOnly = true)
     public long getAdminUsersCount() {
-        return userRepository.countByRoleName(Role.RoleName.ADMIN);
+        return userRepository.countActiveByRoleName(Role.RoleName.ADMIN);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<User> getRecentUsers(int limit) {
-        return userRepository.findTopUsersOrderByCreatedAtDesc(
+        return userRepository.findTopActiveUsersOrderByCreatedAtDesc(
             org.springframework.data.domain.PageRequest.of(0, limit));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        return userRepository.findAllActive();
     }
 
     @Override
     public Optional<User> getUserById(String userId) {
-        return userRepository.findById(userId);
+        return userRepository.findActiveById(userId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<User> getUserByIdWithRole(String userId) {
-        return userRepository.findByIdWithRole(userId);
+        return userRepository.findActiveByIdWithRole(userId);
     }
 
     @Override
@@ -196,13 +196,48 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(String userId) {
-        userRepository.deleteById(userId);
+        // This method is kept for backward compatibility but now does soft delete
+        softDeleteUser(userId);
+    }
+
+    @Override
+    @Transactional
+    public void softDeleteUser(String userId) {
+        userRepository.findByIdIncludingDeleted(userId).ifPresent(user -> {
+            if (!user.isDeleted()) {
+                user.markAsDeleted();
+                userRepository.save(user);
+            }
+        });
+    }
+
+    @Override
+    @Transactional
+    public void restoreUser(String userId) {
+        userRepository.findByIdIncludingDeleted(userId).ifPresent(user -> {
+            if (user.isDeleted()) {
+                user.restore();
+                userRepository.save(user);
+            }
+        });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> getDeletedUsers() {
+        return userRepository.findDeletedUsers();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> getAllUsersIncludingDeleted() {
+        return userRepository.findAllIncludingDeleted();
     }
 
     @Override
     @Transactional
     public void toggleUserStatus(String userId) {
-        userRepository.findById(userId).ifPresent(user -> {
+        userRepository.findActiveById(userId).ifPresent(user -> {
             user.setIsActive(!user.getIsActive());
             userRepository.save(user);
         });
@@ -211,12 +246,12 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public List<User> searchUsers(String keyword) {
-        // If keyword is null or empty, return all users
+        // If keyword is null or empty, return all active users
         if (keyword == null || keyword.trim().isEmpty()) {
-            return userRepository.findAll();
+            return userRepository.findAllActive();
         }
 
-        // Use the custom repository search method
-        return userRepository.searchByKeyword(keyword.trim());
+        // Use the custom repository search method for active users only
+        return userRepository.searchActiveByKeyword(keyword.trim());
     }
 }

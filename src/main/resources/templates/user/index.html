@@ -99,10 +99,10 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="/cart">
-                            <i class="fas fa-shopping-cart position-relative">
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">0</span>
-                            </i>
+                        <a class="nav-link position-relative" href="/cart" id="cartLink">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span id="cartCountBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                  style="display: none; font-size: 10px;">0</span>
                         </a>
                     </li>
                 </ul>
@@ -794,6 +794,9 @@
             });
         });
     </script>
+
+    <!-- Load cart counter script -->
+    <script th:src="@{/user_template/js/user-main.js}"></script>
 </body>
 </html>
 

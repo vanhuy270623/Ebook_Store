@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/admin/users")
-public class AdminUserController {
+public class AdminUserController extends BaseAdminController {
 
     private static final String ROOT_ADMIN_ID = "user_admin_01";
     private static final String REDIRECT_USERS = "redirect:/admin/users";
@@ -126,14 +126,22 @@ public class AdminUserController {
      */
     @GetMapping
     public String usersList(@RequestParam(required = false) String search,
+                           @RequestParam(defaultValue = "false") boolean showDeleted,
                            Authentication authentication,
                            Model model) {
         User currentUser = getCurrentUser(authentication);
-        List<User> users = userService.searchUsers(search);
+        List<User> users;
+
+        if (showDeleted) {
+            users = userService.getAllUsersIncludingDeleted();
+        } else {
+            users = userService.searchUsers(search);
+        }
 
         model.addAttribute("users", users);
         model.addAttribute("totalUsers", users.size());
         model.addAttribute("search", search);
+        model.addAttribute("showDeleted", showDeleted);
         model.addAttribute("currentAdminId", currentUser.getUserId());
         model.addAttribute("isRootAdmin", isRootAdmin(currentUser));
 
@@ -141,11 +149,15 @@ public class AdminUserController {
     }
 
     /**
-     * Xem chi tiết người dùng
+     * Xem chi tiết người dùng (bao gồm cả user đã xóa)
      */
     @GetMapping("/view/{id}")
     public String viewUser(@PathVariable String id, Model model, RedirectAttributes redirectAttributes) {
-        User user = userService.getUserByIdWithRole(id).orElse(null);
+        // Tìm user bao gồm cả đã xóa để admin có thể xem thông tin
+        User user = userService.getAllUsersIncludingDeleted().stream()
+                .filter(u -> u.getUserId().equals(id))
+                .findFirst()
+                .orElse(null);
 
         if (user == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy người dùng với ID: " + id);
@@ -385,15 +397,28 @@ public class AdminUserController {
     }
 
     /**
-     * Xóa người dùng
+     * Xóa người dùng (Soft Delete - chỉ đánh dấu là đã xóa, không xóa khỏi database)
      */
     @PostMapping("/delete/{id}")
     public String deleteUser(@PathVariable String id,
                             Authentication authentication,
                             RedirectAttributes redirectAttributes) {
         User currentUser = getCurrentUser(authentication);
-        User targetUser = userService.getUserById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User targetUser = userService.getAllUsersIncludingDeleted().stream()
+                .filter(u -> u.getUserId().equals(id))
+                .findFirst()
+                .orElse(null);
+
+        if (targetUser == null) {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy người dùng!");
+            return REDIRECT_USERS;
+        }
+
+        // Kiểm tra nếu user đã bị xóa rồi
+        if (targetUser.isDeleted()) {
+            redirectAttributes.addFlashAttribute("warning", "Người dùng này đã được xóa trước đó!");
+            return REDIRECT_USERS;
+        }
 
         // Kiểm tra quyền xóa admin
         if (isAdmin(targetUser) && !isRootAdmin(currentUser)) {
@@ -401,8 +426,51 @@ public class AdminUserController {
             return REDIRECT_USERS;
         }
 
-        userService.deleteUser(id);
-        redirectAttributes.addFlashAttribute("success", "Xóa người dùng thành công!");
+        // Không cho phép xóa chính mình
+        if (currentUser.getUserId().equals(id)) {
+            redirectAttributes.addFlashAttribute("error", "Không thể xóa chính mình!");
+            return REDIRECT_USERS;
+        }
+
+        userService.softDeleteUser(id);
+        redirectAttributes.addFlashAttribute("success",
+            "Đã đánh dấu người dùng là đã xóa! Dữ liệu vẫn được bảo toàn và có thể khôi phục.");
+
+        return REDIRECT_USERS;
+    }
+
+    /**
+     * Khôi phục người dùng đã bị xóa
+     */
+    @PostMapping("/restore/{id}")
+    public String restoreUser(@PathVariable String id,
+                             Authentication authentication,
+                             RedirectAttributes redirectAttributes) {
+        User currentUser = getCurrentUser(authentication);
+
+        // Chỉ root admin mới có quyền khôi phục
+        if (!isRootAdmin(currentUser)) {
+            redirectAttributes.addFlashAttribute("error", "Chỉ admin gốc mới có quyền khôi phục người dùng!");
+            return REDIRECT_USERS;
+        }
+
+        User targetUser = userService.getAllUsersIncludingDeleted().stream()
+                .filter(u -> u.getUserId().equals(id))
+                .findFirst()
+                .orElse(null);
+
+        if (targetUser == null) {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy người dùng!");
+            return REDIRECT_USERS;
+        }
+
+        if (!targetUser.isDeleted()) {
+            redirectAttributes.addFlashAttribute("warning", "Người dùng này chưa bị xóa!");
+            return REDIRECT_USERS;
+        }
+
+        userService.restoreUser(id);
+        redirectAttributes.addFlashAttribute("success", "Khôi phục người dùng thành công!");
 
         return REDIRECT_USERS;
     }

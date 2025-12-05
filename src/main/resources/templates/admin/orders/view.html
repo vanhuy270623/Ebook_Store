@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Chi tiết đơn hàng <small th:text="${order.orderId}">Order ID</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/orders}">Quản lý đơn hàng</a></li>
+				<li class="active">Chi tiết</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row" th:if="${success} or ${error}">
+				<div class="col-md-12">
+					<div class="alert alert-success alert-dismissible" th:if="${success}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<span th:text="${success}"></span>
+					</div>
+					<div class="alert alert-danger alert-dismissible" th:if="${error}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<span th:text="${error}"></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-8">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Thông tin đơn hàng</h3>
+							<div class="box-tools pull-right">
+								<span class="label label-warning" th:if="${order.paymentStatus.name() == 'PENDING'}">Chờ xử lý</span>
+								<span class="label label-success" th:if="${order.paymentStatus.name() == 'COMPLETED'}">Hoàn thành</span>
+								<span class="label label-danger" th:if="${order.paymentStatus.name() == 'FAILED'}">Thất bại</span>
+								<span class="label label-default" th:if="${order.paymentStatus.name() == 'CANCELLED'}">Đã hủy</span>
+							</div>
+						</div>
+						<div class="box-body">
+							<dl class="dl-horizontal">
+								<dt>Mã đơn hàng:</dt>
+								<dd><strong th:text="${order.orderId}">ORD001</strong></dd>
+
+								<dt>Khách hàng:</dt>
+								<dd th:text="${order.user.fullName}">Nguyễn Văn A</dd>
+
+								<dt>Email:</dt>
+								<dd th:text="${order.user.email}">email@example.com</dd>
+
+								<dt>Loại đơn hàng:</dt>
+								<dd>
+									<span th:if="${order.orderType.name() == 'BOOK'}">Mua sách</span>
+									<span th:if="${order.orderType.name() == 'SUBSCRIPTION'}">Gói subscription</span>
+								</dd>
+
+								<dt>Tổng tiền:</dt>
+								<dd><strong class="text-red" style="font-size: 18px;" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT') + ' đ'}">100,000 đ</strong></dd>
+
+								<dt>Phương thức thanh toán:</dt>
+								<dd>
+									<span th:if="${order.paymentMethod != null}" th:text="${order.paymentMethod.name()}">VNPAY</span>
+									<span th:if="${order.paymentMethod == null}">-</span>
+								</dd>
+
+								<dt>Mã giao dịch:</dt>
+								<dd th:text="${order.transactionId ?: 'Chưa có'}">TXN123456</dd>
+
+								<dt>Ngày tạo:</dt>
+								<dd th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm:ss')}">01/12/2024 10:30:00</dd>
+
+								<dt th:if="${order.startDate != null}">Ngày bắt đầu:</dt>
+								<dd th:if="${order.startDate != null}" th:text="${#temporals.format(order.startDate, 'dd/MM/yyyy')}">01/12/2024</dd>
+
+								<dt th:if="${order.endDate != null}">Ngày kết thúc:</dt>
+								<dd th:if="${order.endDate != null}" th:text="${#temporals.format(order.endDate, 'dd/MM/yyyy')}">31/12/2024</dd>
+							</dl>
+						</div>
+					</div>
+
+					<!-- Order Items (if book order) -->
+					<div class="box box-info" th:if="${order.orderType.name() == 'BOOK' && orderItems != null}">
+						<div class="box-header with-border">
+							<h3 class="box-title">Chi tiết sách</h3>
+						</div>
+						<div class="box-body table-responsive no-padding">
+							<table class="table table-striped">
+								<thead>
+									<tr>
+										<th>Sách</th>
+										<th>Giá</th>
+										<th>Số lượng</th>
+										<th>Tổng</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="item : ${orderItems}">
+										<td th:text="${item.book.title}">Tên sách</td>
+										<td th:text="${#numbers.formatDecimal(item.priceAtPurchase, 0, 'COMMA', 0, 'POINT') + ' đ'}">50,000 đ</td>
+										<td th:text="${item.quantity}">1</td>
+										<td><strong th:text="${#numbers.formatDecimal(item.priceAtPurchase * item.quantity, 0, 'COMMA', 0, 'POINT') + ' đ'}">50,000 đ</strong></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+					<!-- Subscription Info (if subscription order) -->
+					<div class="box box-success" th:if="${order.orderType.name() == 'SUBSCRIPTION' && order.subscription != null}">
+						<div class="box-header with-border">
+							<h3 class="box-title">Thông tin gói subscription</h3>
+						</div>
+						<div class="box-body">
+							<dl class="dl-horizontal">
+								<dt>Gói:</dt>
+								<dd th:text="${order.subscription.packageName}">BASIC</dd>
+
+								<dt>Giá:</dt>
+								<dd th:text="${#numbers.formatDecimal(order.subscription.price, 0, 'COMMA', 0, 'POINT') + ' đ'}">99,000 đ</dd>
+
+								<dt>Thời hạn:</dt>
+								<dd th:text="${order.subscription.durationDays + ' ngày'}">30 ngày</dd>
+							</dl>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-4">
+					<div class="box box-warning">
+						<div class="box-header with-border">
+							<h3 class="box-title">Cập nhật trạng thái</h3>
+						</div>
+						<div class="box-body">
+							<form th:action="@{/admin/orders/update-status/{id}(id=${order.orderId})}" method="post">
+								<div class="form-group">
+									<label>Trạng thái mới:</label>
+									<select name="status" class="form-control" required>
+										<option th:each="st : ${paymentStatuses}"
+												th:value="${st}"
+												th:text="${st.name()}"
+												th:selected="${st == order.paymentStatus}">
+										</option>
+									</select>
+								</div>
+								<button type="submit" class="btn btn-warning btn-block">
+									<i class="fa fa-save"></i> Cập nhật trạng thái
+								</button>
+							</form>
+						</div>
+					</div>
+
+					<div class="box box-default">
+						<div class="box-header with-border">
+							<h3 class="box-title">Thao tác</h3>
+						</div>
+						<div class="box-body">
+							<a th:href="@{/admin/orders}" class="btn btn-default btn-block">
+								<i class="fa fa-arrow-left"></i> Quay lại danh sách
+							</a>
+							<a th:href="@{/admin/orders/statistics}" class="btn btn-info btn-block">
+								<i class="fa fa-bar-chart"></i> Xem thống kê
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>
+

@@ -2,6 +2,104 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
 	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<style>
+		/* Timeline styling improvements */
+		.timeline > li > .timeline-item {
+			box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+			border-radius: 3px;
+			margin-top: 0;
+			background: #fff;
+			color: #444;
+			margin-left: 60px;
+			margin-right: 15px;
+			padding: 10px;
+			position: relative;
+		}
+
+		.timeline > li > .timeline-item > .timeline-header {
+			margin: 0;
+			color: #555;
+			border-bottom: 1px solid #f4f4f4;
+			padding: 5px 0;
+			font-size: 15px;
+			line-height: 1.1;
+		}
+
+		.timeline > li > .timeline-item > .timeline-header.bg-red {
+			color: #fff;
+			background: #dd4b39;
+			margin: -10px -10px 10px -10px;
+		}
+
+		.timeline > li > .timeline-item > .time {
+			color: #999;
+			float: right;
+			font-size: 12px;
+		}
+
+		.timeline > li > .timeline-item > .timeline-body {
+			margin-top: 10px;
+		}
+
+		.timeline > li > .fa,
+		.timeline > li > .glyphicon,
+		.timeline > li > .ion {
+			width: 40px;
+			height: 40px;
+			font-size: 18px;
+			line-height: 40px;
+			position: absolute;
+			color: #666;
+			background: #d2d6de;
+			border-radius: 50%;
+			text-align: center;
+			left: 18px;
+			top: 0;
+		}
+
+		.timeline > li.time-label > span {
+			font-weight: 600;
+			padding: 5px 10px;
+			display: inline-block;
+			background-color: #fff;
+			border-radius: 4px;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+		}
+
+		.timeline > li.time-label > span.bg-red {
+			background-color: #dd4b39;
+			color: #fff;
+		}
+
+		.timeline > li.time-label > span.bg-blue {
+			background-color: #0073b7;
+			color: #fff;
+		}
+
+		.timeline > li.time-label > span.bg-green {
+			background-color: #00a65a;
+			color: #fff;
+		}
+
+		/* Status badges in timeline */
+		.timeline-body .label {
+			margin-right: 5px;
+			font-size: 11px;
+			padding: 4px 8px;
+		}
+
+		.timeline-body p {
+			margin: 5px 0;
+		}
+
+		.timeline-body code {
+			background: #f4f4f4;
+			padding: 2px 6px;
+			border-radius: 3px;
+			color: #d73925;
+			font-size: 12px;
+		}
+	</style>
 </head>
 <body class="hold-transition skin-blue sidebar-mini">
 <div class="wrapper">
@@ -113,6 +211,21 @@
 										<span th:if="${user.lastLogin == null}" class="text-muted">Chưa đăng nhập</span>
 									</span>
 								</li>
+								<!-- Thông tin xóa mềm -->
+								<li class="list-group-item" th:if="${user.deletedAt != null}" style="background-color: #f2dede;">
+									<b><i class="fa fa-trash-o"></i> Trạng thái</b>
+									<span class="pull-right">
+										<span class="label label-danger">
+											<i class="fa fa-trash"></i> ĐÃ XÓA
+										</span>
+									</span>
+								</li>
+								<li class="list-group-item" th:if="${user.deletedAt != null}" style="background-color: #f2dede;">
+									<b><i class="fa fa-calendar-times-o"></i> Thời gian xóa</b>
+									<span class="pull-right text-danger" th:text="${#temporals.format(user.deletedAt, 'dd/MM/yyyy HH:mm')}">
+										01/01/2024 10:00
+									</span>
+								</li>
 							</ul>
 
 							<div class="row">
@@ -139,22 +252,43 @@
 							</div>
 
 							<div style="margin-top: 20px;">
-								<a th:href="@{/admin/users/edit/{id}(id=${user.userId})}" class="btn btn-warning btn-block">
-									<i class="fa fa-pencil"></i> Chỉnh sửa thông tin
-								</a>
+								<!-- Nếu user đã bị xóa, hiển thị nút khôi phục -->
+								<div th:if="${user.deletedAt != null}" class="alert alert-danger" style="margin-bottom: 10px;">
+									<i class="fa fa-exclamation-triangle"></i>
+									<strong>Người dùng này đã bị xóa!</strong><br>
+									<small>Dữ liệu vẫn được lưu trữ và có thể khôi phục.</small>
+								</div>
 
-								<!-- Only show toggle status button if user is not user_admin_01 -->
-								<form th:if="${user.userId != 'user_admin_01'}"
-									  th:action="@{/admin/users/toggle-status/{id}(id=${user.userId})}"
-									  method="post"
-									  style="margin-top: 5px;">
-									<button type="submit" class="btn btn-block"
-											th:classappend="${user.isActive} ? 'btn-danger' : 'btn-success'"
-											onclick="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái tài khoản này?')">
-										<i class="fa" th:classappend="${user.isActive} ? 'fa-lock' : 'fa-unlock'"></i>
-										<span th:text="${user.isActive} ? 'Khóa tài khoản' : 'Kích hoạt tài khoản'">Action</span>
-									</button>
-								</form>
+								<th:block th:if="${user.deletedAt != null}">
+									<!-- Nút khôi phục cho user đã xóa -->
+									<form th:action="@{/admin/users/restore/{id}(id=${user.userId})}"
+										  method="post">
+										<button type="submit" class="btn btn-success btn-block"
+												onclick="return confirm('Bạn có chắc muốn khôi phục người dùng này?')">
+											<i class="fa fa-undo"></i> Khôi phục người dùng
+										</button>
+									</form>
+								</th:block>
+
+								<th:block th:if="${user.deletedAt == null}">
+									<!-- Các nút thông thường cho user chưa xóa -->
+									<a th:href="@{/admin/users/edit/{id}(id=${user.userId})}" class="btn btn-warning btn-block">
+										<i class="fa fa-pencil"></i> Chỉnh sửa thông tin
+									</a>
+
+									<!-- Only show toggle status button if user is not user_admin_01 -->
+									<form th:if="${user.userId != 'user_admin_01'}"
+										  th:action="@{/admin/users/toggle-status/{id}(id=${user.userId})}"
+										  method="post"
+										  style="margin-top: 5px;">
+										<button type="submit" class="btn btn-block"
+												th:classappend="${user.isActive} ? 'btn-danger' : 'btn-success'"
+												onclick="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái tài khoản này?')">
+											<i class="fa" th:classappend="${user.isActive} ? 'fa-lock' : 'fa-unlock'"></i>
+											<span th:text="${user.isActive} ? 'Khóa tài khoản' : 'Kích hoạt tài khoản'">Action</span>
+										</button>
+									</form>
+								</th:block>
 							</div>
 						</div>
 					</div>
@@ -172,27 +306,141 @@
 									<h4><i class="fa fa-history"></i> Lịch sử hoạt động</h4>
 									<div th:if="${user.createdAt != null}">
 										<ul class="timeline timeline-inverse" style="margin-left: 0;">
+
+											<!-- Sự kiện XÓA TÀI KHOẢN (nếu có) -->
+											<th:block th:if="${user.deletedAt != null}">
+												<li class="time-label">
+													<span class="bg-red" th:text="${#temporals.format(user.deletedAt, 'dd/MM/yyyy')}">Ngày xóa</span>
+												</li>
+												<li>
+													<i class="fa fa-trash bg-red"></i>
+													<div class="timeline-item">
+														<span class="time"><i class="fa fa-clock-o"></i>
+															<span th:text="${#temporals.format(user.deletedAt, 'HH:mm')}">10:00</span>
+														</span>
+														<h3 class="timeline-header bg-red" style="padding: 5px 10px; border-radius: 3px;">
+															<strong>Tài khoản đã bị xóa</strong>
+														</h3>
+														<div class="timeline-body">
+															<div class="alert alert-danger" style="margin-bottom: 0;">
+																<i class="fa fa-exclamation-triangle"></i>
+																<strong>Tài khoản đã bị đánh dấu xóa.</strong><br>
+																<small>Dữ liệu vẫn được lưu trữ và có thể khôi phục bởi Root Admin.</small>
+															</div>
+														</div>
+													</div>
+												</li>
+											</th:block>
+
+											<!-- Sự kiện CẬP NHẬT GÌN NHẤT (nếu khác created) -->
+											<th:block th:if="${user.updatedAt != null && user.deletedAt == null && !#temporals.format(user.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm'))}">
+												<li class="time-label">
+													<span class="bg-blue" th:text="${#temporals.format(user.updatedAt, 'dd/MM/yyyy')}">Ngày cập nhật</span>
+												</li>
+												<li>
+													<i class="fa fa-edit bg-blue"></i>
+													<div class="timeline-item">
+														<span class="time"><i class="fa fa-clock-o"></i>
+															<span th:text="${#temporals.format(user.updatedAt, 'HH:mm')}">14:30</span>
+														</span>
+														<h3 class="timeline-header">
+															<strong>Cập nhật thông tin</strong>
+														</h3>
+														<div class="timeline-body">
+															Thông tin tài khoản đã được cập nhật gần đây nhất.
+														</div>
+													</div>
+												</li>
+											</th:block>
+
+											<!-- Sự kiện ĐĂNG NHẬP LẦN CUỐI (nếu có) -->
+											<th:block th:if="${user.lastLogin != null}">
+												<li class="time-label">
+													<span class="bg-green" th:text="${#temporals.format(user.lastLogin, 'dd/MM/yyyy')}">Ngày đăng nhập</span>
+												</li>
+												<li>
+													<i class="fa fa-sign-in bg-green"></i>
+													<div class="timeline-item">
+														<span class="time"><i class="fa fa-clock-o"></i>
+															<span th:text="${#temporals.format(user.lastLogin, 'HH:mm')}">09:15</span>
+														</span>
+														<h3 class="timeline-header">Đăng nhập lần cuối</h3>
+														<div class="timeline-body">
+															Người dùng đã đăng nhập vào hệ thống.
+														</div>
+													</div>
+												</li>
+											</th:block>
+
+											<!-- Sự kiện TRẠNG THÁI TÀI KHOẢN -->
 											<li class="time-label">
-												<span  th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}">Ngày tạo</span>
+												<span th:text="'Trạng thái hiện tại'">Trạng thái</span>
 											</li>
 											<li>
-												<i class="fa fa-user-plus "></i>
+												<i class="fa"
+												   th:classappend="${user.isActive ? 'fa-check-circle bg-green' : 'fa-lock bg-red'}"></i>
 												<div class="timeline-item">
-													<span class="time"><i class="fa fa-clock-o"></i>
-														<span th:text="${#temporals.format(user.createdAt, 'HH:mm')}">01/01/2024</span>
-													</span>
-													<h3 class="timeline-header">Tạo tài khoản</h3>
+													<h3 class="timeline-header">
+														<span th:if="${user.isActive}">
+															<strong class="text-green">Tài khoản đang hoạt động</strong>
+														</span>
+														<span th:if="${!user.isActive}">
+															<strong class="text-red">Tài khoản đã bị khóa</strong>
+														</span>
+													</h3>
 													<div class="timeline-body">
-														Tài khoản được tạo và đăng ký thành công.
+														<div th:if="${user.isActive}">
+															<span class="label label-success"><i class="fa fa-unlock"></i> Đang hoạt động bình thường</span>
+															<span class="label label-info" th:if="${user.isVerified}">
+																<i class="fa fa-certificate"></i> Đã xác thực email
+															</span>
+															<span class="label label-warning" th:if="${!user.isVerified}">
+																<i class="fa fa-exclamation-triangle"></i> Chưa xác thực email
+															</span>
+														</div>
+														<div th:if="${!user.isActive}" class="alert alert-warning" style="margin-top: 10px; margin-bottom: 0;">
+															<i class="fa fa-lock"></i>
+															<strong>Tài khoản bị khóa.</strong><br>
+															<small>Người dùng không thể đăng nhập cho đến khi được kích hoạt lại.</small>
+														</div>
 													</div>
 												</div>
 											</li>
+
+											<!-- Sự kiện TẠO TÀI KHOẢN -->
+											<li class="time-label">
+												<span th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}">Ngày tạo</span>
+											</li>
+											<li>
+												<i class="fa fa-user-plus bg-aqua"></i>
+												<div class="timeline-item">
+													<span class="time"><i class="fa fa-clock-o"></i>
+														<span th:text="${#temporals.format(user.createdAt, 'HH:mm')}">08:00</span>
+													</span>
+													<h3 class="timeline-header">
+														<strong>Tạo tài khoản</strong>
+													</h3>
+													<div class="timeline-body">
+														<p><i class="fa fa-user"></i> Tài khoản được tạo với vai trò:
+															<span class="label"
+																  th:classappend="${roleName == 'ADMIN' ? 'label-danger' : 'label-primary'}"
+																  th:text="${roleName}">USER</span>
+														</p>
+														<p><i class="fa fa-id-card"></i> User ID: <code th:text="${user.userId}">user_id</code></p>
+														<p><i class="fa fa-user-circle"></i> Username: <strong th:text="${user.username}">username</strong></p>
+													</div>
+												</div>
+											</li>
+
+											<!-- Kết thúc timeline -->
 											<li>
 												<i class="fa fa-clock-o bg-gray"></i>
 											</li>
 										</ul>
 									</div>
-									<p th:if="${user.createdAt == null}" class="text-muted">Không có thông tin lịch sử hoạt động.</p>
+									<p th:if="${user.createdAt == null}" class="text-muted">
+										<i class="fa fa-info-circle"></i> Không có thông tin lịch sử hoạt động.
+									</p>
 								</div>
 							</div>
 

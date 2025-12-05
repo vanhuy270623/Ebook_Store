@@ -46,7 +46,7 @@
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown">
 						<img th:src="${user?.avatarUrl != null ? user.avatarUrl : '/admin_template/images/user.png'}"
 						     class="user-image" alt="User Image">
-						<span class="hidden-xs" sec:authentication="name">Admin</span>
+						<span class="hidden-xs" th:text="${user?.fullName != null ? user.fullName : (user?.username != null ? user.username : 'Admin')}">Admin</span>
 					</a>
 					<ul class="dropdown-menu">
 						<!-- User image -->
@@ -54,7 +54,7 @@
 							<img th:src="${user?.avatarUrl != null ? user.avatarUrl : '/admin_template/images/user.png'}"
 							     class="img-circle" alt="User Image">
 							<p>
-								<span sec:authentication="name">Admin</span>
+								<span th:text="${user?.fullName != null ? user.fullName : (user?.username != null ? user.username : 'Admin')}">Admin</span>
 								<small>Quản trị viên</small>
 							</p>
 						</li>

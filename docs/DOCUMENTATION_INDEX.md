@@ -1,9 +1,39 @@
 # 📚 Admin Controllers Documentation Index
-**Date:** 30/11/2025
+**Date:** 04/12/2025 (Updated)
 
 ---
 
 ## 📖 Documentation Files Overview
+
+### 🆕 SOFT_DELETE_IMPLEMENTATION.md
+**Purpose:** Technical documentation for soft delete feature  
+**Audience:** Developers, technical leads  
+**Contents:**
+- Implementation overview
+- Entity, Repository, Service, Controller changes
+- Benefits and security considerations
+- Usage guide for developers
+- Testing scenarios
+- Backward compatibility notes
+
+**Use When:** Understanding how soft delete works technically
+
+---
+
+### 🆕 ADMIN_USER_SOFT_DELETE_GUIDE.md
+**Purpose:** User guide for admin users on soft delete features  
+**Audience:** Admin users, support staff  
+**Contents:**
+- Feature overview with screenshots
+- Step-by-step guides
+- Permission matrix
+- FAQ
+- Best practices
+- Comparison: Soft vs Hard delete
+
+**Use When:** Training admins or troubleshooting user management
+
+---
 
 ### 1. FINAL_COMPLETION_SUMMARY.md
 **Purpose:** Quick reference completion status  

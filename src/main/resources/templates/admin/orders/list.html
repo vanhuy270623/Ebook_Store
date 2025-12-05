@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.min.css">
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Quản lý đơn hàng <small>Danh sách tất cả đơn hàng</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li class="active">Quản lý đơn hàng</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row" th:if="${success} or ${error}">
+				<div class="col-md-12">
+					<div class="alert alert-success alert-dismissible" th:if="${success}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-check"></i> Thành công!</h4>
+						<span th:text="${success}"></span>
+					</div>
+					<div class="alert alert-danger alert-dismissible" th:if="${error}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-ban"></i> Lỗi!</h4>
+						<span th:text="${error}"></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box box-solid">
+						<div class="box-body">
+							<form method="get" action="/admin/orders" class="form-inline">
+								<div class="form-group">
+									<label>Trạng thái:</label>
+									<select name="status" class="form-control">
+										<option value="ALL">Tất cả</option>
+										<option th:each="st : ${paymentStatuses}"
+												th:value="${st}"
+												th:text="${st.name()}"
+												th:selected="${st.name() == selectedStatus}">
+										</option>
+									</select>
+								</div>
+								<div class="form-group">
+									<label>Loại đơn hàng:</label>
+									<select name="orderType" class="form-control">
+										<option value="ALL">Tất cả</option>
+										<option th:each="type : ${orderTypes}"
+												th:value="${type}"
+												th:text="${type.name()}"
+												th:selected="${type.name() == selectedOrderType}">
+										</option>
+									</select>
+								</div>
+								<button type="submit" class="btn btn-primary"><i class="fa fa-filter"></i> Lọc</button>
+								<a th:href="@{/admin/orders}" class="btn btn-default"><i class="fa fa-refresh"></i></a>
+								<a th:href="@{/admin/orders/statistics}" class="btn btn-info pull-right"><i class="fa fa-bar-chart"></i> Thống kê</a>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fa fa-shopping-cart"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng đơn hàng</span>
+							<span class="info-box-number" th:text="${totalOrders ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-yellow"><i class="fa fa-clock-o"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Chờ xử lý</span>
+							<span class="info-box-number" th:text="${pendingOrders ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Hoàn thành</span>
+							<span class="info-box-number" th:text="${completedOrders ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-red"><i class="fa fa-times"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Thất bại</span>
+							<span class="info-box-number" th:text="${failedOrders ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box">
+						<div class="box-header">
+							<h3 class="box-title">Danh sách đơn hàng (<span th:text="${totalOrders ?: 0}">0</span>)</h3>
+						</div>
+						<div class="box-body">
+							<table id="ordersTable" class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>Mã đơn</th>
+										<th>Khách hàng</th>
+										<th>Loại</th>
+										<th>Tổng tiền</th>
+										<th>Phương thức</th>
+										<th>Trạng thái</th>
+										<th>Ngày tạo</th>
+										<th>Thao tác</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="order : ${orders}">
+										<td><strong th:text="${order.orderId}">ORD001</strong></td>
+										<td th:text="${order.user.fullName}">Nguyễn Văn A</td>
+										<td>
+											<span class="label label-primary" th:if="${order.orderType.name() == 'BOOK'}">Sách</span>
+											<span class="label label-info" th:if="${order.orderType.name() == 'SUBSCRIPTION'}">Gói</span>
+										</td>
+										<td><strong th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT') + ' đ'}">100,000 đ</strong></td>
+										<td>
+											<span th:if="${order.paymentMethod != null}" th:text="${order.paymentMethod.name()}">VNPAY</span>
+											<span th:if="${order.paymentMethod == null}">-</span>
+										</td>
+										<td>
+											<span class="label label-warning" th:if="${order.paymentStatus.name() == 'PENDING'}">Chờ xử lý</span>
+											<span class="label label-success" th:if="${order.paymentStatus.name() == 'COMPLETED'}">Hoàn thành</span>
+											<span class="label label-danger" th:if="${order.paymentStatus.name() == 'FAILED'}">Thất bại</span>
+											<span class="label label-default" th:if="${order.paymentStatus.name() == 'CANCELLED'}">Đã hủy</span>
+										</td>
+										<td th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">01/12/2024 10:30</td>
+										<td>
+											<a th:href="@{/admin/orders/view/{id}(id=${order.orderId})}" class="btn btn-sm btn-info" title="Xem chi tiết"><i class="fa fa-search"></i></a>
+										</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(orders)}">
+										<td colspan="8" class="text-center text-muted">Không có dữ liệu</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script src="/admin_template/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/admin_template/plugins/datatables/dataTables.bootstrap.min.js"></script>
+<script>
+	$(function () {
+		$('#ordersTable').DataTable({
+			'paging': true,
+			'lengthChange': true,
+			'searching': true,
+			'ordering': true,
+			'info': true,
+			'autoWidth': false,
+			'pageLength': 25,
+			'order': [[6, 'desc']], // Sort by date descending
+			'language': {
+				'url': '//cdn.datatables.net/plug-ins/1.10.24/i18n/Vietnamese.json'
+			}
+		});
+	});
+</script>
+</body>
+</html>
+

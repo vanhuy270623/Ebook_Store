@@ -1,5 +1,6 @@
 package stu.datn.ebook_store.service;
 
+import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.OrderItem;
 
 import java.util.List;
@@ -18,6 +19,13 @@ public interface OrderItemService {
     List<OrderItem> getOrderItemsByOrderId(String orderId);
 
     /**
+     * Get all order items for a specific order by Order entity
+     * @param order The order entity
+     * @return List of order items
+     */
+    List<OrderItem> getOrderItemsByOrder(Order order);
+
+    /**
      * Get an order item by ID
      * @param orderItemId The order item ID
      * @return Optional containing the order item if found
@@ -30,6 +38,13 @@ public interface OrderItemService {
      * @return The created order item
      */
     OrderItem createOrderItem(OrderItem orderItem);
+
+    /**
+     * Save an order item (alias for createOrderItem)
+     * @param orderItem The order item to save
+     * @return The saved order item
+     */
+    OrderItem saveOrderItem(OrderItem orderItem);
 
     /**
      * Delete an order item

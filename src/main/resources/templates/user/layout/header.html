@@ -120,9 +120,9 @@
 
                 <!-- Cart for authenticated users -->
                 <li sec:authorize="isAuthenticated()">
-                    <a class="nav-link position-relative" th:href="@{/user/cart}">
+                    <a class="nav-link position-relative" th:href="@{/cart}" id="cartLink">
                         <img th:src="@{/user_template/images/cart.svg}" alt="Cart">
-                        <span class="cart-count-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                        <span id="cartCountBadge" class="cart-count-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                               style="display: none; font-size: 10px;">0</span>
                     </a>
                 </li>

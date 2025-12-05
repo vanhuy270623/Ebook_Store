@@ -35,6 +35,12 @@ public class OrderItemServiceImpl implements OrderItemService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<OrderItem> getOrderItemsByOrder(Order order) {
+        return orderItemRepository.findByOrder_OrderId(order.getOrderId());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<OrderItem> getOrderItemById(String orderItemId) {
         return orderItemRepository.findById(orderItemId);
     }
@@ -45,6 +51,11 @@ public class OrderItemServiceImpl implements OrderItemService {
             orderItem.setOrderItemId(generateOrderItemId());
         }
         return orderItemRepository.save(orderItem);
+    }
+
+    @Override
+    public OrderItem saveOrderItem(OrderItem orderItem) {
+        return createOrderItem(orderItem);
     }
 
     @Override

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Chi tiết gói subscription <small th:text="${subscription.packageName}">Package</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/subscriptions}">Quản lý subscription</a></li>
+				<li class="active">Chi tiết</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row">
+				<div class="col-md-8">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Thông tin gói</h3>
+							<div class="box-tools pull-right">
+								<span class="label label-success" th:if="${subscription.isActive}">Đang hoạt động</span>
+								<span class="label label-danger" th:unless="${subscription.isActive}">Ngừng hoạt động</span>
+							</div>
+						</div>
+						<div class="box-body">
+							<dl class="dl-horizontal">
+								<dt>Tên gói:</dt>
+								<dd><strong th:text="${subscription.packageName}">BASIC</strong></dd>
+
+								<dt>Mô tả:</dt>
+								<dd th:text="${subscription.description ?: 'Không có'}">Mô tả gói</dd>
+
+								<dt>Giá:</dt>
+								<dd><strong class="text-red" style="font-size: 18px;" th:text="${#numbers.formatDecimal(subscription.price, 0, 'COMMA', 0, 'POINT') + ' đ'}">99,000 đ</strong></dd>
+
+								<dt>Thời hạn:</dt>
+								<dd th:text="${subscription.durationDays + ' ngày'}">30 ngày</dd>
+
+								<dt>Số thiết bị tối đa:</dt>
+								<dd th:text="${subscription.maxDevices + ' thiết bị'}">1 thiết bị</dd>
+
+								<dt>Có quảng cáo:</dt>
+								<dd>
+									<span th:if="${subscription.hasAds}"><i class="fa fa-check text-success"></i> Có</span>
+									<span th:unless="${subscription.hasAds}"><i class="fa fa-times text-danger"></i> Không</span>
+								</dd>
+
+								<dt>Thứ tự hiển thị:</dt>
+								<dd th:text="${subscription.displayOrder}">0</dd>
+
+								<dt>Ngày tạo:</dt>
+								<dd th:text="${#temporals.format(subscription.createdAt, 'dd/MM/yyyy HH:mm:ss')}">01/12/2024 10:00:00</dd>
+
+								<dt>Trạng thái:</dt>
+								<dd>
+									<span class="label label-success" th:if="${subscription.isActive}">
+										<i class="fa fa-check"></i> Đang hoạt động
+									</span>
+									<span class="label label-danger" th:unless="${subscription.isActive}">
+										<i class="fa fa-times"></i> Ngừng hoạt động
+									</span>
+								</dd>
+							</dl>
+						</div>
+						<div class="box-footer">
+							<a th:href="@{/admin/subscriptions/edit/{id}(id=${subscription.subscriptionId})}" class="btn btn-warning">
+								<i class="fa fa-pencil"></i> Chỉnh sửa
+							</a>
+							<a th:href="@{/admin/subscriptions}" class="btn btn-default">
+								<i class="fa fa-arrow-left"></i> Quay lại
+							</a>
+							<form th:action="@{/admin/subscriptions/toggle/{id}(id=${subscription.subscriptionId})}"
+								  method="post"
+								  style="display:inline;">
+								<button type="submit" class="btn btn-info">
+									<i class="fa fa-toggle-on"></i> Bật/Tắt
+								</button>
+							</form>
+							<form th:action="@{/admin/subscriptions/delete/{id}(id=${subscription.subscriptionId})}"
+								  method="post"
+								  style="display:inline;"
+								  onsubmit="return confirm('Bạn có chắc muốn xóa gói này?');">
+								<button type="submit" class="btn btn-danger pull-right">
+									<i class="fa fa-trash"></i> Xóa
+								</button>
+							</form>
+						</div>
+					</div>
+
+					<div class="box box-info">
+						<div class="box-header with-border">
+							<h3 class="box-title">Đơn hàng liên quan (<span th:text="${totalOrders ?: 0}">0</span>)</h3>
+						</div>
+						<div class="box-body">
+							<table class="table table-striped" th:if="${orders != null && !#lists.isEmpty(orders)}">
+								<thead>
+									<tr>
+										<th>Mã đơn</th>
+										<th>Khách hàng</th>
+										<th>Tổng tiền</th>
+										<th>Trạng thái</th>
+										<th>Ngày tạo</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="order : ${orders}">
+										<td><strong th:text="${order.orderId}">ORD001</strong></td>
+										<td th:text="${order.user.fullName}">Tên KH</td>
+										<td th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT') + ' đ'}">99,000 đ</td>
+										<td>
+											<span class="label label-success" th:if="${order.paymentStatus.name() == 'COMPLETED'}">Hoàn thành</span>
+											<span class="label label-warning" th:if="${order.paymentStatus.name() == 'PENDING'}">Chờ</span>
+										</td>
+										<td th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy')}">01/12/2024</td>
+									</tr>
+								</tbody>
+							</table>
+							<p class="text-center text-muted" th:if="${orders == null || #lists.isEmpty(orders)}">Chưa có đơn hàng nào</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-4">
+					<div class="box box-success">
+						<div class="box-header with-border">
+							<h3 class="box-title">Lợi ích gói</h3>
+						</div>
+						<div class="box-body">
+							<ul class="list-unstyled">
+								<li><i class="fa fa-check text-success"></i> Truy cập <strong th:text="${subscription.durationDays + ' ngày'}">30 ngày</strong></li>
+								<li><i class="fa fa-check text-success"></i> Đọc tất cả sách</li>
+								<li><i class="fa fa-check text-success"></i> Đăng nhập <strong th:text="${subscription.maxDevices + ' thiết bị'}">1 thiết bị</strong></li>
+								<li th:if="${!subscription.hasAds}"><i class="fa fa-check text-success"></i> Không quảng cáo</li>
+								<li th:if="${subscription.hasAds}"><i class="fa fa-times text-danger"></i> Có quảng cáo</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>
+

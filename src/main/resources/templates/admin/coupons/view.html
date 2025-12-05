@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Chi tiết coupon <small th:text="${coupon.code}">Code</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/coupons}">Quản lý coupon</a></li>
+				<li class="active">Chi tiết</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row">
+				<div class="col-md-8">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Thông tin coupon</h3>
+							<div class="box-tools pull-right">
+								<span class="label label-success" th:if="${isActive}">Đang hoạt động</span>
+								<span class="label label-danger" th:if="${isExpired}">Hết hạn</span>
+								<span class="label label-warning" th:if="${!isActive && !isExpired}">Hết lượt</span>
+							</div>
+						</div>
+						<div class="box-body">
+							<dl class="dl-horizontal">
+								<dt>Mã coupon:</dt>
+								<dd><strong th:text="${coupon.code}">SUMMER2024</strong></dd>
+
+								<dt>Loại giảm giá:</dt>
+								<dd>
+									<span th:if="${coupon.discountType.name() == 'PERCENT'}">Phần trăm (%)</span>
+									<span th:if="${coupon.discountType.name() == 'FIXED'}">Cố định (VNĐ)</span>
+								</dd>
+
+								<dt>Giá trị giảm:</dt>
+								<dd>
+									<strong>
+										<span th:if="${coupon.discountType.name() == 'PERCENT'}" th:text="${coupon.discountValue + '%'}">10%</span>
+										<span th:if="${coupon.discountType.name() == 'FIXED'}" th:text="${#numbers.formatDecimal(coupon.discountValue, 0, 'COMMA', 0, 'POINT') + ' đ'}">50,000 đ</span>
+									</strong>
+								</dd>
+
+								<dt>Đơn hàng tối thiểu:</dt>
+								<dd th:text="${coupon.minOrderValue != null ? #numbers.formatDecimal(coupon.minOrderValue, 0, 'COMMA', 0, 'POINT') + ' đ' : 'Không có'}">100,000 đ</dd>
+
+								<dt>Số lượt sử dụng còn lại:</dt>
+								<dd>
+									<span class="label label-primary" th:text="${coupon.usageLimit}">50</span>
+								</dd>
+
+								<dt>Hạn sử dụng:</dt>
+								<dd th:text="${#temporals.format(coupon.endDate, 'dd/MM/yyyy HH:mm:ss')}">31/12/2024 23:59:59</dd>
+
+								<dt>Trạng thái:</dt>
+								<dd>
+									<span class="label label-success" th:if="${isActive}">
+										<i class="fa fa-check"></i> Đang hoạt động
+									</span>
+									<span class="label label-danger" th:if="${isExpired}">
+										<i class="fa fa-clock-o"></i> Đã hết hạn
+									</span>
+									<span class="label label-warning" th:if="${!isActive && !isExpired}">
+										<i class="fa fa-ban"></i> Đã hết lượt sử dụng
+									</span>
+								</dd>
+							</dl>
+						</div>
+						<div class="box-footer">
+							<a th:href="@{/admin/coupons/edit/{id}(id=${coupon.couponId})}" class="btn btn-warning">
+								<i class="fa fa-pencil"></i> Chỉnh sửa
+							</a>
+							<a th:href="@{/admin/coupons}" class="btn btn-default">
+								<i class="fa fa-arrow-left"></i> Quay lại
+							</a>
+							<form th:action="@{/admin/coupons/delete/{id}(id=${coupon.couponId})}"
+								  method="post"
+								  style="display:inline;"
+								  onsubmit="return confirm('Bạn có chắc muốn xóa coupon này?');">
+								<button type="submit" class="btn btn-danger pull-right">
+									<i class="fa fa-trash"></i> Xóa
+								</button>
+							</form>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-4">
+					<div class="box box-info">
+						<div class="box-header with-border">
+							<h3 class="box-title">Hướng dẫn sử dụng</h3>
+						</div>
+						<div class="box-body">
+							<p><strong>Cách áp dụng coupon:</strong></p>
+							<ol>
+								<li>Khách hàng nhập mã <code th:text="${coupon.code}">CODE</code> khi checkout</li>
+								<li>Hệ thống kiểm tra tính hợp lệ</li>
+								<li>Giảm giá được áp dụng tự động</li>
+								<li>Số lượt sử dụng giảm đi 1</li>
+							</ol>
+
+							<p class="text-muted"><small>Coupon sẽ tự động hết hạn sau ngày kết thúc hoặc khi hết số lượt sử dụng.</small></p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>
+

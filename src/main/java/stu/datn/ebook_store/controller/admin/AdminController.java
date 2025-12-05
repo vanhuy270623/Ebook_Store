@@ -15,7 +15,7 @@ import stu.datn.ebook_store.service.ReviewService;
 
 @Controller
 @RequestMapping("/admin")
-public class AdminController {
+public class AdminController extends BaseAdminController {
 
     private final BookService bookService;
     private final UserService userService;

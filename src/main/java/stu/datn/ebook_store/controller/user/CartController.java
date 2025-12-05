@@ -12,6 +12,7 @@ import stu.datn.ebook_store.service.CartItemService;
 import stu.datn.ebook_store.service.CartService;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,12 +49,28 @@ public class CartController {
      * Xem giỏ hàng
      */
     @GetMapping
-    public String viewCart(Model model) {
-        // TODO: Implement get current user session
-        // For now, return empty cart view
-        model.addAttribute("cartItems", List.of());
-        model.addAttribute("cartTotal", BigDecimal.ZERO);
-        model.addAttribute("cartItemCount", 0);
+    public String viewCart(Authentication authentication, Model model) {
+        User currentUser = getCurrentUser(authentication);
+
+        List<CartItem> cartItems = new ArrayList<>();
+        BigDecimal cartTotal = BigDecimal.ZERO;
+
+        if (currentUser != null) {
+            Optional<Cart> cartOpt = cartService.getCartByUser(currentUser);
+            if (cartOpt.isPresent()) {
+                Cart cart = cartOpt.get();
+                cartItems = cartItemService.getCartItemsByCart(cart);
+
+                // Calculate total
+                cartTotal = cartItems.stream()
+                        .map(item -> item.getBook().getPrice() != null ? item.getBook().getPrice() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+            }
+        }
+
+        model.addAttribute("cartItems", cartItems);
+        model.addAttribute("cartTotal", cartTotal);
+        model.addAttribute("cartItemCount", cartItems.size());
 
         return "user/cart/view";
     }
@@ -64,6 +81,7 @@ public class CartController {
     @PostMapping("/add/{bookId}")
     public String addToCart(
             @PathVariable String bookId,
+            @RequestParam(value = "redirect", required = false) String redirectUrl,
             Authentication authentication,
             RedirectAttributes redirectAttributes) {
 
@@ -77,25 +95,46 @@ public class CartController {
             // Kiểm tra sách có thể mua được không
             if (book.getAccessType() == Book.AccessType.FREE) {
                 redirectAttributes.addFlashAttribute("error", "Sách này không thể thêm vào giỏ (sách miễn phí)");
-                return "redirect:/books/view/" + bookId;
+                return getRedirectPath(redirectUrl, bookId);
             }
 
             // Lấy hoặc tạo giỏ hàng
             Cart cart = cartService.getCartByUser(currentUser)
                     .orElseGet(() -> cartService.createCartForUser(currentUser));
 
-            // Tạo CartItem (composite key: cart + book)
+            // Kiểm tra sách đã có trong giỏ chưa
+            CartItemId cartItemId = new CartItemId(cart.getCartId(), bookId);
+            Optional<CartItem> existingItem = cartItemService.getCartItemById(cartItemId);
+
+            if (existingItem.isPresent()) {
+                redirectAttributes.addFlashAttribute("info", "Sách này đã có trong giỏ hàng");
+                return getRedirectPath(redirectUrl, bookId);
+            }
+
+            // Tạo CartItem mới (composite key: cart + book)
             CartItem newItem = new CartItem();
             newItem.setCart(cart);
             newItem.setBook(book);
             cartItemService.saveCartItem(newItem);
-            redirectAttributes.addFlashAttribute("success", "Thêm sách vào giỏ thành công");
 
-            return "redirect:/cart";
+            redirectAttributes.addFlashAttribute("success", "Đã thêm \"" + book.getTitle() + "\" vào giỏ hàng");
+            redirectAttributes.addFlashAttribute("cartUpdated", true); // Flag để JS biết cần cập nhật
+
+            return getRedirectPath(redirectUrl, bookId);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
-            return "redirect:/books/view/" + bookId;
+            return getRedirectPath(redirectUrl, bookId);
         }
+    }
+
+    /**
+     * Helper method để xác định trang redirect
+     */
+    private String getRedirectPath(String redirectUrl, String bookId) {
+        if (redirectUrl != null && !redirectUrl.isEmpty()) {
+            return "redirect:" + redirectUrl;
+        }
+        return "redirect:/books/view/" + bookId;
     }
 
     /**
@@ -145,9 +184,16 @@ public class CartController {
             Optional<Cart> cartOpt = cartService.getCartByUser(currentUser);
 
             if (cartOpt.isPresent()) {
-                // Xóa toàn bộ items
-                // TODO: Implement when CartItemService has getAllByCart method
-                redirectAttributes.addFlashAttribute("success", "Giỏ hàng đã được xóa");
+                Cart cart = cartOpt.get();
+                List<CartItem> cartItems = cartItemService.getCartItemsByCart(cart);
+
+                // Xóa từng item
+                for (CartItem item : cartItems) {
+                    CartItemId id = new CartItemId(cart.getCartId(), item.getBook().getBookId());
+                    cartItemService.deleteCartItem(id);
+                }
+
+                redirectAttributes.addFlashAttribute("success", "Đã xóa toàn bộ giỏ hàng");
             }
 
             return "redirect:/cart";
@@ -155,6 +201,45 @@ public class CartController {
             redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
             return "redirect:/cart";
         }
+    }
+
+    /**
+     * REST API: Lấy số lượng sách trong giỏ
+     * Trả về JSON cho AJAX request
+     */
+    @GetMapping("/count")
+    @ResponseBody
+    public Map<String, Object> getCartCount(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            if (authentication != null && authentication.isAuthenticated()) {
+                User currentUser = getCurrentUser(authentication);
+                Optional<Cart> cartOpt = cartService.getCartByUser(currentUser);
+
+                int count = 0;
+                if (cartOpt.isPresent()) {
+                    Cart cart = cartOpt.get();
+                    List<CartItem> cartItems = cartItemService.getCartItemsByCart(cart);
+                    count = cartItems.size();
+                }
+
+                response.put("count", count);
+                response.put("displayCount", count > 5 ? "5+" : String.valueOf(count));
+                response.put("success", true);
+            } else {
+                response.put("count", 0);
+                response.put("displayCount", "0");
+                response.put("success", true);
+            }
+        } catch (Exception e) {
+            response.put("count", 0);
+            response.put("displayCount", "0");
+            response.put("success", false);
+            response.put("error", e.getMessage());
+        }
+
+        return response;
     }
 
     /**
@@ -182,4 +267,3 @@ public class CartController {
         return response;
     }
 }
-

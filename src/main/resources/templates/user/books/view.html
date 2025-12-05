@@ -104,23 +104,35 @@
 
                             <!-- Action Buttons -->
                             <div class="d-grid gap-2">
-                                <form th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).FREE}" method="get" action="#">
+                                <form th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).FREE}" method="get" th:action="@{/reading/reader/{id}(id=${book.bookId})}">
                                     <button type="submit" class="btn btn-success w-100">
                                         <i class="fas fa-book-reader me-2"></i>Đọc ngay
                                     </button>
                                 </form>
-                                <form th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).PURCHASE}"
-                                      th:action="@{/cart/add/{id}(id=${book.bookId})}" method="post">
-                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="fas fa-cart-plus me-2"></i>Thêm vào giỏ
-                                    </button>
-                                </form>
-                                <form th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).SUBSCRIPTION}" method="get" action="/subscribe">
-                                    <button type="submit" class="btn btn-warning w-100">
-                                        <i class="fas fa-crown me-2"></i>Nâng cấp VIP
-                                    </button>
-                                </form>
+                                <div th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).PURCHASE}">
+                                    <!-- Check if user has purchased this book -->
+                                    <a th:href="@{/reading/reader/{id}(id=${book.bookId})}" class="btn btn-success w-100 mb-2">
+                                        <i class="fas fa-book-reader me-2"></i>Đọc sách
+                                    </a>
+                                    <form th:action="@{/cart/add/{id}(id=${book.bookId})}" method="post">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="redirect" th:value="@{/books/view/{id}(id=${book.bookId})}"/>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-cart-plus me-2"></i>Thêm vào giỏ
+                                        </button>
+                                    </form>
+                                </div>
+                                <div th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).SUBSCRIPTION}">
+                                    <!-- Check if user has active subscription -->
+                                    <a th:href="@{/reading/reader/{id}(id=${book.bookId})}" class="btn btn-success w-100 mb-2">
+                                        <i class="fas fa-book-reader me-2"></i>Đọc sách
+                                    </a>
+                                    <form method="get" action="/subscribe">
+                                        <button type="submit" class="btn btn-warning w-100">
+                                            <i class="fas fa-crown me-2"></i>Nâng cấp VIP
+                                        </button>
+                                    </form>
+                                </div>
                                 <button class="btn btn-outline-danger">
                                     <i class="far fa-heart me-2"></i>Yêu thích
                                 </button>
@@ -142,7 +154,7 @@
                             </div>
                             <div class="d-flex justify-content-between">
                                 <span class="text-muted"><i class="fas fa-file-alt me-2"></i>Trang:</span>
-                                <strong th:text="${book.pageCount != null ? book.pageCount : 'N/A'}">0</strong>
+                                <strong th:text="${book.pages != null ? book.pages : 'N/A'}">0</strong>
                             </div>
                         </div>
                     </div>
@@ -282,6 +294,96 @@
 
     <!-- Scripts -->
     <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/user_template/js/user-main.js}"></script>
+
+    <!-- Handle Flash Messages and Update Cart -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kiểm tra và hiển thị thông báo
+            /*[# th:if="${success}"]*/
+            const successMsg = /*[[${success}]]*/ '';
+            if (successMsg) {
+                showToast(successMsg, 'success');
+                // Cập nhật cart counter nếu có flag cartUpdated
+                /*[# th:if="${cartUpdated}"]*/
+                if (typeof window.updateCartCount === 'function') {
+                    setTimeout(() => window.updateCartCount(), 500);
+                }
+                /*[/]*/
+            }
+            /*[/]*/
+
+            /*[# th:if="${error}"]*/
+            const errorMsg = /*[[${error}]]*/ '';
+            if (errorMsg) {
+                showToast(errorMsg, 'error');
+            }
+            /*[/]*/
+
+            /*[# th:if="${info}"]*/
+            const infoMsg = /*[[${info}]]*/ '';
+            if (infoMsg) {
+                showToast(infoMsg, 'info');
+            }
+            /*[/]*/
+        });
+
+        // Hàm hiển thị toast notification
+        function showToast(message, type = 'info') {
+            // Kiểm tra xem có container toast chưa
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 9999; width: 350px;';
+                document.body.appendChild(toastContainer);
+            }
+
+            // Tạo toast element
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white border-0 show mb-2';
+            toast.style.cssText = 'box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);';
+
+            // Màu sắc theo loại
+            const colors = {
+                'success': 'bg-success',
+                'error': 'bg-danger',
+                'info': 'bg-info'
+            };
+            toast.classList.add(colors[type] || 'bg-info');
+
+            // Icon theo loại
+            const icons = {
+                'success': '<i class="fas fa-check-circle me-2"></i>',
+                'error': '<i class="fas fa-exclamation-circle me-2"></i>',
+                'info': '<i class="fas fa-info-circle me-2"></i>'
+            };
+
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${icons[type] || ''}${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+
+            toastContainer.appendChild(toast);
+
+            // Tự động ẩn sau 5 giây
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+
+            // Xử lý nút close
+            toast.querySelector('.btn-close').addEventListener('click', () => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            });
+        }
+    </script>
+
     <style>
         .hover-shadow {
             transition: box-shadow 0.3s;

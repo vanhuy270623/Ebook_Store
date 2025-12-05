@@ -188,9 +188,11 @@
                             </div>
 
                             <div class="d-grid gap-2">
-                                <button th:disabled="${cartItems.isEmpty()}" class="btn btn-primary btn-lg">
+                                <a th:href="@{/order/checkout}"
+                                   th:classappend="${cartItems.isEmpty()} ? 'disabled' : ''"
+                                   class="btn btn-primary btn-lg">
                                     <i class="fas fa-credit-card me-2"></i>Thanh toán
-                                </button>
+                                </a>
                                 <a href="/books" class="btn btn-outline-primary">
                                     <i class="fas fa-arrow-left me-2"></i>Tiếp tục mua sách
                                 </a>
@@ -267,6 +269,87 @@
 
     <!-- Scripts -->
     <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/user_template/js/user-main.js}"></script>
+
+    <!-- Handle Flash Messages and Update Cart Counter -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hiển thị thông báo
+            /*[# th:if="${success}"]*/
+            const successMsg = /*[[${success}]]*/ '';
+            if (successMsg) {
+                showToast(successMsg, 'success');
+                // Cập nhật cart counter
+                if (typeof window.updateCartCount === 'function') {
+                    setTimeout(() => window.updateCartCount(), 500);
+                }
+            }
+            /*[/]*/
+
+            /*[# th:if="${error}"]*/
+            const errorMsg = /*[[${error}]]*/ '';
+            if (errorMsg) {
+                showToast(errorMsg, 'error');
+            }
+            /*[/]*/
+
+            /*[# th:if="${info}"]*/
+            const infoMsg = /*[[${info}]]*/ '';
+            if (infoMsg) {
+                showToast(infoMsg, 'info');
+            }
+            /*[/]*/
+        });
+
+        // Hàm hiển thị toast notification
+        function showToast(message, type = 'info') {
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 9999; width: 350px;';
+                document.body.appendChild(toastContainer);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white border-0 show mb-2';
+            toast.style.cssText = 'box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);';
+
+            const colors = {
+                'success': 'bg-success',
+                'error': 'bg-danger',
+                'info': 'bg-info'
+            };
+            toast.classList.add(colors[type] || 'bg-info');
+
+            const icons = {
+                'success': '<i class="fas fa-check-circle me-2"></i>',
+                'error': '<i class="fas fa-exclamation-circle me-2"></i>',
+                'info': '<i class="fas fa-info-circle me-2"></i>'
+            };
+
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${icons[type] || ''}${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+
+            toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+
+            toast.querySelector('.btn-close').addEventListener('click', () => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            });
+        }
+    </script>
 </body>
 </html>
 

@@ -147,110 +147,115 @@
 <script src="/admin_template/plugins/datatables/jquery.dataTables.min.js"></script>
 <script src="/admin_template/plugins/datatables/dataTables.bootstrap.min.js"></script>
 <script>
-$(document).ready(function() {
-	$('#booksTable').DataTable({
-		"paging": true,
-		"lengthChange": true,
-		"searching": false,
-		"ordering": true,
-		"info": true,
-		"autoWidth": false,
-		"pageLength": 25,
-		"language": {
-			"url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
-		}
-	});
-
-	// Add event listeners for manage assets buttons
-	$(document).on('click', '.btn-manage-assets', function() {
-	var bookId = $(this).data('book-id');
-	deleteBook(bookId);
-});
-});
-
-function manageBookAssets(bookId) {
-	// TODO: Implement book assets management
-	alert('Chức năng quản lý file sách sẽ được phát triển sau.\nBook ID: ' + bookId);
-}
-
-function deleteBook(bookId) {
-	if(confirm('Bạn có chắc chắn muốn xóa sách này?\nHành động này không thể hoàn tác!')) {
-		// Get CSRF token from cookie
-		var token = getCookie('XSRF-TOKEN');
-
-		$.ajax({
-			url: '/admin/books/delete/' + bookId,
-			type: 'POST',
-			xhrFields: {
-				withCredentials: true
-			},
-			headers: {
-				'X-XSRF-TOKEN': token,
-				'X-Requested-With': 'XMLHttpRequest'
-			},
-			success: function(response, textStatus, xhr) {
-				// Check if response is HTML (login page redirect)
-				if(typeof response === 'string' && response.includes('<!DOCTYPE html>')) {
-					alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
-					window.location.href = '/auth/login';
-					return;
-				}
-
-				// Parse response if string
-				if(typeof response === 'string') {
-					try {
-						response = JSON.parse(response);
-					} catch(e) {
-						alert('Lỗi: Không thể xử lý phản hồi từ server');
-						return;
-					}
-				}
-
-				if(response && response.success) {
-					alert(response.message);
-					location.reload();
-				} else {
-					alert('Lỗi: ' + (response && response.message ? response.message : 'Có lỗi xảy ra khi xóa sách'));
-				}
-			},
-			error: function(xhr, status, error) {
-				// Check for 401 Unauthorized (session expired)
-				if(xhr.status === 401) {
-					var message = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!';
-					if(xhr.responseJSON && xhr.responseJSON.message) {
-						message = xhr.responseJSON.message;
-					}
-					alert(message);
-					window.location.href = '/auth/login';
-					return;
-				}
-
-				// Check if redirected to login page (HTML response)
-				if(xhr.responseText && xhr.responseText.includes('<!DOCTYPE html>')) {
-					alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
-					window.location.href = '/auth/login';
-					return;
-				}
-
-				var errorMessage = 'Có lỗi xảy ra khi xóa sách!';
-				if(xhr.responseJSON && xhr.responseJSON.message) {
-					errorMessage = xhr.responseJSON.message;
-				} else if(xhr.status === 403) {
-					errorMessage = 'Lỗi bảo mật: Không có quyền thực hiện thao tác này!';
-				}
-				alert(errorMessage);
+	$(document).ready(function() {
+		// Khởi tạo DataTable
+		$('#booksTable').DataTable({
+			"paging": true,
+			"lengthChange": true,
+			"searching": false, // Nếu bạn muốn dùng form tìm kiếm server-side thì tắt cái này là đúng
+			"ordering": true,
+			"info": true,
+			"autoWidth": false,
+			"pageLength": 25,
+			"language": {
+				"url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
 			}
 		});
-	}
-}
 
-// Helper function to get cookie value
-function getCookie(name) {
-	var value = "; " + document.cookie;
-	var parts = value.split("; " + name + "=");
-	if (parts.length == 2) return parts.pop().split(";").shift();
-	return null;
-}
+		// --- SỬA LẠI PHẦN NÀY ---
+
+		// 1. Bắt sự kiện cho nút XÓA (.btn-delete-book)
+		$(document).on('click', '.btn-delete-book', function() {
+			var bookId = $(this).data('book-id');
+			deleteBook(bookId);
+		});
+
+		// 2. Bắt sự kiện cho nút QUẢN LÝ FILE (.btn-manage-assets)
+		// Sửa lại logic: Gọi hàm manageBookAssets thay vì deleteBook
+		$(document).on('click', '.btn-manage-assets', function() {
+			var bookId = $(this).data('book-id');
+			manageBookAssets(bookId);
+		});
+	});
+
+	// Hàm xử lý quản lý file (Placeholder)
+	function manageBookAssets(bookId) {
+		alert('Chức năng quản lý file sách sẽ được phát triển sau.\nBook ID: ' + bookId);
+	}
+
+	// Hàm xử lý xóa sách
+	function deleteBook(bookId) {
+		if(confirm('Bạn có chắc chắn muốn xóa sách này?\nHành động này không thể hoàn tác!')) {
+			// Lấy CSRF token (nếu dùng Spring Security mặc định)
+			var token = getCookie('XSRF-TOKEN');
+			// Lưu ý: Nếu không dùng Cookie CsrfTokenRepository, bạn có thể cần lấy từ thẻ meta trong <head>
+
+			$.ajax({
+				url: '/admin/books/delete/' + bookId, // Đảm bảo URL này khớp với Controller
+				type: 'POST',
+				xhrFields: {
+					withCredentials: true
+				},
+				headers: {
+					'X-XSRF-TOKEN': token,
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(response) {
+					// Xử lý khi server trả về trang Login HTML (hết session)
+					if(typeof response === 'string' && response.includes('<!DOCTYPE html>')) {
+						alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
+						window.location.href = '/auth/login';
+						return;
+					}
+
+					// Parse JSON nếu cần (thường $.ajax tự parse nếu response header đúng)
+					if(typeof response === 'string') {
+						try {
+							response = JSON.parse(response);
+						} catch(e) {
+							console.error("Lỗi parse JSON", e);
+						}
+					}
+
+					if(response && response.success) {
+						alert(response.message);
+						// Reload lại trang để cập nhật danh sách
+						location.reload();
+					} else {
+						alert('Lỗi: ' + (response && response.message ? response.message : 'Có lỗi xảy ra'));
+					}
+				},
+				error: function(xhr, status, error) {
+					// Xử lý lỗi 401, 403...
+					if(xhr.status === 401) {
+						alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
+						window.location.href = '/auth/login';
+						return;
+					}
+
+					var errorMessage = 'Có lỗi xảy ra khi xóa sách!';
+					if (xhr.responseJSON && xhr.responseJSON.message) {
+						errorMessage = xhr.responseJSON.message;
+					} else if (xhr.responseText) {
+						// Cố gắng parse message từ response text nếu có
+						try {
+							var json = JSON.parse(xhr.responseText);
+							if(json.message) errorMessage = json.message;
+						} catch(e) {}
+					}
+
+					alert(errorMessage);
+				}
+			});
+		}
+	}
+
+	function getCookie(name) {
+		var value = "; " + document.cookie;
+		var parts = value.split("; " + name + "=");
+		if (parts.length == 2) return parts.pop().split(";").shift();
+		return null;
+	}
 </script>
 </body>
 </html>

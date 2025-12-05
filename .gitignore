@@ -31,3 +31,32 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Upload Directories (Large Binary Files) ###
+/uploads/
+F:/datn_uploads/
+datn_uploads/
+
+### Logs ###
+*.log
+logs/
+*.log.*
+
+### OS ###
+.DS_Store
+Thumbs.db
+desktop.ini
+
+### Backup Files ###
+*.bak
+*.tmp
+*.swp
+*.swo
+*~
+
+### Application Properties (uncomment if contains sensitive data) ###
+# application-prod.properties
+# application-local.properties
+
+# Bỏ qua file cấu hình môi trường
+src/main/resources/application.properties

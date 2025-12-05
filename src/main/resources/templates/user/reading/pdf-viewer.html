@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${book.title + ' - PDF Reader'}">PDF Reader</title>
+
+    <!-- PDF.js CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/web/viewer.min.css">
+
+    <!-- Custom CSS -->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #404040;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .reader-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .reader-header {
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .book-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .book-cover {
+            width: 40px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .book-details h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .book-details p {
+            margin: 2px 0 0 0;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .reader-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-dark {
+            background: #343a40;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+            transform: translateY(-1px);
+        }
+
+        .progress-info {
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        .pdf-viewer {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pdf-canvas-container {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .pdf-canvas {
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(64, 64, 64, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .zoom-input {
+            width: 60px;
+            padding: 4px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #444;
+            color: white;
+            text-align: center;
+        }
+
+        .page-navigation {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .page-input {
+            width: 50px;
+            padding: 4px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #444;
+            color: white;
+            text-align: center;
+        }
+
+        /* Dark mode styles */
+        .dark-mode {
+            background: #1a1a1a;
+        }
+
+        .dark-mode .reader-header {
+            background: #000;
+        }
+
+        .dark-mode .pdf-canvas-container {
+            background: #2d2d2d;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .reader-header {
+                padding: 8px 12px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .reader-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .book-details h3 {
+                font-size: 14px;
+            }
+
+            .pdf-canvas-container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="reader-container">
+        <!-- Header với thông tin sách và controls -->
+        <div class="reader-header">
+            <div class="book-info">
+                <img th:src="@{/uploads/covers/{cover}(cover=${book.coverImage ?: 'default-cover.jpg'})}"
+                     alt="Book Cover" class="book-cover"
+                     th:onerror="this.src='@{/images/default-cover.jpg}'">
+                <div class="book-details">
+                    <h3 th:text="${book.title}">Tên Sách</h3>
+                    <p th:text="${book.author?.name ?: 'Unknown Author'}">Tác Giả</p>
+                </div>
+            </div>
+
+            <div class="reader-controls">
+                <!-- Page Navigation -->
+                <div class="control-group page-navigation">
+                    <button class="btn btn-secondary" id="prevPage" onclick="previousPage()">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <input type="number" id="pageInput" class="page-input" value="1" min="1"
+                           onchange="goToPage(this.value)">
+                    <span class="progress-info">/ <span id="totalPages">1</span></span>
+                    <button class="btn btn-secondary" id="nextPage" onclick="nextPage()">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- Zoom Controls -->
+                <div class="control-group zoom-controls">
+                    <button class="btn btn-secondary" onclick="zoomOut()">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <input type="number" id="zoomInput" class="zoom-input" value="100" min="25" max="300" step="25"
+                           onchange="setZoom(this.value)">
+                    <span class="progress-info">%</span>
+                    <button class="btn btn-secondary" onclick="zoomIn()">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+
+                <!-- Mode & Actions -->
+                <div class="control-group">
+                    <button class="btn btn-dark" id="darkModeBtn" onclick="toggleDarkMode()">
+                        <i class="fas fa-moon"></i> Dark
+                    </button>
+                    <button class="btn btn-primary" onclick="saveBookmark()">
+                        <i class="fas fa-bookmark"></i> Bookmark
+                    </button>
+                    <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Thoát
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF Viewer -->
+        <div class="pdf-viewer">
+            <div class="loading-overlay" id="loadingOverlay">
+                <div>
+                    <i class="fas fa-spinner fa-spin"></i> Đang tải PDF...
+                </div>
+            </div>
+            <div class="pdf-canvas-container">
+                <canvas id="pdfCanvas" class="pdf-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/build/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+    <script th:inline="javascript">
+        // Variables from Thymeleaf
+        const bookId = /*[[${book.bookId}]]*/ 1;
+        const assetPath = /*[[${asset.filePath}]]*/ '';
+        const initialPage = /*[[${progress?.currentPage ?: 1}]]*/ 1;
+        const bookmarkData = /*[[${progress?.bookmarkData ?: '[]'}]]*/ '[]';
+
+        // PDF.js variables
+        let pdfDoc = null;
+        let pageNum = initialPage;
+        let pageCount = 0;
+        let scale = 1.0;
+        let canvas = null;
+        let ctx = null;
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/build/pdf.worker.min.js';
+
+            canvas = document.getElementById('pdfCanvas');
+            ctx = canvas.getContext('2d');
+
+            loadPDF();
+
+            // Auto-save progress every 30 seconds
+            setInterval(saveProgress, 30000);
+        });
+
+        async function loadPDF() {
+            try {
+                showLoading(true);
+
+                const pdfPath = `/uploads/source/${assetPath}`;
+                console.log('Loading PDF from:', pdfPath);
+
+                pdfDoc = await pdfjsLib.getDocument(pdfPath).promise;
+                pageCount = pdfDoc.numPages;
+
+                document.getElementById('totalPages').textContent = pageCount;
+                document.getElementById('pageInput').max = pageCount;
+
+                renderPage(pageNum);
+                showLoading(false);
+
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                showLoading(false);
+                alert('Lỗi khi tải file PDF. Vui lòng thử lại sau.');
+            }
+        }
+
+        async function renderPage(num) {
+            if (!pdfDoc) return;
+
+            try {
+                const page = await pdfDoc.getPage(num);
+                const viewport = page.getViewport({ scale: scale });
+
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+
+                await page.render(renderContext).promise;
+
+                // Update UI
+                document.getElementById('pageInput').value = num;
+                pageNum = num;
+
+                // Save progress
+                saveProgress();
+
+            } catch (error) {
+                console.error('Error rendering page:', error);
+            }
+        }
+
+        function previousPage() {
+            if (pageNum > 1) {
+                renderPage(pageNum - 1);
+            }
+        }
+
+        function nextPage() {
+            if (pageNum < pageCount) {
+                renderPage(pageNum + 1);
+            }
+        }
+
+        function goToPage(page) {
+            const pageNumber = parseInt(page);
+            if (pageNumber >= 1 && pageNumber <= pageCount) {
+                renderPage(pageNumber);
+            } else {
+                document.getElementById('pageInput').value = pageNum;
+            }
+        }
+
+        function zoomIn() {
+            scale = Math.min(scale * 1.25, 3.0);
+            document.getElementById('zoomInput').value = Math.round(scale * 100);
+            renderPage(pageNum);
+        }
+
+        function zoomOut() {
+            scale = Math.max(scale * 0.8, 0.25);
+            document.getElementById('zoomInput').value = Math.round(scale * 100);
+            renderPage(pageNum);
+        }
+
+        function setZoom(zoomPercent) {
+            scale = parseInt(zoomPercent) / 100;
+            scale = Math.max(0.25, Math.min(scale, 3.0));
+            renderPage(pageNum);
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            const btn = document.getElementById('darkModeBtn');
+
+            if (isDark) {
+                btn.innerHTML = '<i class="fas fa-sun"></i> Light';
+            } else {
+                btn.innerHTML = '<i class="fas fa-moon"></i> Dark';
+            }
+
+            // Save preference
+            fetch('/reading/api/toggle-mode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `mode=${isDark ? 'dark' : 'light'}`
+            });
+        }
+
+        async function saveProgress() {
+            try {
+                const formData = new FormData();
+                formData.append('currentPage', pageNum);
+                formData.append('totalPages', pageCount);
+                formData.append('bookmarkData', JSON.stringify(getBookmarks()));
+
+                const response = await fetch(`/reading/api/progress/${bookId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to save progress');
+                }
+            } catch (error) {
+                console.error('Error saving progress:', error);
+            }
+        }
+
+        function saveBookmark() {
+            const bookmarks = getBookmarks();
+            const bookmark = {
+                page: pageNum,
+                timestamp: new Date().toISOString(),
+                note: prompt('Ghi chú cho bookmark (tùy chọn):') || ''
+            };
+
+            bookmarks.push(bookmark);
+            localStorage.setItem(`bookmarks_${bookId}`, JSON.stringify(bookmarks));
+
+            alert(`Đã lưu bookmark tại trang ${pageNum}`);
+        }
+
+        function getBookmarks() {
+            try {
+                const stored = localStorage.getItem(`bookmarks_${bookId}`);
+                return stored ? JSON.parse(stored) : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.style.display = show ? 'flex' : 'none';
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName.toLowerCase() === 'input') return;
+
+            switch(e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    previousPage();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    nextPage();
+                    break;
+                case 'Home':
+                    e.preventDefault();
+                    goToPage(1);
+                    break;
+                case 'End':
+                    e.preventDefault();
+                    goToPage(pageCount);
+                    break;
+                case '=':
+                case '+':
+                    e.preventDefault();
+                    zoomIn();
+                    break;
+                case '-':
+                    e.preventDefault();
+                    zoomOut();
+                    break;
+            }
+        });
+
+        // Save progress when leaving page
+        window.addEventListener('beforeunload', saveProgress);
+    </script>
+</body>
+</html>

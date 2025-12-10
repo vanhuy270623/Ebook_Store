@@ -29,7 +29,7 @@ import java.util.Optional;
  */
 @Controller
 @RequestMapping("/admin/coupons")
-public class AdminCouponController {
+public class AdminCouponController extends BaseAdminController {
 
     private static final String REDIRECT_COUPONS = "redirect:/admin/coupons";
 

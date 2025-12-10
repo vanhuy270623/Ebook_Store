@@ -62,6 +62,9 @@ public class User implements Serializable {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "restored_at")
+    private LocalDateTime restoredAt;
+
     @PrePersist
     protected void onCreate() {
         if (this.isActive == null) {
@@ -96,6 +99,7 @@ public class User implements Serializable {
     // Restore method
     public void restore() {
         this.deletedAt = null;
+        this.restoredAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gói Đăng Ký Của Tôi - Ebook Store</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 30px;
+        }
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .subscription-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .card-custom {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .active-subscription {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .active-subscription h3 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        .active-subscription .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .active-subscription .info-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .badge-status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        .badge-active {
+            background: #28a745;
+            color: white;
+        }
+        .badge-expired {
+            background: #dc3545;
+            color: white;
+        }
+        .badge-cancelled {
+            background: #6c757d;
+            color: white;
+        }
+        .history-card {
+            background: white;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        .history-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+        .history-card.expired {
+            border-left-color: #dc3545;
+            opacity: 0.7;
+        }
+        .history-card.cancelled {
+            border-left-color: #6c757d;
+            opacity: 0.6;
+        }
+        .btn-cancel {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+        }
+        .btn-cancel:hover {
+            background: #c82333;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-state i {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" th:href="@{/user/index}">
+                <i class="fas fa-book-reader me-2"></i>EbookStore
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/user/index}">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/books}">Sách</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/subscription/plans}">Gói VIP</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <a class="nav-link" th:href="@{/cart}">
+                            <i class="fas fa-shopping-cart"></i> Giỏ hàng
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> <span sec:authentication="name">User</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" th:href="@{/user/profile}"><i class="fas fa-user-circle"></i> Tài khoản</a></li>
+                            <li><a class="dropdown-item" th:href="@{/subscription/my-subscriptions}"><i class="fas fa-crown"></i> Gói của tôi</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" th:href="@{/auth/logout}"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a class="nav-link" th:href="@{/auth/login}">Đăng nhập</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fas fa-crown"></i> Gói Đăng Ký Của Tôi</h1>
+            <p class="mb-0">Quản lý gói đăng ký và lịch sử sử dụng</p>
+        </div>
+    </div>
+
+    <div class="subscription-container">
+        <!-- Alert Messages -->
+        <div th:if="${error}" class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span>
+        </div>
+        <div th:if="${success}" class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle"></i> <span th:text="${success}"></span>
+        </div>
+
+        <!-- Active Subscription -->
+        <div th:if="${activeSubscription}" class="active-subscription">
+            <h3><i class="fas fa-star"></i> Gói Đang Hoạt Động</h3>
+
+            <div class="info-row">
+                <span><strong>Tên gói:</strong></span>
+                <span th:text="${activeSubscription.subscription.packageName}" style="font-size: 1.3rem;"></span>
+            </div>
+
+            <div class="info-row">
+                <span><strong>Ngày bắt đầu:</strong></span>
+                <span th:text="${#temporals.format(activeSubscription.startDate, 'dd/MM/yyyy HH:mm')}"></span>
+            </div>
+
+            <div class="info-row">
+                <span><strong>Ngày hết hạn:</strong></span>
+                <span th:text="${#temporals.format(activeSubscription.endDate, 'dd/MM/yyyy HH:mm')}"></span>
+            </div>
+
+            <div class="info-row">
+                <span><strong>Còn lại:</strong></span>
+                <span>
+                    <span th:with="daysLeft=${T(java.time.temporal.ChronoUnit).DAYS.between(T(java.time.LocalDateTime).now(), activeSubscription.endDate)}">
+                        <span th:text="${daysLeft > 0 ? daysLeft + ' ngày' : 'Đã hết hạn'}"></span>
+                    </span>
+                </span>
+            </div>
+
+            <div class="mt-4">
+                <button class="btn btn-light btn-lg me-2"
+                        data-bs-toggle="modal"
+                        th:attr="data-bs-target='#cancelModal_' + ${activeSubscription.userSubscriptionId}">
+                    <i class="fas fa-times-circle"></i> Hủy gói
+                </button>
+                <a th:href="@{/subscription/plans}" class="btn btn-outline-light btn-lg">
+                    <i class="fas fa-arrow-up"></i> Nâng cấp
+                </a>
+            </div>
+
+            <!-- Cancel Confirmation Modal -->
+            <div class="modal fade" th:id="'cancelModal_' + ${activeSubscription.userSubscriptionId}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title text-dark">Xác nhận hủy gói</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-dark">
+                            <p>Bạn có chắc chắn muốn hủy gói đăng ký này?</p>
+                            <p class="text-danger"><strong>Lưu ý:</strong> Bạn sẽ không thể truy cập các tính năng của gói này sau khi hủy.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                            <form th:action="@{/subscription/cancel/{id}(id=${activeSubscription.userSubscriptionId})}" method="post">
+                                <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Active Subscription -->
+        <div th:unless="${activeSubscription}" class="alert alert-warning">
+            <h5><i class="fas fa-info-circle"></i> Bạn chưa có gói đăng ký nào đang hoạt động</h5>
+            <p class="mb-0">
+                <a th:href="@{/subscription/plans}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Đăng ký ngay
+                </a>
+            </p>
+        </div>
+
+        <!-- Subscription History -->
+        <div class="card-custom">
+            <div class="card-header bg-white p-4">
+                <h4 class="mb-0">
+                    <i class="fas fa-history"></i> Lịch Sử Đăng Ký
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <div th:if="${subscriptions == null or #lists.isEmpty(subscriptions)}" class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h5>Chưa có lịch sử đăng ký</h5>
+                    <p class="text-muted">Bạn chưa đăng ký gói nào</p>
+                </div>
+
+                <div th:if="${subscriptions != null and !#lists.isEmpty(subscriptions)}">
+                    <div th:each="sub : ${subscriptions}"
+                         th:class="${sub.status.name() == 'ACTIVE'} ? 'history-card' :
+                                   (${sub.status.name() == 'EXPIRED'} ? 'history-card expired' : 'history-card cancelled')">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <h5 class="mb-1" th:text="${sub.subscription.packageName}"></h5>
+                                <span class="badge-status"
+                                      th:class="${sub.status.name() == 'ACTIVE'} ? 'badge-status badge-active' :
+                                                (${sub.status.name() == 'EXPIRED'} ? 'badge-status badge-expired' : 'badge-status badge-cancelled')"
+                                      th:text="${sub.status.name() == 'ACTIVE' ? 'Đang hoạt động' :
+                                                (sub.status.name() == 'EXPIRED' ? 'Đã hết hạn' : 'Đã hủy')}">
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="row text-muted small">
+                                    <div class="col-6">
+                                        <i class="fas fa-calendar-plus"></i>
+                                        Bắt đầu: <span th:text="${#temporals.format(sub.startDate, 'dd/MM/yyyy')}"></span>
+                                    </div>
+                                    <div class="col-6">
+                                        <i class="fas fa-calendar-times"></i>
+                                        Kết thúc: <span th:text="${#temporals.format(sub.endDate, 'dd/MM/yyyy')}"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <span class="text-muted small" th:if="${sub.order}">
+                                    Mã đơn: <strong th:text="${sub.order.orderId}"></strong>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center mt-4">
+            <a th:href="@{/subscription/plans}" class="btn btn-primary btn-lg">
+                <i class="fas fa-shopping-cart"></i> Xem các gói đăng ký
+            </a>
+            <a th:href="@{/user/dashboard}" class="btn btn-outline-secondary btn-lg">
+                <i class="fas fa-home"></i> Về trang chủ
+            </a>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

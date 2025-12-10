@@ -46,6 +46,9 @@ public class SecurityConfig {
                         // === USER & ADMIN ACCESS ===
                         .requestMatchers(
                                 "/user/**", // All user routes
+                                "/payment/**", // Payment routes (VNPay, Bank Transfer)
+                                "/order/**", // Order routes
+                                "/cart/**", // Cart routes
                                 "/subscription/manage" // Manage subscription
                         ).hasAnyRole("USER", "ADMIN") // ⚠️ USER hoặc ADMIN
 

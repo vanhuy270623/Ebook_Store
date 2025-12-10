@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chờ xác nhận thanh toán - EbookStore</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
+    <style>
+        .waiting-icon {
+            font-size: 100px;
+            color: #ffc107;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -29px;
+            top: 5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #dee2e6;
+        }
+        .timeline-item.completed::before {
+            background: #28a745;
+            border-color: #28a745;
+        }
+        .timeline-item.active::before {
+            background: #ffc107;
+            border-color: #ffc107;
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+        .status-card {
+            border-left: 4px solid #ffc107;
+            background: #fff9e6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" th:href="@{/user/index}">
+                <i class="fas fa-book-reader me-2"></i>EbookStore
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/user/index}">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/books">Sách</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cart">
+                            <i class="fas fa-shopping-cart"></i> Giỏ hàng
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Back Button -->
+                <div class="mb-3">
+                    <a href="/order/history" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Danh sách đơn hàng
+                    </a>
+                </div>
+
+                <!-- Main Status Card -->
+                <div class="card shadow-lg text-center mb-4">
+                    <div class="card-body p-5">
+                        <div class="mb-4">
+                            <i class="fas fa-clock waiting-icon"></i>
+                        </div>
+                        <h2 class="text-warning mb-3">Chờ xác nhận thanh toán</h2>
+                        <p class="text-muted mb-4">
+                            Cảm ơn bạn đã xác nhận chuyển khoản. Đơn hàng của bạn đang được admin kiểm tra và xử lý.
+                        </p>
+
+                        <div class="status-card card mb-4">
+                            <div class="card-body">
+                                <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>Thông tin đơn hàng</h5>
+                                <div class="row text-start">
+                                    <div class="col-md-6 mb-2">
+                                        <strong>Mã đơn hàng:</strong><br>
+                                        <span class="text-primary" th:text="${order.orderId}">ORD001</span>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong>Tổng tiền:</strong><br>
+                                        <span class="text-danger fw-bold" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">1,000,000 đ</span>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong>Phương thức:</strong><br>
+                                        <span class="badge bg-info">Chuyển khoản ngân hàng</span>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong>Trạng thái:</strong><br>
+                                        <span class="badge bg-warning">Chờ xác nhận</span>
+                                    </div>
+                                    <div class="col-12 mt-2">
+                                        <strong>Thời gian đặt:</strong><br>
+                                        <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm:ss')}">07/12/2025 10:30:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Process -->
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Tiến trình xử lý đơn hàng</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <div class="timeline-item completed">
+                                <strong><i class="fas fa-check-circle text-success me-2"></i>Đặt hàng thành công</strong>
+                                <p class="text-muted small mb-0">Đơn hàng đã được tạo trong hệ thống</p>
+                            </div>
+
+                            <div class="timeline-item completed">
+                                <strong><i class="fas fa-qrcode text-success me-2"></i>Quét mã thanh toán</strong>
+                                <p class="text-muted small mb-0">Bạn đã xem thông tin thanh toán</p>
+                            </div>
+
+                            <div class="timeline-item completed">
+                                <strong><i class="fas fa-credit-card text-success me-2"></i>Xác nhận đã chuyển khoản</strong>
+                                <p class="text-muted small mb-0">Bạn đã xác nhận đã thực hiện chuyển khoản</p>
+                            </div>
+
+                            <div class="timeline-item active">
+                                <strong><i class="fas fa-user-shield text-warning me-2"></i>Admin đang kiểm tra</strong>
+                                <p class="text-muted small mb-0">Đơn hàng đang chờ admin xác nhận thanh toán</p>
+                                <div class="spinner-border spinner-border-sm text-warning mt-2" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+
+                            <div class="timeline-item">
+                                <strong><i class="far fa-check-circle text-muted me-2"></i>Xác nhận thanh toán</strong>
+                                <p class="text-muted small mb-0">Admin duyệt đơn hàng sau khi kiểm tra</p>
+                            </div>
+
+                            <div class="timeline-item">
+                                <strong><i class="far fa-book text-muted me-2"></i>Truy cập sách</strong>
+                                <p class="text-muted small mb-0">Bạn có thể đọc sách sau khi được duyệt</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <div class="card shadow mb-4" th:if="${orderItems != null and !orderItems.isEmpty()}">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-book me-2"></i>Chi tiết đơn hàng</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Sách</th>
+                                        <th>Tác giả</th>
+                                        <th class="text-end">Giá</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="item : ${orderItems}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img th:src="@{${item.book.coverImageUrl}}"
+                                                     th:alt="${item.book.title}"
+                                                     style="width: 40px; height: 56px; object-fit: cover; margin-right: 10px;"
+                                                     class="rounded">
+                                                <span th:text="${item.book.title}">Tên sách</span>
+                                            </div>
+                                        </td>
+                                        <td th:text="${item.book.firstAuthorName}">Tác giả</td>
+                                        <td class="text-end" th:text="${#numbers.formatDecimal(item.priceAtPurchase, 0, 'COMMA', 0, 'POINT')} + ' đ'">100,000 đ</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2" class="text-end">Tổng cộng:</th>
+                                        <th class="text-end text-danger" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">1,000,000 đ</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Important Notes -->
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Lưu ý quan trọng:</h6>
+                    <ul class="mb-0">
+                        <li>Thời gian xử lý: <strong>trong vòng 24 giờ</strong> (giờ làm việc)</li>
+                        <li>Bạn sẽ nhận được thông báo qua email khi đơn hàng được duyệt</li>
+                        <li>Có thể kiểm tra trạng thái đơn hàng trong phần "Đơn hàng của tôi"</li>
+                        <li>Nếu có vấn đề, vui lòng liên hệ: <strong>support@ebookstore.com</strong></li>
+                    </ul>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="/order/history" class="btn btn-primary">
+                        <i class="fas fa-list me-2"></i>Xem đơn hàng của tôi
+                    </a>
+                    <a href="/" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>Về trang chủ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2025 EbookStore. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        // Auto refresh page every 30 seconds to check for status updates
+        let refreshInterval = setInterval(function() {
+            location.reload();
+        }, 30000); // 30 seconds
+
+        // Stop auto refresh when user leaves the page
+        window.addEventListener('beforeunload', function() {
+            clearInterval(refreshInterval);
+        });
+
+        // Check order status via AJAX (optional)
+        function checkOrderStatus() {
+            const orderId = '[[${order.orderId}]]';
+            fetch('/order/api/status?orderId=' + orderId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.paymentStatus === 'PAID' || data.paymentStatus === 'COMPLETED') {
+                        window.location.href = '/payment/success?orderId=' + orderId;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking order status:', error);
+                });
+        }
+
+        // Check status every 10 seconds
+        setInterval(checkOrderStatus, 10000);
+    </script>
+</body>
+</html>
+

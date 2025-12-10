@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/admin/posts")
-public class AdminPostController {
+public class AdminPostController extends BaseAdminController {
 
     private static final String REDIRECT_POSTS = "redirect:/admin/posts";
 

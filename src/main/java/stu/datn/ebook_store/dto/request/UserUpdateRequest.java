@@ -30,7 +30,7 @@ public class UserUpdateRequest {
     @Size(max = 255, message = "Họ tên không được vượt quá 255 ký tự")
     private String fullName;
 
-    @Pattern(regexp = "^[0-9]{10,11}$", message = "Số điện thoại phải là 10-11 chữ số")
+    @Pattern(regexp = "^$|^[0-9]{10,11}$", message = "Số điện thoại phải là 10-11 chữ số")
     private String phone;
 
     @Size(max = 500, message = "URL avatar không được vượt quá 500 ký tự")

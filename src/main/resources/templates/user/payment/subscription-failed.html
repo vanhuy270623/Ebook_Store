@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh Toán Thất Bại - EbookStore</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #e53935 0%, #f44336 100%);
+            min-height: 100vh;
+        }
+        .failed-container {
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .failed-card {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 30px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .failed-icon {
+            font-size: 100px;
+            color: #dc3545;
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        .failed-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #dc3545;
+            margin: 20px 0;
+        }
+        .error-info {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        .btn-action {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" th:href="@{/user/index}">
+                <i class="fas fa-book-reader me-2"></i>EbookStore
+            </a>
+        </div>
+    </nav>
+
+    <div class="failed-container">
+        <div class="failed-card">
+            <div class="failed-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+
+            <h1 class="failed-title">Thanh Toán Thất Bại!</h1>
+
+            <p class="lead text-muted">Rất tiếc, giao dịch của bạn không thành công</p>
+
+            <div class="error-info">
+                <h6><strong><i class="fas fa-exclamation-triangle"></i> Lý do:</strong></h6>
+                <p class="mb-0" th:text="${errorMessage} ?: 'Có lỗi xảy ra trong quá trình thanh toán'">
+                    Có lỗi xảy ra trong quá trình thanh toán
+                </p>
+            </div>
+
+            <div th:if="${order}" class="alert alert-info">
+                <p class="mb-1"><strong>Mã đơn hàng:</strong> <span th:text="${order.orderId}">SUB_XXXXX</span></p>
+                <p class="mb-0"><strong>Gói:</strong> <span th:text="${order.subscription.packageName}">VIP</span></p>
+            </div>
+
+            <div class="alert alert-warning">
+                <i class="fas fa-info-circle"></i>
+                <strong>Lưu ý:</strong> Bạn có thể thử lại thanh toán hoặc chọn phương thức khác.
+            </div>
+
+            <div class="mt-4">
+                <a th:href="@{/subscription/plans}" class="btn btn-primary btn-action">
+                    <i class="fas fa-redo"></i> Thử Lại
+                </a>
+                <a th:href="@{/user/index}" class="btn btn-outline-secondary btn-action">
+                    <i class="fas fa-home"></i> Về Trang Chủ
+                </a>
+            </div>
+
+            <div class="mt-4">
+                <h6>Cần hỗ trợ?</h6>
+                <p class="text-muted small">
+                    Liên hệ: <a href="mailto:support@ebookstore.vn">support@ebookstore.vn</a> |
+                    Hotline: 1900 xxxx
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>
+

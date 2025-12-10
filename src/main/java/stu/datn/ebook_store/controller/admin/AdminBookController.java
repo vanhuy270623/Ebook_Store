@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin/books")
-public class AdminBookController {
+public class AdminBookController extends BaseAdminController {
 
     private final BookService bookService;
     private final BookCategoryRepository bookCategoryRepository;

@@ -29,7 +29,7 @@ import java.util.Optional;
  */
 @Controller
 @RequestMapping("/admin/subscriptions")
-public class AdminSubscriptionController {
+public class AdminSubscriptionController extends BaseAdminController {
 
     private static final String REDIRECT_SUBSCRIPTIONS = "redirect:/admin/subscriptions";
 
@@ -43,13 +43,6 @@ public class AdminSubscriptionController {
     }
 
     // ============================= HELPER METHODS =============================
-
-    /**
-     * Lấy thông tin user hiện tại từ Authentication
-     */
-    private User getCurrentUser(Authentication authentication) {
-        return (User) authentication.getPrincipal();
-    }
 
     /**
      * Sinh Subscription ID tự động theo format: "sub_XX"
@@ -90,7 +83,7 @@ public class AdminSubscriptionController {
      * GET /admin/subscriptions
      */
     @GetMapping
-    public String subscriptionsList(Authentication authentication, Model model) {
+    public String subscriptionsList(Model model) {
         List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
 
         model.addAttribute("subscriptions", subscriptions);
@@ -135,7 +128,6 @@ public class AdminSubscriptionController {
     public String createSubscription(
             @Valid @ModelAttribute("subscriptionRequest") SubscriptionCreateRequest subscriptionRequest,
             BindingResult result,
-            Authentication authentication,
             RedirectAttributes redirectAttributes,
             Model model) {
 
@@ -199,7 +191,6 @@ public class AdminSubscriptionController {
             @PathVariable String id,
             @Valid @ModelAttribute("subscriptionRequest") SubscriptionUpdateRequest subscriptionRequest,
             BindingResult result,
-            Authentication authentication,
             RedirectAttributes redirectAttributes,
             Model model) {
 

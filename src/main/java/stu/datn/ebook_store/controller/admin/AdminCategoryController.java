@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/admin/categories")
-public class AdminCategoryController {
+public class AdminCategoryController extends BaseAdminController {
 
     private static final String REDIRECT_CATEGORIES = "redirect:/admin/categories";
 

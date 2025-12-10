@@ -19,6 +19,10 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
 
     List<OrderItem> findByOrder_OrderId(String orderId);
 
+    // Fetch join to eagerly load Book and avoid LazyInitializationException
+    @Query("SELECT oi FROM OrderItem oi JOIN FETCH oi.book b LEFT JOIN FETCH b.authors WHERE oi.order.orderId = :orderId")
+    List<OrderItem> findByOrderIdWithBook(@Param("orderId") String orderId);
+
     List<OrderItem> findByBook_BookId(String bookId);
 }
 

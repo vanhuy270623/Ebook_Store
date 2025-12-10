@@ -16,6 +16,7 @@ public interface UserService {
     long getActiveUsersCount();
     long getVerifiedUsersCount();
     long getAdminUsersCount();
+    long getAllAdminsCountIncludingDeleted(); // Count all admins including deleted ones
     java.util.List<User> getRecentUsers(int limit);
     java.util.List<User> getAllUsers();
     java.util.Optional<User> getUserById(String userId);

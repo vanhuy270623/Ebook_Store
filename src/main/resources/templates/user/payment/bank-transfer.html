@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Thanh toán chuyển khoản - EbookStore</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
+    <style>
+        .qr-code-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .qr-code-img {
+            max-width: 300px;
+            width: 100%;
+            height: auto;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            background: white;
+        }
+        .bank-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .copy-btn {
+            cursor: pointer;
+            color: #007bff;
+            margin-left: 10px;
+        }
+        .copy-btn:hover {
+            color: #0056b3;
+        }
+        .step-indicator {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" th:href="@{/user/index}">
+                <i class="fas fa-book-reader me-2"></i>EbookStore
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/user/index}">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/books">Sách</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cart">
+                            <i class="fas fa-shopping-cart"></i> Giỏ hàng
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Back Button -->
+                <div class="mb-3">
+                    <a href="/order/history" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Quay lại
+                    </a>
+                </div>
+
+                <h2 class="text-center mb-4">
+                    <i class="fas fa-qrcode me-2"></i>Thanh toán chuyển khoản ngân hàng
+                </h2>
+
+                <div class="row">
+                    <!-- QR Code Section -->
+                    <div class="col-md-6">
+                        <div class="qr-code-container">
+                            <h5 class="mb-3"><i class="fas fa-mobile-alt me-2"></i>Quét mã QR để thanh toán</h5>
+
+                            <!-- QR Code Image with error handling -->
+                            <div th:if="${qrCodeUrl != null and !qrCodeUrl.isEmpty()}">
+                                <img th:src="${qrCodeUrl}"
+                                     alt="QR Code"
+                                     class="qr-code-img"
+                                     id="qrCodeImage"
+                                     onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2Yzc1N2QiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5RUiBDb2RlPC90ZXh0Pjwvc3ZnPg=='; this.style.border='2px solid #dc3545';"
+                                     onload="console.log('QR Code loaded successfully');">
+                            </div>
+
+                            <!-- Debug info (remove in production) -->
+                            <div th:if="${qrCodeUrl == null or qrCodeUrl.isEmpty()}" class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Không thể tạo mã QR</strong>
+                                <p class="mb-0 small">URL QR Code trống hoặc không hợp lệ</p>
+                            </div>
+
+                            <!-- Show URL for debugging -->
+                            <div class="mt-2">
+                                <small class="text-muted d-none" id="qrDebug">
+                                    QR URL: <span th:text="${qrCodeUrl}">N/A</span>
+                                </small>
+                            </div>
+
+                            <p class="text-muted mt-3 small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Sử dụng ứng dụng ngân hàng để quét mã
+                            </p>
+                        </div>
+
+                        <!-- Order Summary -->
+                        <div class="card mt-4" th:if="${order}">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Thông tin đơn hàng</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="info-row">
+                                    <span class="text-muted">Mã đơn hàng:</span>
+                                    <strong th:text="${order.orderId}">ORD001</strong>
+                                </div>
+                                <div class="info-row">
+                                    <span class="text-muted">Số tiền:</span>
+                                    <strong class="text-danger" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">1,000,000 đ</strong>
+                                </div>
+                                <div class="info-row">
+                                    <span class="text-muted">Phương thức:</span>
+                                    <span class="badge bg-info">Chuyển khoản</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bank Info & Instructions -->
+                    <div class="col-md-6">
+                        <div class="bank-info">
+                            <h5 class="mb-3"><i class="fas fa-university me-2"></i>Thông tin chuyển khoản</h5>
+
+                            <div class="info-row">
+                                <span class="text-muted">Ngân hàng:</span>
+                                <strong>
+                                    <span th:text="${bankName}">Vietcombank</span>
+                                    <i class="fas fa-copy copy-btn" onclick="copyToClipboard(this, '[[${bankName}]]')" title="Sao chép"></i>
+                                </strong>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="text-muted">Chi nhánh:</span>
+                                <strong>
+                                    <span th:text="${bankBranch}">Chi nhánh TP.HCM</span>
+                                </strong>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="text-muted">Số tài khoản:</span>
+                                <strong>
+                                    <span th:text="${bankAccountNumber}">1234567890</span>
+                                    <i class="fas fa-copy copy-btn" onclick="copyToClipboard(this, '[[${bankAccountNumber}]]')" title="Sao chép"></i>
+                                </strong>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="text-muted">Chủ tài khoản:</span>
+                                <strong>
+                                    <span th:text="${bankAccountName}">CONG TY EBOOK STORE</span>
+                                </strong>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="text-muted">Số tiền:</span>
+                                <strong class="text-danger">
+                                    <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">1,000,000 đ</span>
+                                    <i class="fas fa-copy copy-btn" onclick="copyToClipboard(this, '[[${order.totalAmount}]]')" title="Sao chép"></i>
+                                </strong>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="text-muted">Nội dung CK:</span>
+                                <strong>
+                                    <span th:text="${transferContent}">EBOOKSTORE ORD001</span>
+                                    <i class="fas fa-copy copy-btn" onclick="copyToClipboard(this, '[[${transferContent}]]')" title="Sao chép"></i>
+                                </strong>
+                            </div>
+                        </div>
+
+                        <!-- Instructions -->
+                        <div class="mt-4">
+                            <h5 class="mb-3"><i class="fas fa-list-ol me-2"></i>Hướng dẫn thanh toán</h5>
+
+                            <div class="step-indicator">
+                                <strong><i class="fas fa-mobile-alt me-2"></i>Bước 1:</strong>
+                                Mở ứng dụng ngân hàng trên điện thoại
+                            </div>
+
+                            <div class="step-indicator">
+                                <strong><i class="fas fa-qrcode me-2"></i>Bước 2:</strong>
+                                Quét mã QR ở bên trái hoặc nhập thông tin chuyển khoản
+                            </div>
+
+                            <div class="step-indicator">
+                                <strong><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Bước 3:</strong>
+                                Kiểm tra kỹ thông tin và <strong>nội dung chuyển khoản</strong>
+                            </div>
+
+                            <div class="step-indicator">
+                                <strong><i class="fas fa-credit-card me-2"></i>Bước 4:</strong>
+                                Xác nhận thanh toán trên ứng dụng ngân hàng
+                            </div>
+
+                            <div class="step-indicator">
+                                <strong><i class="fas fa-check-circle me-2"></i>Bước 5:</strong>
+                                Sau khi chuyển khoản thành công, bấm nút bên dưới
+                            </div>
+                        </div>
+
+                        <!-- Confirm Button -->
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="button"
+                                    class="btn btn-success btn-lg"
+                                    id="confirmBtn"
+                                    onclick="confirmTransfer()">
+                                <i class="fas fa-check-circle me-2"></i>Tôi đã chuyển khoản
+                            </button>
+                        </div>
+
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Lưu ý:</strong> Đơn hàng sẽ được admin xác nhận trong vòng 24h.
+                            Bạn sẽ nhận được thông báo khi đơn hàng được duyệt.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <div class="card mt-4" th:if="${orderItems != null and !orderItems.isEmpty()}">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-book me-2"></i>Chi tiết đơn hàng</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Sách</th>
+                                        <th>Tác giả</th>
+                                        <th class="text-end">Giá</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="item : ${orderItems}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img th:src="@{${item.book.coverImageUrl}}"
+                                                     th:alt="${item.book.title}"
+                                                     style="width: 40px; height: 56px; object-fit: cover; margin-right: 10px;"
+                                                     class="rounded">
+                                                <span th:text="${item.book.title}">Tên sách</span>
+                                            </div>
+                                        </td>
+                                        <td th:text="${item.book.firstAuthorName}">Tác giả</td>
+                                        <td class="text-end" th:text="${#numbers.formatDecimal(item.priceAtPurchase, 0, 'COMMA', 0, 'POINT')} + ' đ'">100,000 đ</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2" class="text-end">Tổng cộng:</th>
+                                        <th class="text-end text-danger" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">1,000,000 đ</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2025 EbookStore. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+    <script th:inline="javascript">
+        // Debug QR Code
+        /*<![CDATA[*/
+        var qrCodeUrl = /*[[${qrCodeUrl}]]*/ '';
+        console.log('QR Code URL:', qrCodeUrl);
+
+        // Check if QR image loads
+        window.addEventListener('DOMContentLoaded', function() {
+            var qrImage = document.getElementById('qrCodeImage');
+            if (qrImage) {
+                console.log('QR Image element found');
+                console.log('QR Image src:', qrImage.src);
+
+                // Add load event listener
+                qrImage.addEventListener('load', function() {
+                    console.log('QR Image loaded successfully!');
+                });
+
+                // Add error event listener
+                qrImage.addEventListener('error', function() {
+                    console.error('QR Image failed to load!');
+                    console.error('Failed URL:', qrImage.src);
+
+                    // Show debug info
+                    var debugDiv = document.getElementById('qrDebug');
+                    if (debugDiv) {
+                        debugDiv.classList.remove('d-none');
+                    }
+                });
+            } else {
+                console.error('QR Image element not found!');
+            }
+        });
+        /*]]*/
+
+        // Copy to clipboard function
+        function copyToClipboard(element, text) {
+            navigator.clipboard.writeText(text).then(function() {
+                // Show success feedback
+                const originalIcon = element.className;
+                element.className = 'fas fa-check copy-btn text-success';
+
+                setTimeout(function() {
+                    element.className = originalIcon;
+                }, 1500);
+
+                // Show toast notification
+                showToast('Đã sao chép vào clipboard!', 'success');
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+                showToast('Không thể sao chép', 'error');
+            });
+        }
+
+        // Confirm transfer function
+        function confirmTransfer() {
+            /*<![CDATA[*/
+            const orderId = /*[[${order.orderId}]]*/ 'default_order_id';
+            /*]]*/
+
+            console.log('Confirming transfer for orderId:', orderId);
+
+            const confirmBtn = document.getElementById('confirmBtn');
+
+            // Validate orderId
+            if (!orderId || orderId === 'default_order_id' || orderId.trim() === '') {
+                console.error('Invalid orderId:', orderId);
+                showToast('Lỗi: Không tìm thấy mã đơn hàng', 'error');
+                return;
+            }
+
+            // Disable button and show loading
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+
+            // Get CSRF token
+            const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+            console.log('CSRF Token:', token ? 'Found' : 'Not found');
+            console.log('CSRF Header:', header);
+
+            // Prepare headers
+            const headers = {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            };
+
+            // Add CSRF token if exists
+            if (token && header) {
+                headers[header] = token;
+            }
+
+            // Build URL with proper encoding
+            const url = '/payment/bank-transfer/confirm?orderId=' + encodeURIComponent(orderId);
+            console.log('Request URL:', url);
+
+            // Send AJAX request
+            fetch(url, {
+                method: 'POST',
+                headers: headers,
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    // Redirect after 1 second
+                    setTimeout(function() {
+                        window.location.href = data.redirectUrl;
+                    }, 1000);
+                } else {
+                    showToast(data.message, 'error');
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Tôi đã chuyển khoản';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Có lỗi xảy ra. Vui lòng thử lại. Chi tiết: ' + error.message, 'error');
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Tôi đã chuyển khoản';
+            });
+        }
+
+        // Toast notification function
+        function showToast(message, type) {
+            const toastHtml = `
+                <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0"
+                     role="alert" aria-live="assertive" aria-atomic="true"
+                     style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+
+            const toastElement = document.createRange().createContextualFragment(toastHtml).firstElementChild;
+            document.body.appendChild(toastElement);
+
+            const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+            toast.show();
+
+            toastElement.addEventListener('hidden.bs.toast', function () {
+                toastElement.remove();
+            });
+        }
+    </script>
+</body>
+</html>
+

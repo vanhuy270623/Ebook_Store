@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/admin/authors")
-public class AdminAuthorController {
+public class AdminAuthorController extends BaseAdminController {
 
     private static final String REDIRECT_AUTHORS = "redirect:/admin/authors";
 

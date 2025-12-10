@@ -148,6 +148,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
+    public long getAllAdminsCountIncludingDeleted() {
+        return userRepository.countAllByRoleName(Role.RoleName.ADMIN);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<User> getRecentUsers(int limit) {
         return userRepository.findTopActiveUsersOrderByCreatedAtDesc(
             org.springframework.data.domain.PageRequest.of(0, limit));

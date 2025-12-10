@@ -76,7 +76,7 @@
                                                 <div>
                                                     <strong th:text="${item.book.title}">Tên sách</strong>
                                                     <br>
-                                                    <small class="text-muted" th:text="${item.book.bookAuthor?.author?.authorName}">Tác giả</small>
+                                                    <small class="text-muted" th:text="${item.book.firstAuthorName}">Tác giả</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -123,17 +123,20 @@
                             <!-- Payment Method -->
                             <div class="mb-3">
                                 <label class="form-label">Phương thức thanh toán *</label>
-                                <div class="form-check">
+                                <div class="form-check mb-2">
                                     <input class="form-check-input" type="radio" name="paymentMethod" id="vnpay" value="VNPAY" checked>
                                     <label class="form-check-label" for="vnpay">
                                         <i class="fas fa-credit-card text-primary"></i> VNPay (Thẻ ATM, Visa, Mastercard)
                                     </label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="paymentMethod" id="momo" value="MOMO">
-                                    <label class="form-check-label" for="momo">
-                                        <i class="fas fa-mobile-alt text-danger"></i> MoMo
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="bankTransfer" value="BANK_TRANSFER">
+                                    <label class="form-check-label" for="bankTransfer">
+                                        <i class="fas fa-qrcode text-success"></i> Chuyển khoản ngân hàng (Quét mã QR)
                                     </label>
+                                    <small class="d-block text-muted ms-4">
+                                        <i class="fas fa-info-circle"></i> Quét mã QR bằng app ngân hàng để thanh toán nhanh chóng
+                                    </small>
                                 </div>
                             </div>
                         </form>

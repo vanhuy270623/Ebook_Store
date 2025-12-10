@@ -26,6 +26,43 @@
 			cursor: help;
 			border-bottom: 1px dashed #999;
 		}
+
+		/* Đảm bảo icon sắp xếp hiển thị cho cột "Ngày tạo" */
+		table.dataTable thead .sorting,
+		table.dataTable thead .sorting_asc,
+		table.dataTable thead .sorting_desc {
+			cursor: pointer;
+			position: relative;
+		}
+
+		table.dataTable thead .sorting:after,
+		table.dataTable thead .sorting_asc:after,
+		table.dataTable thead .sorting_desc:after {
+			position: absolute;
+			bottom: 8px;
+			right: 8px;
+			display: block;
+			font-family: 'Glyphicons Halflings';
+			opacity: 0.5;
+		}
+
+		table.dataTable thead .sorting:after {
+			content: "\e150"; /* icon sort */
+			opacity: 0.2;
+		}
+
+		table.dataTable thead .sorting_asc:after {
+			content: "\e155"; /* icon sort-by-attributes */
+		}
+
+		table.dataTable thead .sorting_desc:after {
+			content: "\e156"; /* icon sort-by-attributes-alt */
+		}
+
+		/* Ẩn icon cho các cột không thể sắp xếp */
+		table.dataTable thead th:not(.sorting):not(.sorting_asc):not(.sorting_desc) {
+			cursor: default;
+		}
 	</style>
 </head>
 <body class="hold-transition skin-blue sidebar-mini">
@@ -293,12 +330,49 @@
 <th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
 <script src="/admin_template/plugins/datatables/jquery.dataTables.min.js"></script>
 <script src="/admin_template/plugins/datatables/dataTables.bootstrap.min.js"></script>
-<script>
-	// Chỉ giữ lại mỗi script khởi tạo DataTable, không còn logic xử lý nút bấm
+<script th:inline="none">
 	$(document).ready(function() {
+		// Lấy giá trị showDeleted từ URL params hoặc từ checkbox
+		var urlParams = new URLSearchParams(window.location.search);
+		var showDeleted = urlParams.get('showDeleted') === 'true';
+
+		// Xác định các cột không được sắp xếp (tất cả trừ cột "Ngày tạo")
+		var nonSortableColumns = [0, 1, 2, 3]; // Avatar, Thông tin, Email & Trạng thái, Vai trò
+		if (showDeleted) {
+			nonSortableColumns.push(5); // Trạng thái xóa
+			nonSortableColumns.push(6); // Thao tác
+		} else {
+			nonSortableColumns.push(5); // Thao tác
+		}
+
 		$('#usersTable').DataTable({
-			"language": { "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json" },
-			"searching": false
+			"paging": true,
+			"lengthChange": true,
+			"searching": false,
+			"ordering": true,
+			"info": true,
+			"autoWidth": false,
+			"pageLength": 25,
+			"order": [[4, "desc"]], // Sắp xếp mặc định theo cột "Ngày tạo" (index 4) giảm dần
+			"columnDefs": [
+				{
+					"orderable": false,
+					"targets": nonSortableColumns // Tắt sắp xếp tất cả các cột trừ "Ngày tạo"
+				},
+				{
+					"orderable": true,
+					"targets": 4 // Chỉ bật sắp xếp cho cột "Ngày tạo" (index 4)
+				}
+			],
+			"language": {
+				"url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
+			}
+		});
+
+		// Debug: Kiểm tra xem các class đã được apply chưa
+		console.log('DataTable initialized - sorting enabled for column 4 (Ngày tạo)');
+		$('#usersTable thead th').each(function(index) {
+			console.log('Column ' + index + ' classes:', $(this).attr('class'));
 		});
 	});
 </script>

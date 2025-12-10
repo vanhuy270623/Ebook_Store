@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/admin/reviews")
-public class AdminReviewController {
+public class AdminReviewController extends BaseAdminController {
 
     private static final String REDIRECT_REVIEWS = "redirect:/admin/reviews";
 

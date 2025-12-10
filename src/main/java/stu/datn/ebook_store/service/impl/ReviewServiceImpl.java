@@ -130,6 +130,11 @@ public class ReviewServiceImpl implements ReviewService {
         }
     }
 
+    @Override
+    public long getTotalReviewsCount() {
+        return reviewRepository.count();
+    }
+
     private String generateReviewId() {
         long count = reviewRepository.count();
         return "review_" + System.currentTimeMillis() + "_" + (count + 1);

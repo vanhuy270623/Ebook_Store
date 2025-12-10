@@ -332,7 +332,32 @@
 												</li>
 											</th:block>
 
-											<!-- Sự kiện CẬP NHẬT GÌN NHẤT (nếu khác created) -->
+											<!-- Sự kiện KHÔI PHỤC TÀI KHOẢN (nếu có) -->
+											<th:block th:if="${user.restoredAt != null && user.deletedAt == null}">
+												<li class="time-label">
+													<span class="bg-green" th:text="${#temporals.format(user.restoredAt, 'dd/MM/yyyy')}">Ngày khôi phục</span>
+												</li>
+												<li>
+													<i class="fa fa-undo bg-green"></i>
+													<div class="timeline-item">
+														<span class="time"><i class="fa fa-clock-o"></i>
+															<span th:text="${#temporals.format(user.restoredAt, 'HH:mm')}">15:30</span>
+														</span>
+														<h3 class="timeline-header" style="background-color: #d4edda; color: #155724; padding: 5px 10px; border-radius: 3px;">
+															<strong>Tài khoản đã được khôi phục</strong>
+														</h3>
+														<div class="timeline-body">
+															<div class="alert alert-success" style="margin-bottom: 0;">
+																<i class="fa fa-check-circle"></i>
+																<strong>Tài khoản đã được khôi phục thành công.</strong><br>
+																<small>Người dùng có thể tiếp tục sử dụng tài khoản như bình thường.</small>
+															</div>
+														</div>
+													</div>
+												</li>
+											</th:block>
+
+											<!-- Sự kiện CẬP NHẬT GẦN NHẤT (nếu khác created) -->
 											<th:block th:if="${user.updatedAt != null && user.deletedAt == null && !#temporals.format(user.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm'))}">
 												<li class="time-label">
 													<span class="bg-blue" th:text="${#temporals.format(user.updatedAt, 'dd/MM/yyyy')}">Ngày cập nhật</span>

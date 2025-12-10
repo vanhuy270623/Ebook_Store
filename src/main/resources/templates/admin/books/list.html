@@ -4,6 +4,44 @@
 	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
 	<!-- DataTables CSS -->
 	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.min.css">
+	<style>
+		/* Đảm bảo icon sắp xếp hiển thị cho các cột có thể sắp xếp */
+		table.dataTable thead .sorting,
+		table.dataTable thead .sorting_asc,
+		table.dataTable thead .sorting_desc {
+			cursor: pointer;
+			position: relative;
+		}
+
+		table.dataTable thead .sorting:after,
+		table.dataTable thead .sorting_asc:after,
+		table.dataTable thead .sorting_desc:after {
+			position: absolute;
+			bottom: 8px;
+			right: 8px;
+			display: block;
+			font-family: 'Glyphicons Halflings';
+			opacity: 0.5;
+		}
+
+		table.dataTable thead .sorting:after {
+			content: "\e150"; /* icon sort */
+			opacity: 0.2;
+		}
+
+		table.dataTable thead .sorting_asc:after {
+			content: "\e155"; /* icon sort-by-attributes */
+		}
+
+		table.dataTable thead .sorting_desc:after {
+			content: "\e156"; /* icon sort-by-attributes-alt */
+		}
+
+		/* Ẩn icon cho các cột không thể sắp xếp */
+		table.dataTable thead th:not(.sorting):not(.sorting_asc):not(.sorting_desc) {
+			cursor: default;
+		}
+	</style>
 </head>
 <body class="hold-transition skin-blue sidebar-mini">
 <div class="wrapper">
@@ -146,20 +184,37 @@
 <!-- DataTables -->
 <script src="/admin_template/plugins/datatables/jquery.dataTables.min.js"></script>
 <script src="/admin_template/plugins/datatables/dataTables.bootstrap.min.js"></script>
-<script>
+<script th:inline="none">
 	$(document).ready(function() {
 		// Khởi tạo DataTable
-		$('#booksTable').DataTable({
+		var table = $('#booksTable').DataTable({
 			"paging": true,
 			"lengthChange": true,
-			"searching": false, // Nếu bạn muốn dùng form tìm kiếm server-side thì tắt cái này là đúng
+			"searching": false,
 			"ordering": true,
 			"info": true,
 			"autoWidth": false,
 			"pageLength": 25,
+			"order": [[7, 'desc']], // Sắp xếp mặc định theo ngày tạo giảm dần
+			"columnDefs": [
+				{
+					"orderable": false,
+					"targets": [0, 1, 2, 3, 4, 6, 8] // Tắt sắp xếp các cột này
+				},
+				{
+					"orderable": true,
+					"targets": [5, 7] // Chỉ bật sắp xếp cho Đánh giá và Ngày tạo
+				}
+			],
 			"language": {
 				"url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
 			}
+		});
+
+		// Debug: Kiểm tra xem các class đã được apply chưa
+		console.log('DataTable initialized');
+		$('#booksTable thead th').each(function(index) {
+			console.log('Column ' + index + ' classes:', $(this).attr('class'));
 		});
 
 		// --- SỬA LẠI PHẦN NÀY ---

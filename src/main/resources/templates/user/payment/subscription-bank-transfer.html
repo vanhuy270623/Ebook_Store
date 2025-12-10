@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuyển Khoản - EbookStore</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .bank-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .card-custom {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card-header-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        .card-body {
+            padding: 30px;
+        }
+        .bank-info {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        .bank-info .row {
+            margin-bottom: 15px;
+        }
+        .bank-info .row:last-child {
+            margin-bottom: 0;
+        }
+        .bank-info strong {
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+        .bank-info .value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .copy-btn {
+            cursor: pointer;
+            color: #667eea;
+            margin-left: 10px;
+        }
+        .copy-btn:hover {
+            color: #764ba2;
+        }
+        .qr-code {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .qr-code img {
+            max-width: 300px;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            padding: 10px;
+            background: white;
+        }
+        .instructions {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .order-info {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" th:href="@{/user/index}">
+                <i class="fas fa-book-reader me-2"></i>EbookStore
+            </a>
+        </div>
+    </nav>
+
+    <div class="bank-container">
+        <h1 class="text-white text-center mb-4">
+            <i class="fas fa-university"></i> Chuyển Khoản Ngân Hàng
+        </h1>
+
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <i class="fas fa-info-circle"></i> Thông Tin Đơn Hàng
+            </div>
+            <div class="card-body">
+                <div class="order-info">
+                    <div class="row">
+                        <div class="col-4"><strong>Mã đơn hàng:</strong></div>
+                        <div class="col-8">
+                            <span th:text="${order.orderId}" id="orderId"></span>
+                            <i class="fas fa-copy copy-btn" onclick="copyText('orderId')" title="Sao chép"></i>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>Gói đăng ký:</strong></div>
+                        <div class="col-8" th:text="${order.subscription.packageName}"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>Số tiền:</strong></div>
+                        <div class="col-8">
+                            <span class="text-danger fw-bold">
+                                <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')}"></span>đ
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <i class="fas fa-credit-card"></i> Thông Tin Chuyển Khoản
+            </div>
+            <div class="card-body">
+                <div class="bank-info">
+                    <div class="row">
+                        <div class="col-4"><strong>Ngân hàng:</strong></div>
+                        <div class="col-8">
+                            <span class="value">TPBank</span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>Số tài khoản:</strong></div>
+                        <div class="col-8">
+                            <span class="value" id="accountNumber">79992706999</span>
+                            <i class="fas fa-copy copy-btn" onclick="copyText('accountNumber')" title="Sao chép"></i>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>Chủ tài khoản:</strong></div>
+                        <div class="col-8">
+                            <span class="value">CONG TY EBOOK STORE</span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>Chi nhánh:</strong></div>
+                        <div class="col-8">
+                            <span class="value">TP. Hồ Chí Minh</span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>Số tiền:</strong></div>
+                        <div class="col-8">
+                            <span class="value text-danger" id="amount"
+                                  th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'"></span>
+                            <i class="fas fa-copy copy-btn" onclick="copyText('amount')" title="Sao chép"></i>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>Nội dung:</strong></div>
+                        <div class="col-8">
+                            <span class="value" id="content" th:text="'SUB ' + ${order.orderId}"></span>
+                            <i class="fas fa-copy copy-btn" onclick="copyText('content')" title="Sao chép"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QR Code -->
+                <div class="qr-code">
+                    <h5><i class="fas fa-qrcode"></i> Quét mã QR để chuyển khoản</h5>
+                    <img th:src="@{'https://img.vietqr.io/image/TP-79992706999-compact2.png?amount=' + ${order.totalAmount} + '&addInfo=SUB%20' + ${order.orderId} + '&accountName=CONG%20TY%20EBOOK%20STORE'}"
+                         alt="QR Code"
+                         onerror="this.style.display='none'"/>
+                    <p class="text-muted mt-2">
+                        <small>Sử dụng ứng dụng ngân hàng để quét mã QR</small>
+                    </p>
+                </div>
+
+                <!-- Instructions -->
+                <div class="instructions">
+                    <h6><i class="fas fa-list-ol"></i> <strong>Hướng dẫn:</strong></h6>
+                    <ol>
+                        <li>Mở ứng dụng ngân hàng của bạn</li>
+                        <li>Quét mã QR hoặc nhập thông tin chuyển khoản theo thông tin trên</li>
+                        <li><strong>Quan trọng:</strong> Nhập đúng nội dung chuyển khoản để hệ thống tự động xác nhận</li>
+                        <li>Hoàn tất giao dịch</li>
+                        <li>Gói của bạn sẽ được kích hoạt sau khi hệ thống xác nhận thanh toán (5-15 phút)</li>
+                    </ol>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-clock"></i>
+                    <strong>Lưu ý:</strong> Đơn hàng sẽ tự động hủy sau 24 giờ nếu không nhận được thanh toán.
+                </div>
+
+                <div class="text-center mt-4">
+                    <a th:href="@{/subscription/my-subscriptions}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-check"></i> Tôi đã chuyển khoản
+                    </a>
+                    <a th:href="@{/subscription/plans}" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-times"></i> Hủy
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        function copyText(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+
+            navigator.clipboard.writeText(text).then(() => {
+                const icon = element.nextElementSibling;
+                icon.className = 'fas fa-check copy-btn';
+                icon.style.color = '#28a745';
+
+                setTimeout(() => {
+                    icon.className = 'fas fa-copy copy-btn';
+                    icon.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Không thể sao chép:', err);
+            });
+        }
+    </script>
+</body>
+</html>
+

@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/admin/orders")
-public class AdminOrderController {
+public class AdminOrderController extends BaseAdminController {
 
     private static final String REDIRECT_ORDERS = "redirect:/admin/orders";
 
@@ -96,14 +96,19 @@ public class AdminOrderController {
         long pendingOrders = orders.stream()
                 .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.PENDING)
                 .count();
+        long waitingApprovalOrders = orders.stream()
+                .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.WAITING_APPROVAL)
+                .count();
         long completedOrders = orders.stream()
-                .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.COMPLETED)
+                .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.COMPLETED
+                          || o.getPaymentStatus() == Order.PaymentStatus.PAID)
                 .count();
         long failedOrders = orders.stream()
                 .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.FAILED)
                 .count();
 
         model.addAttribute("pendingOrders", pendingOrders);
+        model.addAttribute("waitingApprovalOrders", waitingApprovalOrders);
         model.addAttribute("completedOrders", completedOrders);
         model.addAttribute("failedOrders", failedOrders);
 
@@ -155,7 +160,28 @@ public class AdminOrderController {
                 return REDIRECT_ORDERS;
             }
 
+            Order order = orderOpt.get();
             Order.PaymentStatus newStatus = Order.PaymentStatus.valueOf(status);
+
+            // Nếu chuyển sang COMPLETED và là subscription order, kích hoạt subscription
+            if (newStatus == Order.PaymentStatus.COMPLETED
+                && order.getOrderType() == Order.OrderType.SUBSCRIPTION
+                && order.getSubscription() != null
+                && order.getStartDate() == null) { // Chỉ kích hoạt nếu chưa có start_date
+
+                LocalDateTime now = LocalDateTime.now();
+                order.setStartDate(now);
+
+                // Tính end_date dựa trên duration của subscription
+                int durationDays = order.getSubscription().getDurationDays();
+                LocalDateTime endDate = now.plusDays(durationDays);
+                order.setEndDate(endDate);
+
+                System.out.println("Admin approved subscription - Order: " + id +
+                                 ", Plan: " + order.getSubscription().getPackageName() +
+                                 ", End date: " + endDate);
+            }
+
             orderService.updateOrderStatus(id, newStatus);
 
             redirectAttributes.addFlashAttribute("success",
@@ -283,6 +309,101 @@ public class AdminOrderController {
 
             response.put("success", true);
             response.put("message", "Cập nhật thành công");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Có lỗi xảy ra: " + e.getMessage());
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    /**
+     * Duyệt đơn hàng chuyển khoản (AJAX)
+     * POST /admin/orders/approve/{id}
+     */
+    @PostMapping("/approve/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> approveOrder(
+            @PathVariable String id,
+            Authentication authentication) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Optional<Order> orderOpt = orderService.getOrderById(id);
+            if (orderOpt.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy đơn hàng");
+                return ResponseEntity.ok(response);
+            }
+
+            Order order = orderOpt.get();
+
+            // Kiểm tra trạng thái hiện tại
+            if (order.getPaymentStatus() != Order.PaymentStatus.WAITING_APPROVAL) {
+                response.put("success", false);
+                response.put("message", "Đơn hàng không ở trạng thái chờ duyệt");
+                return ResponseEntity.ok(response);
+            }
+
+            // Cập nhật trạng thái thành PAID
+            order.setPaymentStatus(Order.PaymentStatus.PAID);
+            orderService.saveOrder(order);
+
+            // TODO: Gửi email thông báo cho khách hàng (nếu có email service)
+            // emailService.sendPaymentApprovedEmail(order);
+
+            response.put("success", true);
+            response.put("message", "Đã duyệt đơn hàng thành công");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Có lỗi xảy ra: " + e.getMessage());
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    /**
+     * Từ chối đơn hàng chuyển khoản (AJAX)
+     * POST /admin/orders/reject/{id}
+     */
+    @PostMapping("/reject/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> rejectOrder(
+            @PathVariable String id,
+            @RequestParam(required = false) String reason,
+            Authentication authentication) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Optional<Order> orderOpt = orderService.getOrderById(id);
+            if (orderOpt.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy đơn hàng");
+                return ResponseEntity.ok(response);
+            }
+
+            Order order = orderOpt.get();
+
+            // Kiểm tra trạng thái hiện tại
+            if (order.getPaymentStatus() != Order.PaymentStatus.WAITING_APPROVAL) {
+                response.put("success", false);
+                response.put("message", "Đơn hàng không ở trạng thái chờ duyệt");
+                return ResponseEntity.ok(response);
+            }
+
+            // Cập nhật trạng thái thành FAILED
+            order.setPaymentStatus(Order.PaymentStatus.FAILED);
+            orderService.saveOrder(order);
+
+            // TODO: Gửi email thông báo cho khách hàng với lý do (nếu có email service)
+            // emailService.sendPaymentRejectedEmail(order, reason);
+
+            response.put("success", true);
+            response.put("message", "Đã từ chối đơn hàng");
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {

@@ -80,12 +80,13 @@ public class AdminUserController extends BaseAdminController {
 
     /**
      * Sinh User ID tự động theo format:
-     * - "user_admin_XX" cho admin
+     * - "user_admin_XX" cho admin (XX tăng dần theo số admin cao nhất hiện có)
      * - "user_normal_XX" cho user thường
      */
     private String generateNextUserId(Role.RoleName roleName) {
         if (roleName == Role.RoleName.ADMIN) {
-            long adminCount = userService.getAdminUsersCount();
+            // Đếm tất cả admin (bao gồm cả đã xóa) để đảm bảo ID tăng dần và không trùng
+            long adminCount = userService.getAllAdminsCountIncludingDeleted();
             int nextNumber = (int) adminCount + 1;
             return String.format("user_admin_%02d", nextNumber);
         } else {

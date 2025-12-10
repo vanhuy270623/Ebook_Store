@@ -36,6 +36,16 @@ public interface OrderRepository extends JpaRepository<Order, String> {
 
     long countByPaymentStatus(Order.PaymentStatus paymentStatus);
 
+    long countByOrderType(Order.OrderType orderType);
+
     List<Order> findByUser_UserIdAndPaymentStatus(String userId, Order.PaymentStatus paymentStatus);
+
+
+    // Subscription-specific queries
+    List<Order> findByUser_UserIdAndOrderTypeAndPaymentStatusIn(String userId, Order.OrderType orderType, List<Order.PaymentStatus> statuses);
+
+    List<Order> findByUser_UserIdAndOrderTypeOrderByCreatedAtDesc(String userId, Order.OrderType orderType);
+
+    List<Order> findByOrderTypeAndPaymentStatusIn(Order.OrderType orderType, List<Order.PaymentStatus> statuses);
 }
 

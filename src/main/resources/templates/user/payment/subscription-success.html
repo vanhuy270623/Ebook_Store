@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh Toán Thành Công - EbookStore</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+        }
+        .success-container {
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .success-card {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 30px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .success-icon {
+            font-size: 100px;
+            color: #28a745;
+            animation: scaleIn 0.5s ease-out;
+        }
+        @keyframes scaleIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .success-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #28a745;
+            margin: 20px 0;
+        }
+        .order-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        .order-info .row {
+            margin-bottom: 10px;
+        }
+        .btn-action {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" th:href="@{/user/index}">
+                <i class="fas fa-book-reader me-2"></i>EbookStore
+            </a>
+        </div>
+    </nav>
+
+    <div class="success-container">
+        <div class="success-card">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+
+            <h1 class="success-title">Thanh Toán Thành Công!</h1>
+
+            <p class="lead text-muted">Cảm ơn bạn đã đăng ký gói VIP</p>
+
+            <div th:if="${order}" class="order-info">
+                <div class="row">
+                    <div class="col-5"><strong>Mã đơn hàng:</strong></div>
+                    <div class="col-7" th:text="${order.orderId}">SUB_XXXXX</div>
+                </div>
+                <div class="row">
+                    <div class="col-5"><strong>Gói đăng ký:</strong></div>
+                    <div class="col-7" th:text="${order.subscription.packageName}">VIP</div>
+                </div>
+                <div class="row">
+                    <div class="col-5"><strong>Thời hạn:</strong></div>
+                    <div class="col-7">
+                        <span th:text="${#temporals.format(order.startDate, 'dd/MM/yyyy')}">01/01/2025</span> -
+                        <span th:text="${#temporals.format(order.endDate, 'dd/MM/yyyy')}">31/01/2025</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-5"><strong>Số tiền:</strong></div>
+                    <div class="col-7">
+                        <span class="text-success fw-bold" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Gói của bạn đã được kích hoạt và có thể sử dụng ngay!
+            </div>
+
+            <div class="mt-4">
+                <a th:href="@{/subscription/my-subscriptions}" class="btn btn-success btn-action">
+                    <i class="fas fa-crown"></i> Xem Gói Của Tôi
+                </a>
+                <a th:href="@{/books}" class="btn btn-primary btn-action">
+                    <i class="fas fa-book"></i> Đọc Sách Ngay
+                </a>
+            </div>
+
+            <div class="mt-3">
+                <a th:href="@{/user/index}" class="text-muted">
+                    <i class="fas fa-home"></i> Về Trang Chủ
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>
+

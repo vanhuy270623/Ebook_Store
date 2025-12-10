@@ -65,6 +65,34 @@ public class AdminController extends BaseAdminController {
         model.addAttribute("verifiedUsers", userService.getVerifiedUsersCount());
         model.addAttribute("recentUsers", userService.getRecentUsers(5));
 
+        // Thống kê đơn hàng và doanh thu
+        model.addAttribute("totalOrders", orderService.getTotalOrdersCount());
+        model.addAttribute("totalRevenue", orderService.getTotalRevenue());
+        model.addAttribute("pendingOrders", orderService.getPendingOrdersCount());
+        model.addAttribute("completedOrders", orderService.getCompletedOrdersCount());
+        model.addAttribute("failedOrders", orderService.getFailedOrdersCount());
+        model.addAttribute("cancelledOrders", orderService.getCancelledOrdersCount());
+        model.addAttribute("recentOrders", orderService.getRecentOrders(10));
+
+        // Thống kê doanh thu chi tiết
+        model.addAttribute("todayRevenue", orderService.getTodayRevenue());
+        model.addAttribute("thisMonthRevenue", orderService.getThisMonthRevenue());
+        model.addAttribute("todayOrders", orderService.getTodayOrdersCount());
+        model.addAttribute("bookRevenue", orderService.getRevenueByOrderType(stu.datn.ebook_store.entity.Order.OrderType.BOOK));
+        model.addAttribute("subscriptionRevenue", orderService.getRevenueByOrderType(stu.datn.ebook_store.entity.Order.OrderType.SUBSCRIPTION));
+        model.addAttribute("monthlyRevenue", orderService.getMonthlyRevenue(12));
+
+        // Thống kê đánh giá
+        model.addAttribute("totalReviews", reviewService.getTotalReviewsCount());
+
+        // TODO: Implement these statistics methods in respective services
+        // For now, using placeholder values or empty lists to prevent template errors
+        model.addAttribute("premiumUsers", 0L); // TODO: Implement in SubscriptionService
+        model.addAttribute("topBooks", bookService.getRecentBooks(5)); // Using recent books as placeholder
+        model.addAttribute("newUsers", userService.getRecentUsers(5)); // Using recent users
+        model.addAttribute("topCategories", java.util.Collections.emptyList()); // TODO: Implement in CategoryService
+        model.addAttribute("recentActivities", java.util.Collections.emptyList()); // TODO: Implement activity tracking
+
         return "admin/dashboard";
     }
 }

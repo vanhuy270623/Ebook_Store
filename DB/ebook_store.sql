@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Nov 20, 2025 at 07:43 PM
+-- Generation Time: Dec 07, 2025 at 12:34 AM
 -- Server version: 9.1.0
 -- PHP Version: 8.3.14
 
@@ -42,18 +42,16 @@ CREATE TABLE IF NOT EXISTS `authors` (
 --
 
 INSERT INTO `authors` (`author_id`, `name`, `biography`, `avatar_url`, `created_at`) VALUES
-('author_1', 'Nguyễn Nhật Ánh', 'Nhà văn viết cho tuổi thơ và tuổi mới lớn ăn khách nhất Việt Nam.', '/book_asset/image/authors/admin.jpg', '2025-11-20 19:16:57'),
-('author_10', 'Paulo Coelho', 'Tác giả của Nhà Giả Kim.', '/book_asset/image/authors/vana.jpg', '2025-11-20 19:16:57'),
-('author_11', 'Nguyễn Du', 'Đại thi hào dân tộc.', '/book_asset/image/authors/thib.jpg', '2025-11-20 19:16:57'),
-('author_12', 'Haruki Murakami', 'Tiểu thuyết gia Nhật Bản đương đại nổi tiếng toàn cầu.', '/book_asset/image/authors/avatar5.png', '2025-11-20 19:16:57'),
-('author_2', 'Dale Carnegie', 'Tác giả Đắc Nhân Tâm.', '/book_asset/image/authors/vana.jpg', '2025-11-20 19:16:57'),
-('author_3', 'Aoyama Gosho', 'Tác giả Thám tử lừng danh Conan.', '/book_asset/image/authors/thib.jpg', '2025-11-20 19:16:57'),
+('author_10', 'Paulo Coelho', 'Tác giả của Nhà Giả Kim.', '/book_asset/image/authors/avatar2.png', '2025-11-20 19:16:57'),
+('author_11', 'Nguyễn Du', 'Đại thi hào dân tộc.', '/book_asset/image/authors/avatar3.png', '2025-11-20 19:16:57'),
+('author_2', 'Dale Carnegie', 'Tác giả Đắc Nhân Tâm.', '/book_asset/image/authors/avatar2.png', '2025-11-20 19:16:57'),
+('author_3', 'Aoyama Gosho', 'Tác giả Thám tử lừng danh Conan.', '/book_asset/image/authors/avatar3.png', '2025-11-20 19:16:57'),
 ('author_4', 'Fujiko F. Fujio', 'Cha đẻ của Doraemon.', '/book_asset/image/authors/avatar5.png', '2025-11-20 19:16:57'),
-('author_5', 'Tô Hoài', 'Tác giả Dế Mèn phiêu lưu ký.', '/book_asset/image/authors/admin.jpg', '2025-11-20 19:16:57'),
-('author_6', 'Nam Cao', 'Nhà văn hiện thực xuất sắc.', '/book_asset/image/authors/vana.jpg', '2025-11-20 19:16:57'),
-('author_7', 'Ngô Tất Tố', 'Nhà văn, nhà báo, nhà nghiên cứu.', '/book_asset/image/authors/thib.jpg', '2025-11-20 19:16:57'),
+('author_5', 'Tô Hoài', 'Tác giả Dế Mèn phiêu lưu ký.', '/book_asset/image/authors/avatar.png', '2025-11-20 19:16:57'),
+('author_6', 'Nam Cao', 'Nhà văn hiện thực xuất sắc.', '/book_asset/image/authors/avatar2.png', '2025-11-20 19:16:57'),
+('author_7', 'Ngô Tất Tố', 'Nhà văn, nhà báo, nhà nghiên cứu.', '/book_asset/image/authors/avatar3.png', '2025-11-20 19:16:57'),
 ('author_8', 'Vũ Trọng Phụng', 'Ông vua phóng sự đất Bắc.', '/book_asset/image/authors/avatar5.png', '2025-11-20 19:16:57'),
-('author_9', 'Tony Buổi Sáng', 'Tác giả ẩn danh được giới trẻ yêu thích.', '/book_asset/image/authors/admin.jpg', '2025-11-20 19:16:57');
+('author_9', 'Tony Buổi Sáng', 'Tác giả ẩn danh được giới trẻ yêu thích.', '/book_asset/image/authors/avatar.png', '2025-11-20 19:16:57');
 
 -- --------------------------------------------------------
 
@@ -108,7 +106,6 @@ CREATE TABLE IF NOT EXISTS `bookassets` (
 --
 
 INSERT INTO `bookassets` (`book_asset_id`, `book_id`, `file_type`, `file_url`, `file_size`, `preview_url`, `created_at`) VALUES
-('asset_01', 'book_01', 'PDF', '/book_asset/source/khoahoc-vientuong/Cac The Gioi Song Song - Michio Kaku.pdf', 5242880, '/book_asset/preview/book_01.pdf', '2025-11-20 19:16:58'),
 ('asset_02', 'book_02', 'PDF', '/book_asset/source/tamly-kynangsong/Dac nhan tam - Dale Carnegie.pdf', 3145728, NULL, '2025-11-20 19:16:58'),
 ('asset_03', 'book_03', 'EPUB', '/book_asset/source/khoahoc-vientuong/Chien Tranh Giua Cac The Gioi - H. G. Wells.epub', 2621440, NULL, '2025-11-20 19:16:58'),
 ('asset_04', 'book_04', 'PDF', '/book_asset/source/kienthuc-hocthuat/Bi Quyet Thuyet Trinh Cua Steve - Carmine Gallo.pdf', 1500000, NULL, '2025-11-20 19:16:58'),
@@ -150,10 +147,9 @@ CREATE TABLE IF NOT EXISTS `books` (
 --
 
 INSERT INTO `books` (`book_id`, `book_category_id`, `title`, `description`, `price`, `cover_image_url`, `publisher`, `publication_year`, `language`, `pages`, `isbn`, `access_type`, `is_downloadable`, `average_rating`, `total_reviews`, `view_count`, `created_at`, `updated_at`) VALUES
-('book_01', 'bcat_1', 'Cho tôi xin một vé đi tuổi thơ', 'Vé đi tuổi thơ giá bao nhiêu?', 80000.00, '/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 'NXB Trẻ', 2010, 'vi', 280, '978-1', 'BOTH', 1, 4.8, 156, 25430, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_02', 'bcat_2', 'Đắc Nhân Tâm', 'Nghệ thuật thu phục lòng người', 120000.00, '/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg', 'NXB Tổng Hợp', 2015, 'vi', 320, '978-2', 'PURCHASE', 1, 4.7, 243, 38920, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_03', 'bcat_1', 'Mắt biếc', 'Chuyện tình đơn phương', 90000.00, '/book_asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 'NXB Trẻ', 2008, 'vi', 252, '978-3', 'BOTH', 1, 4.85, 189, 32100, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_04', 'bcat_3', 'Conan Tập 1', 'Thám tử bị teo nhỏ', 0.00, '/book_asset/image/covers/kienthuc-hocthuat/bi-quyet-thuyet-trinh-cua-steve-jobs.jpg', 'NXB Kim Đồng', 2000, 'vi', 180, '978-4', 'FREE', 1, 4.9, 523, 45670, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_02', 'bcat_2', 'Đắc Nhân Tâm', 'Nghệ thuật thu phục lòng người', 120000.00, '/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg', 'NXB Tổng Hợp', 2015, 'vi', 320, '978-2', 'PURCHASE', 1, 4.7, 243, 38927, '2025-11-20 19:16:58', '2025-12-07 04:47:21'),
+('book_03', 'bcat_1', 'Mắt biếc', 'Chuyện tình đơn phương', 90000.00, '/book_asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 'NXB Trẻ', 2008, 'vi', 252, '978-3', 'BOTH', 1, 4.85, 189, 32103, '2025-11-20 19:16:58', '2025-12-07 04:43:44'),
+('book_04', 'bcat_3', 'Conan Tập 1', 'Thám tử bị teo nhỏ', 0.00, '/book_asset/image/covers/kienthuc-hocthuat/bi-quyet-thuyet-trinh-cua-steve-jobs.jpg', 'NXB Kim Đồng', 2000, 'vi', 180, '978-4', 'FREE', 1, 4.9, 523, 45673, '2025-11-20 19:16:58', '2025-12-07 05:16:17'),
 ('book_05', 'bcat_3', 'Doraemon Tập 1', 'Mèo máy tương lai', 20000.00, '/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 'NXB Kim Đồng', 1995, 'vi', 196, '978-5', 'SUBSCRIPTION', 0, 5, 678, 52340, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_06', 'bcat_1', 'Tôi thấy hoa vàng trên cỏ xanh', 'Tuổi thơ êm đềm', 85000.00, '/book_asset/image/covers/kienthuc-hocthuat/phi-ly-tri.jpg', 'NXB Trẻ', 2011, 'vi', 312, '978-6', 'PURCHASE', 0, 4.75, 298, 42100, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_07', 'bcat_5', 'Dế Mèn phiêu lưu ký', 'Bài học đường đời đầu tiên', 75000.00, '/book_asset/image/covers/kienthuc-hocthuat/steve-jobs-thien-tai-gan-do.jpg', 'NXB Kim Đồng', 1941, 'vi', 264, '978-7', 'BOTH', 1, 4.95, 412, 38920, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
@@ -167,6 +163,7 @@ INSERT INTO `books` (`book_id`, `book_category_id`, `title`, `description`, `pri
 ('book_15', 'bcat_1', 'Rừng Na Uy', 'Nỗi buồn tuổi trẻ', 135000.00, '/book_asset/image/covers/kienthuc-hocthuat/phi-ly-tri.jpg', 'NXB Hội Nhà Văn', 2017, 'vi', 456, '978-15', 'BOTH', 1, 4.75, 678, 52340, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_16', 'bcat_1', 'Cô gái đến từ hôm qua', 'Mối tình thơ dại', 92000.00, '/book_asset/image/covers/kienthuc-hocthuat/steve-jobs-thien-tai-gan-do.jpg', 'NXB Trẻ', 2016, 'vi', 336, '978-16', 'BOTH', 1, 4.7, 423, 39870, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_17', 'bcat_2', 'Bạn đắt giá bao nhiêu?', 'Phụ nữ hiện đại', 88000.00, '/book_asset/image/covers/tamly-kynangsong/40-guong-thanh-cong.jpg', 'NXB Thế Giới', 2013, 'vi', 256, '978-17', 'PURCHASE', 1, 4.35, 289, 27890, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_1765056382778_20', 'bcat_1', 'a', 'a', 50000.00, '/book_asset/image/covers/38af1d72-d73a-4e21-9901-39ac54caa0be.png', 'NXB Trẻ', NULL, 'vi', 25, '978-1', 'PURCHASE', 1, 0, 0, 0, '2025-12-07 04:26:23', '2025-12-07 04:26:23'),
 ('book_18', 'bcat_3', 'Conan Tập 2', 'Vụ án mới', 25000.00, '/book_asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 'NXB Kim Đồng', 2000, 'vi', 180, '978-18', 'SUBSCRIPTION', 0, 4.88, 456, 41230, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_19', 'bcat_3', 'Doraemon Tập 2', 'Bảo bối thần kỳ', 20000.00, '/book_asset/image/covers/kinhte-quanly/sieukinhtehochaihuoc.jpg', 'NXB Kim Đồng', 1995, 'vi', 196, '978-19', 'SUBSCRIPTION', 0, 5, 589, 49870, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_20', 'bcat_1', 'Kafka bên bờ biển', 'Hành trình siêu thực', 145000.00, '/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 'NXB Hội Nhà Văn', 2018, 'vi', 528, '978-20', 'BOTH', 1, 4.8, 512, 44560, '2025-11-20 19:16:58', '2025-11-20 19:16:58');
@@ -190,12 +187,12 @@ CREATE TABLE IF NOT EXISTS `book_authors` (
 --
 
 INSERT INTO `book_authors` (`book_id`, `author_id`) VALUES
-('book_01', 'author_1'),
 ('book_03', 'author_1'),
 ('book_06', 'author_1'),
 ('book_16', 'author_1'),
 ('book_13', 'author_10'),
 ('book_14', 'author_11'),
+('book_1765056382778_20', 'author_11'),
 ('book_15', 'author_12'),
 ('book_20', 'author_12'),
 ('book_02', 'author_2'),
@@ -240,7 +237,7 @@ INSERT INTO `book_category` (`book_category_id`, `category_name`, `description`,
 ('bcat_4', 'Kinh tế', 'Kinh doanh và tài chính', '/book_asset/image/covers/kinhte-quanly/sieukinhtehochaihuoc.jpg', 4, 1, '2025-11-20 19:16:58'),
 ('bcat_5', 'Thiếu nhi', 'Sách dành cho trẻ em', '/book_asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 5, 1, '2025-11-20 19:16:58'),
 ('bcat_6', 'Giáo khoa', 'Sách học tập', '/book_asset/image/covers/kienthuc-hocthuat/tu-duy-phan-bien.jpg', 6, 1, '2025-11-20 19:16:58'),
-('bcat_7', 'Tâm lý', 'Tâm lý học ứng dụng', '/book_asset/image/covers/tamly-kynangsong/40-guong-thanh-cong.jpg', 7, 1, '2025-11-20 19:16:58');
+('bcat_7', 'Tâm lý', 'Tâm lý học ứng dụnga', '/book_asset/image/covers/tamly-kynangsong/40-guong-thanh-cong.jpg', 7, 1, '2025-11-20 19:16:58');
 
 -- --------------------------------------------------------
 
@@ -310,9 +307,9 @@ INSERT INTO `category` (`category_id`, `category_name`) VALUES
 
 DROP TABLE IF EXISTS `coupons`;
 CREATE TABLE IF NOT EXISTS `coupons` (
-  `coupon_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `discount_type` enum('PERCENT','FIXED') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `coupon_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_type` enum('PERCENT','FIXED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `discount_value` decimal(15,2) NOT NULL,
   `min_order_value` decimal(15,2) DEFAULT '0.00',
   `end_date` datetime NOT NULL,
@@ -342,8 +339,8 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `subscription_id` varchar(50) DEFAULT NULL COMMENT 'NULL nếu mua sách lẻ',
   `order_type` enum('BOOK','SUBSCRIPTION') NOT NULL,
   `total_amount` decimal(15,2) NOT NULL,
-  `payment_status` enum('PENDING','COMPLETED','FAILED','CANCELLED') DEFAULT 'PENDING',
-  `payment_method` enum('MOMO','VNPAY','BANK_TRANSFER','CREDIT_CARD','FREE_ACTIVATION') DEFAULT NULL,
+  `payment_status` enum('PENDING','WAITING_APPROVAL','COMPLETED','PAID','FAILED','CANCELLED') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT 'PENDING',
+  `payment_method` enum('VNPAY','BANK_TRANSFER','CREDIT_CARD') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `transaction_id` varchar(255) DEFAULT NULL,
   `start_date` datetime DEFAULT NULL COMMENT 'NULL nếu mua sách lẻ hoặc chưa kích hoạt',
   `end_date` datetime DEFAULT NULL COMMENT 'NULL nếu mua sách lẻ hoặc gói Free vĩnh viễn',
@@ -358,10 +355,15 @@ CREATE TABLE IF NOT EXISTS `orders` (
 --
 
 INSERT INTO `orders` (`order_id`, `user_id`, `subscription_id`, `order_type`, `total_amount`, `payment_status`, `payment_method`, `transaction_id`, `start_date`, `end_date`, `created_at`) VALUES
-('order_01', 'user_normal_01', 'sub_vip', 'SUBSCRIPTION', 199000.00, 'COMPLETED', 'MOMO', NULL, '2025-11-20 19:16:58', '2025-12-20 19:16:58', '2025-11-20 19:16:58'),
-('order_02', 'user_normal_02', NULL, 'BOOK', 120000.00, 'COMPLETED', 'VNPAY', NULL, NULL, NULL, '2025-11-20 19:16:58'),
-('order_03', 'user_normal_02', 'sub_basic', 'SUBSCRIPTION', 89100.00, 'COMPLETED', 'MOMO', NULL, '2025-11-20 19:16:58', '2025-12-20 19:16:58', '2025-11-20 19:16:58'),
-('order_04', 'user_normal_01', NULL, 'BOOK', 153000.00, 'COMPLETED', 'VNPAY', NULL, NULL, NULL, '2025-11-20 19:16:58');
+('order_book_01', 'user_normal_01', NULL, 'BOOK', 120000.00, 'COMPLETED', 'BANK_TRANSFER', NULL, NULL, NULL, '2025-12-07 03:38:55'),
+('order_book_02', 'user_normal_01', NULL, 'BOOK', 120000.00, 'FAILED', 'VNPAY', NULL, NULL, NULL, '2025-12-07 03:47:46'),
+('order_book_03', 'user_normal_01', NULL, 'BOOK', 90000.00, 'COMPLETED', 'VNPAY', '15324709', NULL, NULL, '2025-12-07 06:27:16'),
+('order_book_04', 'user_normal_01', NULL, 'BOOK', 120000.00, 'CANCELLED', 'BANK_TRANSFER', NULL, NULL, NULL, '2025-12-07 07:06:07'),
+('order_sub_admin_vip', 'user_admin_01', 'sub_vip', 'SUBSCRIPTION', 0.00, 'COMPLETED', 'BANK_TRANSFER', 'ADMIN_GRANT', '2025-12-07 07:01:24', '2026-01-06 07:01:24', '2025-12-07 07:01:24'),
+('order_sub_user_normal_02_free', 'user_normal_02', 'sub_free', 'SUBSCRIPTION', 0.00, 'COMPLETED', 'BANK_TRANSFER', 'FREE_GRANT', '2025-12-07 07:01:24', '2035-12-05 07:01:24', '2025-12-07 07:01:24'),
+('order_sub_user_normal_03_free', 'user_normal_03', 'sub_free', 'SUBSCRIPTION', 0.00, 'COMPLETED', 'BANK_TRANSFER', 'FREE_GRANT', '2025-12-07 07:01:24', '2035-12-05 07:01:24', '2025-12-07 07:01:24'),
+('order_sub_user01_premium', 'user_normal_01', 'sub_premium', 'SUBSCRIPTION', 0.00, 'COMPLETED', 'BANK_TRANSFER', 'ADMIN_GRANT', '2025-12-07 07:01:24', '2026-01-06 07:01:24', '2025-12-07 07:01:24'),
+('SUB_B42FB377', 'user_normal_01', 'sub_vip', 'SUBSCRIPTION', 99000.00, 'COMPLETED', 'VNPAY', '15324717', '2025-12-07 07:15:11', '2026-01-06 07:15:11', '2025-12-07 07:14:04');
 
 -- --------------------------------------------------------
 
@@ -385,9 +387,10 @@ CREATE TABLE IF NOT EXISTS `order_items` (
 --
 
 INSERT INTO `order_items` (`order_item_id`, `order_id`, `book_id`, `price_at_purchase`) VALUES
-('item_01', 'order_02', 'book_02', 120000.00),
-('item_02', 'order_04', 'book_02', 108000.00),
-('item_03', 'order_04', 'book_03', 81000.00);
+('item_01', 'order_book_01', 'book_02', 120000.00),
+('item_02', 'order_book_02', 'book_02', 120000.00),
+('item_03', 'order_book_03', 'book_03', 90000.00),
+('item_04', 'order_book_04', 'book_02', 120000.00);
 
 -- --------------------------------------------------------
 
@@ -482,7 +485,6 @@ CREATE TABLE IF NOT EXISTS `reviews` (
 --
 
 INSERT INTO `reviews` (`review_id`, `user_id`, `book_id`, `rating`, `comment`, `is_verified_purchase`, `is_approved`, `created_at`) VALUES
-('rev_01', 'user_normal_01', 'book_01', 5, 'Sách hay tuyệt vời!', 1, 1, '2025-11-20 19:16:58'),
 ('rev_02', 'user_normal_02', 'book_02', 4, 'Nội dung bổ ích.', 1, 1, '2025-11-20 19:16:58'),
 ('rev_03', 'user_normal_01', 'book_13', 5, 'Rất truyền cảm hứng.', 1, 1, '2025-11-20 19:16:58');
 
@@ -535,8 +537,9 @@ CREATE TABLE IF NOT EXISTS `subscriptions` (
 
 INSERT INTO `subscriptions` (`subscription_id`, `package_name`, `price`, `duration_days`, `description`, `features`, `max_devices`, `has_ads`, `is_active`, `display_order`, `created_at`) VALUES
 ('sub_basic', 'BASIC', 59000.00, 30, 'Gói cơ bản', '[\"Đọc sách kho Basic\", \"Không quảng cáo\", \"1 thiết bị\"]', 1, 0, 1, 2, '2025-11-20 19:16:58'),
-('sub_free', 'FREE', 0.00, 3650, 'Gói miễn phí', '[\"Sách miễn phí\", \"Có quảng cáo\"]', 1, 1, 1, 1, '2025-11-20 19:16:58'),
-('sub_vip', 'VIP', 99000.00, 30, 'Gói cao cấp', '[\"Đọc toàn bộ kho sách\", \"Nghe Audio\", \"Tải Offline\", \"3 thiết bị\"]', 3, 0, 1, 3, '2025-11-20 19:16:58');
+('sub_free', 'FREE', 0.00, 3650, 'Gói miễn phí', '[\"Sách miễn phí\", \"Có quảng cáo\", \"1 thiết bị\"]', 1, 1, 1, 1, '2025-11-20 19:16:58'),
+('sub_premium', 'PREMIUM', 79000.00, 30, 'Gói nâng cao', '[\"Đọc sách kho Premium\", \"Không quảng cáo\", \"Tải Offline\", \"2 thiết bị\"]', 2, 0, 1, 3, '2025-11-20 19:16:58'),
+('sub_vip', 'VIP', 99000.00, 30, 'Gói cao cấp', '[\"Đọc toàn bộ kho sách\", \"Tải Offline\", \"3 thiết bị\"]', 3, 0, 1, 4, '2025-11-20 19:16:58');
 
 -- --------------------------------------------------------
 
@@ -560,21 +563,27 @@ CREATE TABLE IF NOT EXISTS `users` (
   `last_login` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` datetime DEFAULT NULL,
+  `restored_at` datetime DEFAULT NULL COMMENT 'Thời điểm tài khoản được khôi phục từ trạng thái đã xóa',
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`),
-  KEY `role_id` (`role_id`)
+  KEY `role_id` (`role_id`),
+  KEY `idx_users_deleted_at` (`deleted_at`),
+  KEY `idx_users_active` (`deleted_at`,`is_active`),
+  KEY `idx_users_restored_at` (`restored_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `role_id`, `username`, `email`, `password_hash`, `full_name`, `phone`, `avatar_url`, `is_active`, `is_verified`, `preferred_reading_mode`, `last_login`, `created_at`, `updated_at`) VALUES
-('user_admin_01', 'role_admin', 'admin', 'admin@ebook.com', '$2a$10$FtNONIM6oxPVPAC8hXsCBu3iR9IoFy8ANRw.Smj1nfi17UKJtIh9y', 'Quản Trị Viên', '0901234567', '/book_asset/image/avatars/admin.jpg', 1, 1, 'DARK', '2025-11-21 02:39:25', '2025-11-20 19:16:58', '2025-11-21 02:39:25'),
-('user_normal_01', 'role_user', 'vana', 'vana@gmail.com', '$2a$10$hash_user1', 'Nguyễn Văn A', '0912345678', '/book_asset/image/avatars/vana.jpg', 1, 1, 'AUTO', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('user_normal_02', 'role_user', 'thib', 'thib@gmail.com', '$2a$10$hash_user2', 'Trần Thị B', '0923456789', '/book_asset/image/avatars/thib.jpg', 1, 1, 'LIGHT', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('user_normal_03', 'role_user', 'minhc', 'minhc@gmail.com', '$2a$10$hash_user3', 'Lê Minh C', '0934567890', '/book_asset/image/avatars/minhc.jpg', 1, 1, 'AUTO', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58');
+INSERT INTO `users` (`user_id`, `role_id`, `username`, `email`, `password_hash`, `full_name`, `phone`, `avatar_url`, `is_active`, `is_verified`, `preferred_reading_mode`, `last_login`, `created_at`, `updated_at`, `deleted_at`, `restored_at`) VALUES
+('user_admin_01', 'role_admin', 'admin', 'admin@ebook.com', '$2a$10$FtNONIM6oxPVPAC8hXsCBu3iR9IoFy8ANRw.Smj1nfi17UKJtIh9y', 'Quản Trị Viên', '0901234567', '/book_asset/image/avatars/admin.jpg', 1, 1, 'DARK', '2025-12-07 07:05:37', '2025-11-20 19:16:58', '2025-12-07 07:05:37', NULL, NULL),
+('user_admin_02', 'role_admin', 'admin4', 'aa@gmail.com', '$2a$10$UxIPZEc19RPX//IAsUxOWuyNG1OC9WYUtczZiqw9jaq3/Ub59uyAi', 'Nguyễn Văn A', '0912345678', '', 1, 0, 'AUTO', '2025-11-30 10:23:04', '2025-11-30 10:21:49', '2025-12-06 06:07:03', '2025-12-06 06:07:03', NULL),
+('user_normal_01', 'role_user', 'vana', 'vana@gmail.com', '$2a$10$FtNONIM6oxPVPAC8hXsCBu3iR9IoFy8ANRw.Smj1nfi17UKJtIh9y', 'Nguyễn Văn An', '0912345678', '/book_asset/image/avatars/user_normal_01.png', 1, 1, 'AUTO', '2025-12-07 07:26:56', '2025-11-20 19:16:58', '2025-12-07 07:26:56', NULL, NULL),
+('user_normal_02', 'role_user', 'thib', 'thib@gmail.com', '$2a$10$hash_user2', 'Trần Thị B', '0923456789', '/book_asset/image/avatars/thib.jpg', 1, 1, 'LIGHT', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58', NULL, NULL),
+('user_normal_03', 'role_user', 'minhc', 'minhc@gmail.com', '$2a$10$hash_user3', 'Lê Minh C', '0934567890', '/book_asset/image/avatars/minhc.jpg', 1, 1, 'AUTO', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -608,80 +617,6 @@ INSERT INTO `user_devices` (`device_id`, `user_id`, `device_name`, `device_type`
 --
 -- Constraints for dumped tables
 --
-
---
--- Constraints for table `banner`
---
-ALTER TABLE `banner`
-  ADD CONSTRAINT `banner_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `bookassets`
---
-ALTER TABLE `bookassets`
-  ADD CONSTRAINT `assets_book_fk` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `books`
---
-ALTER TABLE `books`
-  ADD CONSTRAINT `books_cat_fk` FOREIGN KEY (`book_category_id`) REFERENCES `book_category` (`book_category_id`) ON DELETE SET NULL;
-
---
--- Constraints for table `book_authors`
---
-ALTER TABLE `book_authors`
-  ADD CONSTRAINT `ba_author_fk` FOREIGN KEY (`author_id`) REFERENCES `authors` (`author_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `ba_book_fk` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `carts`
---
-ALTER TABLE `carts`
-  ADD CONSTRAINT `carts_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `cart_items`
---
-ALTER TABLE `cart_items`
-  ADD CONSTRAINT `ci_book_fk` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `ci_cart_fk` FOREIGN KEY (`cart_id`) REFERENCES `carts` (`cart_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `orders`
---
-ALTER TABLE `orders`
-  ADD CONSTRAINT `orders_sub_fk` FOREIGN KEY (`subscription_id`) REFERENCES `subscriptions` (`subscription_id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `orders_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `order_items`
---
-ALTER TABLE `order_items`
-  ADD CONSTRAINT `oi_book_fk` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`) ON DELETE RESTRICT,
-  ADD CONSTRAINT `oi_order_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `post`
---
-ALTER TABLE `post`
-  ADD CONSTRAINT `post_cat_fk` FOREIGN KEY (`category_id`) REFERENCES `category` (`category_id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `post_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `reading_progress`
---
-ALTER TABLE `reading_progress`
-  ADD CONSTRAINT `FKbkt12b5291qetlwy893in048s` FOREIGN KEY (`book_asset_id`) REFERENCES `bookassets` (`book_asset_id`),
-  ADD CONSTRAINT `rp_book_fk` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `rp_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `reviews`
---
-ALTER TABLE `reviews`
-  ADD CONSTRAINT `rev_book_fk` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `rev_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `users`

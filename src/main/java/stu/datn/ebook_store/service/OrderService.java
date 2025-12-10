@@ -26,5 +26,25 @@ public interface OrderService {
     Double getTotalRevenueBetweenDates(LocalDateTime startDate, LocalDateTime endDate);
     long countOrdersByPaymentStatus(Order.PaymentStatus paymentStatus);
     void updateOrderStatus(String orderId, Order.PaymentStatus status);
+
+    // Dashboard statistics methods
+    List<Order> getRecentOrders(int limit);
+    long getTotalOrdersCount();
+    Double getTotalRevenue();
+    long getPendingOrdersCount();
+
+    // Additional dashboard statistics
+    long getCompletedOrdersCount();
+    long getFailedOrdersCount();
+    long getCancelledOrdersCount();
+    Double getRevenueByOrderType(Order.OrderType orderType);
+    List<Object[]> getMonthlyRevenue(int months);
+    Double getTodayRevenue();
+    Double getThisMonthRevenue();
+    long getTodayOrdersCount();
+
+    // Subscription management methods
+    List<Order> getOrdersByUserIdAndType(String userId, Order.OrderType orderType);
+    Order updateOrder(Order order);
 }
 

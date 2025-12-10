@@ -23,5 +23,6 @@ public interface ReviewService {
     long countApprovedReviewsByBook(Book book);
     void approveReview(String reviewId);
     void rejectReview(String reviewId);
+    long getTotalReviewsCount();
 }
 

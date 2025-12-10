@@ -30,7 +30,8 @@ public class OrderItemServiceImpl implements OrderItemService {
     @Override
     @Transactional(readOnly = true)
     public List<OrderItem> getOrderItemsByOrderId(String orderId) {
-        return orderItemRepository.findByOrder_OrderId(orderId);
+        // Use JOIN FETCH query to eagerly load Book and Authors
+        return orderItemRepository.findByOrderIdWithBook(orderId);
     }
 
     @Override
@@ -101,8 +102,14 @@ public class OrderItemServiceImpl implements OrderItemService {
 
     // Private helper methods
 
+    /**
+     * Generate order item ID with sequential numbering
+     * Format: item_XX
+     */
     private String generateOrderItemId() {
-        return "OI" + UUID.randomUUID().toString().replace("-", "").substring(0, 18).toUpperCase();
+        long count = orderItemRepository.count();
+        // Format with 2 digits: 01, 02, 03, etc.
+        return "item_" + String.format("%02d", count + 1);
     }
 }
 

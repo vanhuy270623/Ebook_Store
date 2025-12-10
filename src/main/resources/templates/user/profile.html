@@ -137,11 +137,45 @@
                                     </h5>
                                 </div>
                                 <div class="card-body">
-                                    <form th:action="@{/user/profile/update}" method="post" th:object="${userRequest}">
+                                    <form th:action="@{/user/profile/update}" method="post" th:object="${userRequest}" enctype="multipart/form-data">
                                         <input type="hidden" th:field="*{userId}">
+                                        <input type="hidden" th:field="*{roleId}">
                                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
                                         <div class="row">
+                                            <!-- Avatar Upload -->
+                                            <div class="col-12 mb-4">
+                                                <label class="form-label fw-bold">
+                                                    <i class="fas fa-camera me-1"></i> Ảnh đại diện
+                                                </label>
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div>
+                                                        <img id="avatarPreview"
+                                                             th:if="${user.avatarUrl != null}"
+                                                             th:src="@{${user.avatarUrl}}"
+                                                             alt="Avatar Preview"
+                                                             class="rounded-circle border"
+                                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                                        <i id="avatarIcon"
+                                                           th:if="${user.avatarUrl == null}"
+                                                           class="fas fa-user-circle text-muted"
+                                                           style="font-size: 100px;"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <label for="avatarFile" class="form-label small">Upload file ảnh</label>
+                                                        <input type="file"
+                                                               class="form-control"
+                                                               id="avatarFile"
+                                                               name="avatarFile"
+                                                               accept="image/*"
+                                                               onchange="previewAvatar(this)">
+                                                        <small class="text-muted d-block mt-1">
+                                                            Chọn ảnh để thay đổi avatar. Hỗ trợ: JPG, PNG, GIF (Max: 5MB)
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <div class="col-md-6 mb-3">
                                                 <label class="form-label">
                                                     <i class="fas fa-user me-1"></i> Họ và tên
@@ -170,10 +204,11 @@
 
                                             <div class="col-md-6 mb-3">
                                                 <label class="form-label">
-                                                    <i class="fas fa-image me-1"></i> URL Avatar
+                                                    <i class="fas fa-link me-1"></i> URL Avatar (tùy chọn)
                                                 </label>
                                                 <input type="text" class="form-control" th:field="*{avatarUrl}"
                                                        placeholder="https://...">
+                                                <small class="text-muted">Hoặc nhập URL nếu không upload file</small>
                                             </div>
 
                                             <div class="col-12">
@@ -211,9 +246,9 @@
                                         <div class="col-md-6 mb-3">
                                             <p class="text-muted mb-1">Trạng thái</p>
                                             <span class="badge"
-                                                  th:classappend="${user.status == T(stu.datn.ebook_store.entity.User.UserStatus).ACTIVE} ? 'bg-success' : 'bg-danger'"
-                                                  th:text="${user.status}">
-                                                ACTIVE
+                                                  th:classappend="${user.isActive} ? 'bg-success' : 'bg-danger'"
+                                                  th:text="${user.isActive ? 'Đang hoạt động' : 'Đã vô hiệu hóa'}">
+                                                Đang hoạt động
                                             </span>
                                         </div>
                                     </div>
@@ -316,6 +351,54 @@
 
     <!-- Scripts -->
     <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        // Preview avatar before upload
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                // Check file size (5MB max)
+                if (input.files[0].size > 5 * 1024 * 1024) {
+                    alert('Kích thước file không được vượt quá 5MB!');
+                    input.value = '';
+                    return;
+                }
+
+                // Check file type
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+                if (!allowedTypes.includes(input.files[0].type)) {
+                    alert('Chỉ chấp nhận file ảnh (JPG, PNG, GIF)!');
+                    input.value = '';
+                    return;
+                }
+
+                // Preview image
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('avatarPreview');
+                    const icon = document.getElementById('avatarIcon');
+
+                    if (preview) {
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                        if (icon) icon.style.display = 'none';
+                    } else {
+                        // Create preview if not exists
+                        const newPreview = document.createElement('img');
+                        newPreview.id = 'avatarPreview';
+                        newPreview.src = e.target.result;
+                        newPreview.className = 'rounded-circle border';
+                        newPreview.style.width = '100px';
+                        newPreview.style.height = '100px';
+                        newPreview.style.objectFit = 'cover';
+
+                        if (icon) {
+                            icon.parentNode.replaceChild(newPreview, icon);
+                        }
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
 </body>
 </html>
 

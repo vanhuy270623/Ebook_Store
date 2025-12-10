@@ -48,7 +48,7 @@
                         <a class="nav-link" href="/categories">Danh mục</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/subscribe">Gói VIP</a>
+                        <a class="nav-link" href="/subscription/plans">Gói VIP</a>
                     </li>
 
                     <!-- User Dropdown - Always show for logged in user -->
@@ -219,11 +219,18 @@
             </div>
 
             <div class="row g-4" id="freeBooksContainer">
-                <!-- Free Book 1: Conan Tập 1 -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <a href="/books/book_04" class="book-card">
+                <!-- Dynamic Free Books from Database -->
+                <div th:each="book, freeBooksStat : ${freeBooks}" th:if="${freeBooksStat.index < 8}" class="col-lg-3 col-md-4 col-sm-6">
+                    <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="book-card">
                         <div class="book-cover">
-                            <img th:src="@{/book_asset/image/covers/kienthuc-hocthuat/bi-quyet-thuyet-trinh-cua-steve-jobs.jpg}" alt="Conan Tập 1">
+                            <img th:if="${book.coverImageUrl != null}"
+                                 th:src="@{${book.coverImageUrl}}"
+                                 th:alt="${book.title}">
+                            <div th:if="${book.coverImageUrl == null}"
+                                 class="bg-secondary d-flex align-items-center justify-content-center"
+                                 style="width: 100%; height: 100%;">
+                                <i class="fas fa-book fa-4x text-white"></i>
+                            </div>
                             <span class="book-badge free">Miễn phí</span>
                             <div class="book-actions">
                                 <button class="action-btn" title="Yêu thích">
@@ -235,99 +242,12 @@
                             </div>
                         </div>
                         <div class="book-info">
-                            <h3 class="book-title">Conan Tập 1</h3>
-                            <p class="book-author">Aoyama Gosho</p>
+                            <h3 class="book-title" th:text="${book.title}">Tên sách</h3>
+                            <p class="book-author" th:text="${book.firstAuthorName}">Tác giả</p>
                             <div class="book-meta">
                                 <div class="book-rating">
                                     <i class="fas fa-star"></i>
-                                    <span>4.9</span>
-                                </div>
-                                <div class="book-price free">Miễn phí</div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Free Book 2: Lão Hạc -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <a href="/books/book_08" class="book-card">
-                        <div class="book-cover">
-                            <img th:src="@{/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg}" alt="Lão Hạc">
-                            <span class="book-badge free">Miễn phí</span>
-                            <div class="book-actions">
-                                <button class="action-btn" title="Yêu thích">
-                                    <i class="far fa-heart"></i>
-                                </button>
-                                <button class="action-btn" title="Xem nhanh">
-                                    <i class="far fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="book-info">
-                            <h3 class="book-title">Lão Hạc</h3>
-                            <p class="book-author">Nam Cao</p>
-                            <div class="book-meta">
-                                <div class="book-rating">
-                                    <i class="fas fa-star"></i>
-                                    <span>4.65</span>
-                                </div>
-                                <div class="book-price free">Miễn phí</div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Free Book 3: Chí Phèo -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <a href="/books/book_09" class="book-card">
-                        <div class="book-cover">
-                            <img th:src="@{/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg}" alt="Chí Phèo">
-                            <span class="book-badge free">Miễn phí</span>
-                            <div class="book-actions">
-                                <button class="action-btn" title="Yêu thích">
-                                    <i class="far fa-heart"></i>
-                                </button>
-                                <button class="action-btn" title="Xem nhanh">
-                                    <i class="far fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="book-info">
-                            <h3 class="book-title">Chí Phèo</h3>
-                            <p class="book-author">Nam Cao</p>
-                            <div class="book-meta">
-                                <div class="book-rating">
-                                    <i class="fas fa-star"></i>
-                                    <span>4.55</span>
-                                </div>
-                                <div class="book-price free">Miễn phí</div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Free Book 4: Truyện Kiều -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <a href="/books/book_14" class="book-card">
-                        <div class="book-cover">
-                            <img th:src="@{/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg}" alt="Truyện Kiều">
-                            <span class="book-badge free">Miễn phí</span>
-                            <div class="book-actions">
-                                <button class="action-btn" title="Yêu thích">
-                                    <i class="far fa-heart"></i>
-                                </button>
-                                <button class="action-btn" title="Xem nhanh">
-                                    <i class="far fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="book-info">
-                            <h3 class="book-title">Truyện Kiều</h3>
-                            <p class="book-author">Nguyễn Du</p>
-                            <div class="book-meta">
-                                <div class="book-rating">
-                                    <i class="fas fa-star"></i>
-                                    <span>5.0</span>
+                                    <span th:text="${book.averageRating != null ? #numbers.formatDecimal(book.averageRating, 1, 2) : '0.0'}">0.0</span>
                                 </div>
                                 <div class="book-price free">Miễn phí</div>
                             </div>
@@ -352,118 +272,48 @@
             </div>
 
             <div class="row g-4">
-                <!-- Trending Book 1: Nhà giả kim -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <a href="/books/book_13" class="book-card">
+                <!-- Dynamic Trending Books from Database -->
+                <div th:each="book, trendingBooksStat : ${trendingBooks}" th:if="${trendingBooksStat.index < 8}" class="col-lg-3 col-md-4 col-sm-6">
+                    <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="book-card">
                         <div class="book-cover">
-                            <img th:src="@{/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg}" alt="Nhà giả kim">
+                            <img th:if="${book.coverImageUrl != null}"
+                                 th:src="@{${book.coverImageUrl}}"
+                                 th:alt="${book.title}">
+                            <div th:if="${book.coverImageUrl == null}"
+                                 class="bg-secondary d-flex align-items-center justify-content-center"
+                                 style="width: 100%; height: 100%;">
+                                <i class="fas fa-book fa-4x text-white"></i>
+                            </div>
                             <span class="book-badge hot">Hot</span>
                             <div class="book-actions">
                                 <button class="action-btn" title="Yêu thích">
                                     <i class="far fa-heart"></i>
                                 </button>
-                                <button class="action-btn" title="Thêm vào giỏ">
+                                <button th:if="${book.accessType != T(stu.datn.ebook_store.entity.Book.AccessType).FREE}"
+                                        class="action-btn" title="Thêm vào giỏ">
                                     <i class="fas fa-cart-plus"></i>
                                 </button>
-                            </div>
-                        </div>
-                        <div class="book-info">
-                            <h3 class="book-title">Nhà giả kim</h3>
-                            <p class="book-author">Paulo Coelho</p>
-                            <div class="book-meta">
-                                <div class="book-rating">
-                                    <i class="fas fa-star"></i>
-                                    <span>4.85</span>
-                                </div>
-                                <div class="book-price">110.000đ</div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Trending Book 2: Đắc Nhân Tâm -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <a href="/books/book_02" class="book-card">
-                        <div class="book-cover">
-                            <img th:src="@{/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg}" alt="Đắc Nhân Tâm">
-                            <span class="book-badge hot">Hot</span>
-                            <div class="book-actions">
-                                <button class="action-btn" title="Yêu thích">
-                                    <i class="far fa-heart"></i>
-                                </button>
-                                <button class="action-btn" title="Thêm vào giỏ">
-                                    <i class="fas fa-cart-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="book-info">
-                            <h3 class="book-title">Đắc Nhân Tâm</h3>
-                            <p class="book-author">Dale Carnegie</p>
-                            <div class="book-meta">
-                                <div class="book-rating">
-                                    <i class="fas fa-star"></i>
-                                    <span>4.7</span>
-                                </div>
-                                <div class="book-price">120.000đ</div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Trending Book 3: Doraemon -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <a href="/books/book_05" class="book-card">
-                        <div class="book-cover">
-                            <img th:src="@{/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg}"
-                                 alt="Doraemon">
-                            <span class="book-badge hot">Hot</span>
-                            <div class="book-actions">
-                                <button class="action-btn" title="Yêu thích">
-                                    <i class="far fa-heart"></i>
-                                </button>
-                                <button class="action-btn" title="Xem nhanh">
+                                <button th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).FREE}"
+                                        class="action-btn" title="Xem nhanh">
                                     <i class="far fa-eye"></i>
                                 </button>
                             </div>
                         </div>
                         <div class="book-info">
-                            <h3 class="book-title">Doraemon Tập 1</h3>
-                            <p class="book-author">Fujiko F. Fujio</p>
+                            <h3 class="book-title" th:text="${book.title}">Tên sách</h3>
+                            <p class="book-author" th:text="${book.firstAuthorName}">Tác giả</p>
                             <div class="book-meta">
                                 <div class="book-rating">
                                     <i class="fas fa-star"></i>
-                                    <span>5.0</span>
+                                    <span th:text="${book.averageRating != null ? #numbers.formatDecimal(book.averageRating, 1, 2) : '0.0'}">0.0</span>
                                 </div>
-                                <div class="book-price">20.000đ</div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Trending Book 4: Rừng Na Uy -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <a href="/books/book_15" class="book-card">
-                        <div class="book-cover">
-                            <img th:src="@{/book_asset/image/covers/kienthuc-hocthuat/phi-ly-tri.jpg}" alt="Rừng Na Uy">
-                            <span class="book-badge hot">Hot</span>
-                            <div class="book-actions">
-                                <button class="action-btn" title="Yêu thích">
-                                    <i class="far fa-heart"></i>
-                                </button>
-                                <button class="action-btn" title="Thêm vào giỏ">
-                                    <i class="fas fa-cart-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="book-info">
-                            <h3 class="book-title">Rừng Na Uy</h3>
-                            <p class="book-author">Haruki Murakami</p>
-                            <div class="book-meta">
-                                <div class="book-rating">
-                                    <i class="fas fa-star"></i>
-                                    <span>4.75</span>
-                                </div>
-                                <div class="book-price">135.000đ</div>
+                                <div th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).FREE}"
+                                     class="book-price free">Miễn phí</div>
+                                <div th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).PURCHASE || book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).BOTH}"
+                                     class="book-price"
+                                     th:text="${book.price != null ? #numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT') + 'đ' : ''}">0đ</div>
+                                <div th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).SUBSCRIPTION}"
+                                     class="book-price">VIP</div>
                             </div>
                         </div>
                     </a>
@@ -484,7 +334,7 @@
                     <p class="promo-subtitle">
                         Đọc không giới hạn hơn 10,000+ đầu sách với giá chỉ từ 99.000đ/tháng
                     </p>
-                    <a href="/subscribe" class="btn promo-btn">
+                    <a href="/subscription/plans" class="btn promo-btn">
                         <i class="fas fa-rocket me-2"></i>Khám phá ngay
                     </a>
                 </div>
@@ -506,117 +356,48 @@
             </div>
 
             <div class="row g-4">
-                <!-- Trending Book 3: Doraemon -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <a href="/books/book_05" class="book-card">
+                <!-- Dynamic New Books from Database -->
+                <div th:each="book, newBooksStat : ${newBooks}" th:if="${newBooksStat.index < 8}" class="col-lg-3 col-md-4 col-sm-6">
+                    <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="book-card">
                         <div class="book-cover">
-                            <img th:src="@{/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg}" alt="Doraemon">
+                            <img th:if="${book.coverImageUrl != null}"
+                                 th:src="@{${book.coverImageUrl}}"
+                                 th:alt="${book.title}">
+                            <div th:if="${book.coverImageUrl == null}"
+                                 class="bg-secondary d-flex align-items-center justify-content-center"
+                                 style="width: 100%; height: 100%;">
+                                <i class="fas fa-book fa-4x text-white"></i>
+                            </div>
                             <span class="book-badge new">Mới</span>
                             <div class="book-actions">
                                 <button class="action-btn" title="Yêu thích">
                                     <i class="far fa-heart"></i>
                                 </button>
-                                <button class="action-btn" title="Thêm vào giỏ">
+                                <button th:if="${book.accessType != T(stu.datn.ebook_store.entity.Book.AccessType).FREE}"
+                                        class="action-btn" title="Thêm vào giỏ">
                                     <i class="fas fa-cart-plus"></i>
+                                </button>
+                                <button th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).FREE}"
+                                        class="action-btn" title="Xem nhanh">
+                                    <i class="far fa-eye"></i>
                                 </button>
                             </div>
                         </div>
                         <div class="book-info">
-                            <h3 class="book-title">Mắt biếc</h3>
-                            <p class="book-author">Nguyễn Nhật Ánh</p>
+                            <h3 class="book-title" th:text="${book.title}">Tên sách</h3>
+                            <p class="book-author" th:text="${book.firstAuthorName}">Tác giả</p>
                             <div class="book-meta">
                                 <div class="book-rating">
                                     <i class="fas fa-star"></i>
-                                    <span>4.85</span>
+                                    <span th:text="${book.averageRating != null ? #numbers.formatDecimal(book.averageRating, 1, 2) : '0.0'}">0.0</span>
                                 </div>
-                                <div class="book-price">90.000đ</div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- New Book 2: Cho tôi xin một vé đi tuổi thơ -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <a href="/books/book_01" class="book-card">
-                        <div class="book-cover">
-                            <img th:src="@{/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg}" alt="Vé đi tuổi thơ">
-                            <span class="book-badge new">Mới</span>
-                            <div class="book-actions">
-                                <button class="action-btn" title="Yêu thích">
-                                    <i class="far fa-heart"></i>
-                                </button>
-                                <button class="action-btn" title="Thêm vào giỏ">
-                                    <i class="fas fa-cart-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="book-info">
-                            <h3 class="book-title">Cho tôi xin một vé đi tuổi thơ</h3>
-                            <p class="book-author">Nguyễn Nhật Ánh</p>
-                            <div class="book-meta">
-                                <div class="book-rating">
-                                    <i class="fas fa-star"></i>
-                                    <span>4.8</span>
-                                </div>
-                                <div class="book-price">80.000đ</div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- New Book 1: Mắt biếc -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <a href="/books/book_03" class="book-card">
-                        <div class="book-cover">
-                            <img th:src="@{/book_asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg}" alt="Mắt biếc">
-                            <span class="book-badge new">Mới</span>
-                            <div class="book-actions">
-                                <button class="action-btn" title="Yêu thích">
-                                    <i class="far fa-heart"></i>
-                                </button>
-                                <button class="action-btn" title="Thêm vào giỏ">
-                                    <i class="fas fa-cart-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="book-info">
-                            <h3 class="book-title">Dế Mèn phiêu lưu ký</h3>
-                            <p class="book-author">Tô Hoài</p>
-                            <div class="book-meta">
-                                <div class="book-rating">
-                                    <i class="fas fa-star"></i>
-                                    <span>4.95</span>
-                                </div>
-                                <div class="book-price">75.000đ</div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- New Book 3: Dế Mèn phiêu lưu ký -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <a href="/books/book_07" class="book-card">
-                        <div class="book-cover">
-                            <img th:src="@{/book_asset/image/covers/kienthuc-hocthuat/steve-jobs-thien-tai-gan-do.jpg}" alt="Dế Mèn">
-                            <span class="book-badge new">Mới</span>
-                            <div class="book-actions">
-                                <button class="action-btn" title="Yêu thích">
-                                    <i class="far fa-heart"></i>
-                                </button>
-                                <button class="action-btn" title="Thêm vào giỏ">
-                                    <i class="fas fa-cart-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="book-info">
-                            <h3 class="book-title">Cô gái đến từ hôm qua</h3>
-                            <p class="book-author">Nguyễn Nhật Ánh</p>
-                            <div class="book-meta">
-                                <div class="book-rating">
-                                    <i class="fas fa-star"></i>
-                                    <span>4.7</span>
-                                </div>
-                                <div class="book-price">92.000đ</div>
+                                <div th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).FREE}"
+                                     class="book-price free">Miễn phí</div>
+                                <div th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).PURCHASE || book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).BOTH}"
+                                     class="book-price"
+                                     th:text="${book.price != null ? #numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT') + 'đ' : ''}">0đ</div>
+                                <div th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).SUBSCRIPTION}"
+                                     class="book-price">VIP</div>
                             </div>
                         </div>
                     </a>

@@ -143,7 +143,7 @@ public class OrderController {
 
             // Tạo order
             Order order = new Order();
-            order.setOrderId(UUID.randomUUID().toString());
+            // Don't set orderId - let OrderService generate it with proper format
             order.setUser(currentUser);
             order.setOrderType(Order.OrderType.BOOK);
             order.setTotalAmount(totalAmount);
@@ -156,7 +156,7 @@ public class OrderController {
             // Tạo order items
             for (CartItem cartItem : cartItems) {
                 OrderItem orderItem = new OrderItem();
-                orderItem.setOrderItemId(UUID.randomUUID().toString());
+                // Don't set orderItemId - let OrderItemService generate it with proper format
                 orderItem.setOrder(savedOrder);
                 orderItem.setBook(cartItem.getBook());
                 orderItem.setPriceAtPurchase(cartItem.getBook().getPrice());
@@ -172,8 +172,9 @@ public class OrderController {
             // Chuyển đến payment gateway hoặc confirmation
             if ("VNPAY".equals(paymentMethod)) {
                 return "redirect:/payment/vnpay?orderId=" + savedOrder.getOrderId();
-            } else if ("MOMO".equals(paymentMethod)) {
-                return "redirect:/payment/momo?orderId=" + savedOrder.getOrderId();
+            } else if ("BANK_TRANSFER".equals(paymentMethod)) {
+                // Chuyển đến trang thanh toán QR
+                return "redirect:/payment/bank-transfer?orderId=" + savedOrder.getOrderId();
             } else {
                 // Thanh toán khác - chuyển về trang xác nhận
                 redirectAttributes.addFlashAttribute("success", "Đặt hàng thành công! Mã đơn: " + savedOrder.getOrderId());
@@ -217,7 +218,7 @@ public class OrderController {
         model.addAttribute("orderItems", orderItems);
         model.addAttribute("user", currentUser);
 
-        return "user/order-detail";
+        return "user/order/order-detail";
     }
 
     /**
@@ -255,6 +256,54 @@ public class OrderController {
         }
 
         return "redirect:/user/orders";
+    }
+
+    /**
+     * API endpoint để check order status (cho auto-refresh trong waiting page)
+     */
+    @GetMapping("/api/status")
+    @ResponseBody
+    public java.util.Map<String, Object> checkOrderStatus(
+            @RequestParam String orderId,
+            Authentication authentication) {
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+
+        try {
+            User currentUser = getCurrentUser(authentication);
+            if (currentUser == null) {
+                response.put("success", false);
+                response.put("message", "Unauthorized");
+                return response;
+            }
+
+            Order order = orderService.getOrderById(orderId).orElse(null);
+
+            if (order == null) {
+                response.put("success", false);
+                response.put("message", "Order not found");
+                return response;
+            }
+
+            // Check permission
+            if (!order.getUser().getUserId().equals(currentUser.getUserId())) {
+                response.put("success", false);
+                response.put("message", "Unauthorized");
+                return response;
+            }
+
+            response.put("success", true);
+            response.put("orderId", order.getOrderId());
+            response.put("paymentStatus", order.getPaymentStatus().toString());
+            response.put("paymentMethod", order.getPaymentMethod().toString());
+            response.put("totalAmount", order.getTotalAmount());
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Error: " + e.getMessage());
+        }
+
+        return response;
     }
 }
 

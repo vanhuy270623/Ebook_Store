@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/admin/banners")
-public class AdminBannerController {
+public class AdminBannerController extends BaseAdminController {
 
     private static final String REDIRECT_BANNERS = "redirect:/admin/banners";
 

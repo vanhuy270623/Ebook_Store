@@ -56,6 +56,14 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("SELECT COUNT(u) FROM User u WHERE u.deletedAt IS NULL AND u.role.roleName = :roleName")
     long countActiveByRoleName(@Param("roleName") stu.datn.ebook_store.entity.Role.RoleName roleName);
 
+    // Count all users by role (including deleted ones) - for ID generation
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role.roleName = :roleName")
+    long countAllByRoleName(@Param("roleName") stu.datn.ebook_store.entity.Role.RoleName roleName);
+
+    // Find users with IDs starting with a specific prefix (for sequential ID generation)
+    @Query("SELECT u FROM User u WHERE u.userId LIKE :prefix% ORDER BY u.userId DESC")
+    List<User> findByUserIdStartingWith(@Param("prefix") String prefix);
+
     // Admin methods to include deleted users for management
     @Query("SELECT u FROM User u ORDER BY u.createdAt DESC")
     List<User> findAllIncludingDeleted();

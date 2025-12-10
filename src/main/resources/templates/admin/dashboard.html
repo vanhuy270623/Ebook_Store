@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
 	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<link rel="stylesheet" th:href="@{/admin_template/css/dashboard-custom.css}">
 </head>
 <body class="hold-transition skin-blue sidebar-mini">
 <div class="wrapper">
@@ -69,6 +70,144 @@
 						<div class="info-box-content">
 							<span class="info-box-text">Đã xác thực</span>
 							<span class="info-box-number" th:text="${verifiedUsers ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Revenue & Orders Statistics -->
+			<div class="row">
+				<!-- Today Revenue -->
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="small-box bg-green">
+						<div class="inner">
+							<h3 th:text="${#numbers.formatDecimal(todayRevenue ?: 0, 0, 'COMMA', 0, 'POINT')}">0</h3>
+							<p>Doanh thu hôm nay (đ)</p>
+						</div>
+						<div class="icon">
+							<i class="fa fa-calendar-check-o"></i>
+						</div>
+						<a href="#" class="small-box-footer">
+							<span th:text="${todayOrders ?: 0}">0</span> đơn hàng
+						</a>
+					</div>
+				</div>
+
+				<!-- This Month Revenue -->
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="small-box bg-blue">
+						<div class="inner">
+							<h3 th:text="${#numbers.formatDecimal(thisMonthRevenue ?: 0, 0, 'COMMA', 0, 'POINT')}">0</h3>
+							<p>Doanh thu tháng này (đ)</p>
+						</div>
+						<div class="icon">
+							<i class="fa fa-calendar"></i>
+						</div>
+						<a th:href="@{/admin/orders}" class="small-box-footer">
+							Chi tiết <i class="fa fa-arrow-circle-right"></i>
+						</a>
+					</div>
+				</div>
+
+				<!-- Total Revenue -->
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="small-box bg-yellow">
+						<div class="inner">
+							<h3 th:text="${#numbers.formatDecimal(totalRevenue ?: 0, 0, 'COMMA', 0, 'POINT')}">0</h3>
+							<p>Tổng doanh thu (đ)</p>
+						</div>
+						<div class="icon">
+							<i class="fa fa-money"></i>
+						</div>
+						<a th:href="@{/admin/orders}" class="small-box-footer">
+							<span th:text="${totalOrders ?: 0}">0</span> đơn hàng
+						</a>
+					</div>
+				</div>
+
+				<!-- Completed Orders -->
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="small-box bg-aqua">
+						<div class="inner">
+							<h3 th:text="${completedOrders ?: 0}">0</h3>
+							<p>Đơn hàng hoàn thành</p>
+						</div>
+						<div class="icon">
+							<i class="fa fa-check-circle"></i>
+						</div>
+						<a th:href="@{/admin/orders(status='COMPLETED')}" class="small-box-footer">
+							Chi tiết <i class="fa fa-arrow-circle-right"></i>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Revenue by Type & Recent Orders -->
+			<div class="row">
+				<div class="col-md-6">
+					<div class="box box-success">
+						<div class="box-header with-border">
+							<h3 class="box-title"><i class="fa fa-pie-chart"></i> Doanh thu theo loại đơn hàng</h3>
+						</div>
+						<div class="box-body">
+							<div class="row">
+								<div class="col-md-6">
+									<div class="info-box bg-aqua">
+										<span class="info-box-icon"><i class="fa fa-book"></i></span>
+										<div class="info-box-content">
+											<span class="info-box-text">Mua sách lẻ</span>
+											<span class="info-box-number" th:text="${#numbers.formatDecimal(bookRevenue ?: 0, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
+										</div>
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="info-box bg-purple">
+										<span class="info-box-icon"><i class="fa fa-star"></i></span>
+										<div class="info-box-content">
+											<span class="info-box-text">Gói đăng ký</span>
+											<span class="info-box-number" th:text="${#numbers.formatDecimal(subscriptionRevenue ?: 0, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Recent Orders Preview -->
+				<div class="col-md-6">
+					<div class="box box-warning">
+						<div class="box-header with-border">
+							<h3 class="box-title"><i class="fa fa-list"></i> Đơn hàng gần đây</h3>
+							<div class="box-tools pull-right">
+								<a th:href="@{/admin/orders}" class="btn btn-warning btn-sm">Xem tất cả</a>
+							</div>
+						</div>
+						<div class="box-body" style="max-height: 300px; overflow-y: auto;">
+							<ul class="list-group list-group-unbordered">
+								<li class="list-group-item" th:each="order : ${#lists.size(recentOrders) > 5 ? recentOrders.subList(0, 5) : recentOrders}" th:if="${recentOrders != null}">
+									<div>
+										<strong th:text="${order.orderId}">Order ID</strong>
+										<span class="pull-right">
+											<span class="label"
+											      th:classappend="${order.paymentStatus.name() == 'COMPLETED' ? 'label-success' :
+											                       (order.paymentStatus.name() == 'PENDING' ? 'label-warning' :
+											                       (order.paymentStatus.name() == 'FAILED' ? 'label-danger' : 'label-default'))}"
+											      th:text="${order.paymentStatus}">
+												Status
+											</span>
+										</span>
+									</div>
+									<small class="text-muted">
+										<i class="fa fa-user"></i> <span th:text="${order.user?.fullName ?: order.user?.username}">User</span> |
+										<i class="fa fa-money"></i> <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span> |
+										<i class="fa fa-clock-o"></i> <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">Date</span>
+									</small>
+								</li>
+								<li class="list-group-item text-center" th:if="${recentOrders == null or #lists.isEmpty(recentOrders)}">
+									<em class="text-muted">Chưa có đơn hàng nào</em>
+								</li>
+							</ul>
 						</div>
 					</div>
 				</div>
@@ -212,303 +351,6 @@
 									<em class="text-muted">Chưa có đánh giá nào</em>
 								</li>
 							</ul>
-						</div>
-					</div>
-				</div>
-			</div>
-				</div>
-
-				<!-- Total Orders -->
-				<div class="col-md-3 col-sm-6 col-xs-12">
-					<div class="info-box">
-						<span class="info-box-icon bg-yellow"><i class="fa fa-shopping-cart"></i></span>
-						<div class="info-box-content">
-							<span class="info-box-text">Đơn hàng</span>
-							<span class="info-box-number" th:text="${totalOrders}">8,350</span>
-						</div>
-					</div>
-				</div>
-
-				<!-- Total Revenue -->
-				<div class="col-md-3 col-sm-6 col-xs-12">
-					<div class="info-box">
-						<span class="info-box-icon bg-red"><i class="fa fa-money"></i></span>
-						<div class="info-box-content">
-							<span class="info-box-text">Doanh thu</span>
-							<span class="info-box-number" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">
-								450,000,000 đ
-							</span>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Small boxes -->
-			<div class="row">
-				<!-- Free Books -->
-				<div class="col-lg-3 col-xs-6">
-					<div class="small-box bg-aqua">
-						<div class="inner">
-							<h3 th:text="${freeBooks}">1,250</h3>
-							<p>Sách miễn phí</p>
-						</div>
-						<div class="icon">
-							<i class="fa fa-gift"></i>
-						</div>
-						<a th:href="@{/admin/books(type='free')}" class="small-box-footer">
-							Chi tiết <i class="fa fa-arrow-circle-right"></i>
-						</a>
-					</div>
-				</div>
-
-				<!-- Premium Subscribers -->
-				<div class="col-lg-3 col-xs-6">
-					<div class="small-box bg-green">
-						<div class="inner">
-							<h3 th:text="${premiumUsers}">3,450</h3>
-							<p>Gói Premium</p>
-						</div>
-						<div class="icon">
-							<i class="fa fa-star"></i>
-						</div>
-						<a th:href="@{/admin/subscriptions}" class="small-box-footer">
-							Chi tiết <i class="fa fa-arrow-circle-right"></i>
-						</a>
-					</div>
-				</div>
-
-				<!-- Pending Orders -->
-				<div class="col-lg-3 col-xs-6">
-					<div class="small-box bg-yellow">
-						<div class="inner">
-							<h3 th:text="${pendingOrders}">44</h3>
-							<p>Đơn chờ xử lý</p>
-						</div>
-						<div class="icon">
-							<i class="fa fa-clock-o"></i>
-						</div>
-						<a th:href="@{/admin/orders(status='PENDING')}" class="small-box-footer">
-							Chi tiết <i class="fa fa-arrow-circle-right"></i>
-						</a>
-					</div>
-				</div>
-
-				<!-- Total Reviews -->
-				<div class="col-lg-3 col-xs-6">
-					<div class="small-box bg-red">
-						<div class="inner">
-							<h3 th:text="${totalReviews}">8,650</h3>
-							<p>Đánh giá</p>
-						</div>
-						<div class="icon">
-							<i class="fa fa-comments"></i>
-						</div>
-						<a th:href="@{/admin/reviews}" class="small-box-footer">
-							Chi tiết <i class="fa fa-arrow-circle-right"></i>
-						</a>
-					</div>
-				</div>
-			</div>
-
-			<!-- Charts Row -->
-			<div class="row">
-				<!-- Sales Chart -->
-				<div class="col-md-8">
-					<div class="box box-primary">
-						<div class="box-header with-border">
-							<h3 class="box-title">Doanh thu 12 tháng</h3>
-							<div class="box-tools pull-right">
-								<button type="button" class="btn btn-box-tool" data-widget="collapse">
-									<i class="fa fa-minus"></i>
-								</button>
-							</div>
-						</div>
-						<div class="box-body">
-							<div class="chart">
-								<canvas id="salesChart" style="height:250px"></canvas>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Top Books -->
-				<div class="col-md-4">
-					<div class="box box-success">
-						<div class="box-header with-border">
-							<h3 class="box-title">Sách bán chạy</h3>
-							<div class="box-tools pull-right">
-								<button type="button" class="btn btn-box-tool" data-widget="collapse">
-									<i class="fa fa-minus"></i>
-								</button>
-							</div>
-						</div>
-						<div class="box-body">
-							<ul class="products-list product-list-in-box">
-								<li class="item" th:each="book, iterStat : ${topBooks}">
-									<div class="product-img">
-										<img th:src="${book.coverImageUrl}" alt="Book Cover" class="book-cover-thumb">
-									</div>
-									<div class="product-info">
-										<a href="#" class="product-title" th:text="${book.title}">
-											Book Title
-											<span class="label label-warning pull-right"
-											      th:text="'#' + ${iterStat.count}">#1</span>
-										</a>
-										<span class="product-description" th:text="${book.author?.name}">
-											Author Name
-										</span>
-									</div>
-								</li>
-							</ul>
-						</div>
-						<div class="box-footer text-center">
-							<a th:href="@{/admin/reports/books}" class="uppercase">Xem tất cả</a>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Recent Orders & Activities -->
-			<div class="row">
-				<!-- Recent Orders -->
-				<div class="col-md-8">
-					<div class="box box-warning">
-						<div class="box-header with-border">
-							<h3 class="box-title">Đơn hàng gần đây</h3>
-							<div class="box-tools pull-right">
-								<button type="button" class="btn btn-box-tool" data-widget="collapse">
-									<i class="fa fa-minus"></i>
-								</button>
-							</div>
-						</div>
-						<div class="box-body">
-							<div class="table-responsive">
-								<table class="table table-striped">
-									<thead>
-										<tr>
-											<th>Mã ĐH</th>
-											<th>Khách hàng</th>
-											<th>Tổng tiền</th>
-											<th>Trạng thái</th>
-											<th>Ngày</th>
-											<th>Thao tác</th>
-										</tr>
-									</thead>
-									<tbody>
-										<tr th:each="order : ${recentOrders}">
-											<td th:text="${order.orderId}">ORD-001</td>
-											<td th:text="${order.user?.fullName}">Nguyễn Văn A</td>
-											<td th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'">
-												120,000đ
-											</td>
-											<td>
-												<span class="label"
-												      th:classappend="${order.paymentStatus == 'COMPLETED' ? 'label-success' : (order.paymentStatus == 'PENDING' ? 'label-warning' : 'label-danger')}"
-												      th:text="${order.paymentStatus}">
-													COMPLETED
-												</span>
-											</td>
-											<td th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy')}">01/11/2025</td>
-											<td>
-												<a th:href="@{/admin_template/orders/{id}(id=${order.orderId})}"
-												   class="btn btn-xs btn-info">
-													<i class="fa fa-eye"></i>
-												</a>
-											</td>
-										</tr>
-									</tbody>
-								</table>
-							</div>
-						</div>
-						<div class="box-footer text-center">
-							<a th:href="@{/admin/orders}" class="uppercase">Xem tất cả đơn hàng</a>
-						</div>
-					</div>
-				</div>
-
-				<!-- Recent Activities -->
-				<div class="col-md-4">
-					<div class="box box-info">
-						<div class="box-header with-border">
-							<h3 class="box-title">Hoạt động gần đây</h3>
-							<div class="box-tools pull-right">
-								<button type="button" class="btn btn-box-tool" data-widget="collapse">
-									<i class="fa fa-minus"></i>
-								</button>
-							</div>
-						</div>
-						<div class="box-body">
-							<ul class="timeline">
-								<li th:each="activity : ${recentActivities}">
-									<i class="fa fa-circle bg-blue"></i>
-									<div class="timeline-item">
-										<span class="time">
-											<i class="fa fa-clock-o"></i>
-											<span th:text="${activity.timeAgo}">5 phút trước</span>
-										</span>
-										<h3 class="timeline-header" th:text="${activity.title}">
-											Đơn hàng mới
-										</h3>
-										<div class="timeline-body" th:text="${activity.description}">
-											Khách hàng đã đặt 2 sách
-										</div>
-									</div>
-								</li>
-							</ul>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- New Users & Top Categories -->
-			<div class="row">
-				<!-- New Users -->
-				<div class="col-md-6">
-					<div class="box box-danger">
-						<div class="box-header with-border">
-							<h3 class="box-title">Người dùng mới</h3>
-						</div>
-						<div class="box-body">
-							<ul class="users-list clearfix">
-								<li th:each="user : ${newUsers}">
-									<img th:src="${user.avatarUrl}" alt="User Image">
-									<a class="users-list-name" href="#" th:text="${user.fullName}">User Name</a>
-									<span class="users-list-date"
-									      th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}">
-										01/11/2025
-									</span>
-								</li>
-							</ul>
-						</div>
-						<div class="box-footer text-center">
-							<a th:href="@{/admin/users}" class="uppercase">Xem tất cả</a>
-						</div>
-					</div>
-				</div>
-
-				<!-- Top Categories -->
-				<div class="col-md-6">
-					<div class="box box-primary">
-						<div class="box-header with-border">
-							<h3 class="box-title">Danh mục phổ biến</h3>
-						</div>
-						<div class="box-body">
-							<div class="row">
-								<div class="col-md-12" th:each="category : ${topCategories}">
-									<div class="progress-group">
-										<span class="progress-text" th:text="${category.categoryName}">Tiểu thuyết</span>
-										<span class="progress-number">
-											<b th:text="${category.bookCount}">1,234</b>/
-											<span th:text="${totalBooks}">5,000</span>
-										</span>
-										<div class="progress sm">
-											<div class="progress-bar progress-bar-aqua"
-											     th:style="'width: ' + ${category.percentage} + '%'">
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
 						</div>
 					</div>
 				</div>

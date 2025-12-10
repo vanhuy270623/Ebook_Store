@@ -6,6 +6,8 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -23,6 +25,9 @@ public class Order {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subscription_id")
     private Subscription subscription;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<OrderItem> orderItems = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "order_type", nullable = false)
@@ -61,11 +66,11 @@ public class Order {
     }
 
     public enum PaymentStatus {
-        PENDING, COMPLETED, FAILED, CANCELLED
+        PENDING, WAITING_APPROVAL, COMPLETED, PAID, FAILED, CANCELLED
     }
 
     public enum PaymentMethod {
-        MOMO, VNPAY, BANK_TRANSFER, CREDIT_CARD, FREE_ACTIVATION
+        VNPAY, BANK_TRANSFER, CREDIT_CARD
     }
 }
 

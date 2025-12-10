@@ -9,19 +9,30 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import stu.datn.ebook_store.dto.request.UserUpdateRequest;
 import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.entity.Order;
+import stu.datn.ebook_store.entity.OrderItem;
 import stu.datn.ebook_store.entity.ReadingProgress;
 import stu.datn.ebook_store.entity.User;
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.OrderService;
+import stu.datn.ebook_store.service.OrderItemService;
 import stu.datn.ebook_store.service.ReadingProgressService;
 import stu.datn.ebook_store.service.UserService;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -33,18 +44,23 @@ import java.util.stream.Collectors;
 @RequestMapping("/user")
 public class UserController {
 
+    private static final String AVATAR_UPLOAD_DIR = "F:/datn_uploads/book_asset/image/avatars/";
+
     private final UserService userService;
     private final OrderService orderService;
+    private final OrderItemService orderItemService;
     private final ReadingProgressService readingProgressService;
     private final PasswordEncoder passwordEncoder;
     private final BookService bookService;
 
     @Autowired
     public UserController(UserService userService, OrderService orderService,
+                         OrderItemService orderItemService,
                          ReadingProgressService readingProgressService, PasswordEncoder passwordEncoder,
                          BookService bookService) {
         this.userService = userService;
         this.orderService = orderService;
+        this.orderItemService = orderItemService;
         this.readingProgressService = readingProgressService;
         this.passwordEncoder = passwordEncoder;
         this.bookService = bookService;
@@ -136,6 +152,7 @@ public class UserController {
         userRequest.setFullName(currentUser.getFullName());
         userRequest.setPhone(currentUser.getPhone());
         userRequest.setAvatarUrl(currentUser.getAvatarUrl());
+        userRequest.setRoleId(currentUser.getRole() != null ? currentUser.getRole().getRoleId() : null);
 
         model.addAttribute("user", currentUser);
         model.addAttribute("userRequest", userRequest);
@@ -150,6 +167,7 @@ public class UserController {
     public String updateProfile(
             @Valid @ModelAttribute("userRequest") UserUpdateRequest request,
             BindingResult bindingResult,
+            @RequestParam(value = "avatarFile", required = false) MultipartFile avatarFile,
             Authentication authentication,
             Model model,
             RedirectAttributes redirectAttributes) {
@@ -173,11 +191,24 @@ public class UserController {
                 return "redirect:/user/profile";
             }
 
+            // Xử lý upload avatar nếu có file
+            if (avatarFile != null && !avatarFile.isEmpty()) {
+                try {
+                    String avatarUrl = saveAvatar(avatarFile, currentUser.getUserId());
+                    currentUser.setAvatarUrl(avatarUrl);
+                } catch (IOException e) {
+                    redirectAttributes.addFlashAttribute("error", "Lỗi khi upload avatar: " + e.getMessage());
+                    return "redirect:/user/profile";
+                }
+            } else if (request.getAvatarUrl() != null && !request.getAvatarUrl().trim().isEmpty()) {
+                // Nếu không upload file mới nhưng có URL thì dùng URL
+                currentUser.setAvatarUrl(request.getAvatarUrl());
+            }
+
             // Cập nhật thông tin
             currentUser.setEmail(request.getEmail());
             currentUser.setFullName(request.getFullName());
             currentUser.setPhone(request.getPhone());
-            currentUser.setAvatarUrl(request.getAvatarUrl());
             currentUser.setUpdatedAt(LocalDateTime.now());
 
             userService.saveUser(currentUser);
@@ -188,6 +219,61 @@ public class UserController {
             redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
             return "redirect:/user/profile";
         }
+    }
+
+    /**
+     * Lưu avatar vào thư mục avatars với tên là userId
+     */
+    private String saveAvatar(MultipartFile file, String userId) throws IOException {
+        // Validate file
+        if (file.isEmpty()) {
+            throw new IOException("File rỗng");
+        }
+
+        // Check file size (5MB max)
+        long maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.getSize() > maxSize) {
+            throw new IOException("Kích thước file không được vượt quá 5MB");
+        }
+
+        // Check file type
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IOException("Chỉ chấp nhận file ảnh (JPG, PNG, GIF)");
+        }
+
+        // Tạo thư mục nếu chưa có
+        File uploadDir = new File(AVATAR_UPLOAD_DIR);
+        if (!uploadDir.exists()) {
+            boolean created = uploadDir.mkdirs();
+            if (!created) {
+                throw new IOException("Không thể tạo thư mục upload");
+            }
+        }
+
+        // Lấy extension của file
+        String originalFilename = file.getOriginalFilename();
+        String fileExtension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            // Validate extension
+            if (!fileExtension.matches("\\.(jpg|jpeg|png|gif)$")) {
+                throw new IOException("Chỉ chấp nhận định dạng JPG, PNG, GIF");
+            }
+        } else {
+            // Default to jpg if no extension
+            fileExtension = ".jpg";
+        }
+
+        // Tên file là userId + extension
+        String fileName = userId + fileExtension.toLowerCase();
+        Path filePath = Paths.get(AVATAR_UPLOAD_DIR + fileName);
+
+        // Lưu file
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+        // Trả về URL để truy cập avatar
+        return "/book_asset/image/avatars/" + fileName;
     }
 
     /**
@@ -260,12 +346,20 @@ public class UserController {
         int endIndex = Math.min(startIndex + pageSize, totalOrders);
         List<Order> pagedOrders = orders.subList(startIndex, endIndex);
 
+        // Load order items for each order
+        Map<String, List<OrderItem>> orderItemsMap = new HashMap<>();
+        for (Order order : pagedOrders) {
+            List<OrderItem> items = orderItemService.getOrderItemsByOrderId(order.getOrderId());
+            orderItemsMap.put(order.getOrderId(), items);
+        }
+
         model.addAttribute("orders", pagedOrders);
+        model.addAttribute("orderItemsMap", orderItemsMap);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("totalOrders", totalOrders);
 
-        return "user/orders";
+        return "user/order/orders";
     }
 
     /**
@@ -284,9 +378,15 @@ public class UserController {
             return "redirect:/user/orders";
         }
 
+        // Load order items for book orders
+        if (order.getOrderType() == Order.OrderType.BOOK) {
+            List<OrderItem> orderItems = orderItemService.getOrderItemsByOrderId(orderId);
+            model.addAttribute("orderItems", orderItems);
+        }
+
         model.addAttribute("order", order);
 
-        return "user/order-detail";
+        return "user/order/order-detail";
     }
 
     /**

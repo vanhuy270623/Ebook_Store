@@ -88,26 +88,45 @@
 					<!-- Order Items (if book order) -->
 					<div class="box box-info" th:if="${order.orderType.name() == 'BOOK' && orderItems != null}">
 						<div class="box-header with-border">
-							<h3 class="box-title">Chi tiết sách</h3>
+							<h3 class="box-title">Chi tiết sách trong đơn hàng</h3>
 						</div>
 						<div class="box-body table-responsive no-padding">
 							<table class="table table-striped">
 								<thead>
 									<tr>
-										<th>Sách</th>
-										<th>Giá</th>
-										<th>Số lượng</th>
-										<th>Tổng</th>
+										<th width="50">#</th>
+										<th>Mã sách</th>
+										<th>Tên sách</th>
+										<th>Tác giả</th>
+										<th class="text-right">Giá</th>
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="item : ${orderItems}">
-										<td th:text="${item.book.title}">Tên sách</td>
-										<td th:text="${#numbers.formatDecimal(item.priceAtPurchase, 0, 'COMMA', 0, 'POINT') + ' đ'}">50,000 đ</td>
-										<td th:text="${item.quantity}">1</td>
-										<td><strong th:text="${#numbers.formatDecimal(item.priceAtPurchase * item.quantity, 0, 'COMMA', 0, 'POINT') + ' đ'}">50,000 đ</strong></td>
+									<tr th:each="item, iterStat : ${orderItems}">
+										<td th:text="${iterStat.count}">1</td>
+										<td><small class="text-muted" th:text="${item.book.bookId}">BOOK001</small></td>
+										<td>
+											<strong th:text="${item.book.title}">Tên sách</strong>
+											<br>
+											<small class="text-muted" th:if="${item.book.publisher}" th:text="'NXB: ' + ${item.book.publisher}">NXB Kim Đồng</small>
+										</td>
+										<td th:text="${item.book.firstAuthorName}">Tác giả</td>
+										<td class="text-right">
+											<strong class="text-success" th:text="${#numbers.formatDecimal(item.priceAtPurchase, 0, 'COMMA', 0, 'POINT') + ' đ'}">250,000 đ</strong>
+										</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(orderItems)}">
+										<td colspan="5" class="text-center text-muted">Không có sách trong đơn hàng</td>
 									</tr>
 								</tbody>
+								<tfoot>
+									<tr>
+										<th colspan="4" class="text-right">Tổng tiền:</th>
+										<th class="text-right">
+											<strong class="text-red" style="font-size: 16px;" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT') + ' đ'}">500,000 đ</strong>
+										</th>
+									</tr>
+								</tfoot>
 							</table>
 						</div>
 					</div>

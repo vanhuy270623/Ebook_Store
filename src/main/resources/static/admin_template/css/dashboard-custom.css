@@ -1,0 +1,149 @@
+/* Dashboard Custom Styles */
+
+/* Small boxes hover effect */
+.small-box {
+    transition: all 0.3s ease-in-out;
+}
+
+.small-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Info boxes */
+.info-box {
+    transition: all 0.3s ease-in-out;
+}
+
+.info-box:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Purple color for subscription */
+.bg-purple {
+    background-color: #9b59b6 !important;
+}
+
+.label-purple {
+    background-color: #9b59b6 !important;
+}
+
+/* Table improvements */
+.table-hover tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+.table thead th {
+    background-color: #f4f4f4;
+    font-weight: 600;
+}
+
+/* Order status badges */
+.label {
+    font-size: 11px;
+    padding: 3px 8px;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .small-box .inner h3 {
+        font-size: 28px;
+    }
+
+    .info-box-number {
+        font-size: 20px;
+    }
+}
+
+/* Chart container */
+.chart {
+    position: relative;
+    height: 300px;
+}
+
+/* Recent orders list */
+.list-group-item {
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.list-group-item:hover {
+    border-left-color: #3c8dbc;
+    background-color: #f9f9f9;
+}
+
+/* Box collapsible animation */
+.box.collapsed-box .box-body,
+.box.collapsed-box .box-footer {
+    display: none;
+}
+
+/* Loading spinner */
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.overlay .fa-refresh {
+    animation: fa-spin 2s infinite linear;
+}
+
+/* Revenue cards */
+.small-box .icon {
+    transition: all 0.3s ease;
+}
+
+.small-box:hover .icon {
+    font-size: 95px;
+}
+
+/* Status colors */
+.text-completed {
+    color: #00a65a !important;
+}
+
+.text-pending {
+    color: #f39c12 !important;
+}
+
+.text-failed {
+    color: #dd4b39 !important;
+}
+
+.text-cancelled {
+    color: #999 !important;
+}
+
+/* Dashboard statistics animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 40px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.box, .small-box, .info-box {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* Print styles */
+@media print {
+    .box-tools,
+    .btn,
+    .small-box-footer {
+        display: none;
+    }
+}
+

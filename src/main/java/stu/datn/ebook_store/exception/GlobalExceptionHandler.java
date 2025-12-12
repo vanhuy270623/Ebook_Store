@@ -5,14 +5,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.thymeleaf.exceptions.TemplateInputException;
+import stu.datn.ebook_store.entity.User;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -34,6 +38,27 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /**
+     * Tự động thêm thông tin user đã đăng nhập vào tất cả các views
+     * Giúp các template có thể truy cập ${currentUser} mà không cần controller thêm thủ công
+     */
+    @ModelAttribute("currentUser")
+    public User getCurrentUser() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()
+                && !(authentication.getPrincipal() instanceof String)) {
+                Object principal = authentication.getPrincipal();
+                if (principal instanceof User) {
+                    return (User) principal;
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Could not get current user: {}", e.getMessage());
+        }
+        return null;
+    }
 
     /**
      * Xử lý NullPointerException - Lỗi phổ biến nhất trong Thymeleaf

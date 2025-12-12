@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
     <meta charset="UTF-8">
@@ -32,8 +33,14 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user-circle me-2" style="font-size: 32px;"></i>
-                            <span>Người dùng</span>
+                            <img th:if="${currentUser != null && currentUser.avatarUrl != null}"
+                                 th:src="@{${currentUser.avatarUrl}}"
+                                 alt="Avatar"
+                                 class="rounded-circle me-2"
+                                 style="width: 32px; height: 32px; object-fit: cover;">
+                            <i th:if="${currentUser == null || currentUser.avatarUrl == null}"
+                               class="fas fa-user-circle me-2" style="font-size: 32px;"></i>
+                            <span sec:authentication="principal.fullName">Người dùng</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" th:href="@{/user/dashboard}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
@@ -125,8 +132,8 @@
                             <!-- Reading Info -->
                             <div class="small text-muted mb-3">
                                 <div class="d-flex justify-content-between mb-1">
-                                    <span><i class="fas fa-file-alt me-1"></i> Trang hiện tại:</span>
-                                    <span th:text="${progress.currentPage != null ? progress.currentPage : 0}">0</span>
+                                    <span><i class="fas fa-bookmark me-1"></i> Vị trí đọc:</span>
+                                    <span th:text="${progress.lastReadLocation != null ? progress.lastReadLocation : 'Chưa đọc'}">page-1</span>
                                 </div>
                                 <div class="d-flex justify-content-between">
                                     <span><i class="fas fa-clock me-1"></i> Lần đọc cuối:</span>

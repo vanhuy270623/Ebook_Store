@@ -14,12 +14,12 @@
         <!-- Header với thông tin sách và controls -->
         <div class="reader-header">
             <div class="book-info">
-                <img th:src="@{/uploads/covers/{cover}(cover=${book.coverImage ?: 'default-cover.jpg'})}"
+                <img th:src="${book.coverImageUrl != null ? book.coverImageUrl : '/images/default-cover.jpg'}"
                      alt="Book Cover" class="book-cover"
-                     th:onerror="this.src='@{/images/default-cover.jpg}'">
+                     onerror="this.src='/images/default-cover.jpg'">
                 <div class="book-details">
                     <h3 th:text="${book.title}">Tên Sách</h3>
-                    <p th:text="${book.author?.name ?: 'Unknown Author'}">Tác Giả</p>
+                    <p th:text="${book.authorNames ?: 'Unknown Author'}">Tác Giả</p>
                 </div>
             </div>
 
@@ -136,8 +136,8 @@
     <script th:inline="javascript">
         // Variables from Thymeleaf
         const bookId = /*[[${book.bookId}]]*/ 1;
-        const assetPath = /*[[${asset.filePath}]]*/ '';
-        const initialLocation = /*[[${progress?.bookmarkData}]]*/ null;
+        const assetPath = /*[[${asset.fileUrl}]]*/ '';
+        const initialLocation = /*[[${progress?.lastReadLocation}]]*/ null;
 
         // ePub.js variables
         let book = null;
@@ -157,7 +157,8 @@
             try {
                 showLoading(true);
 
-                const epubPath = `/uploads/source/${assetPath}`;
+                // assetPath đã chứa full path từ DB: /book_asset/source/...
+                const epubPath = assetPath;
                 console.log('Loading EPUB from:', epubPath);
 
                 // Initialize book

@@ -169,6 +169,14 @@ body.reading-page {
     text-align: center;
 }
 
+.progress-info {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 /* PDF Viewer specific */
 #pdf-canvas {
     display: block;
@@ -241,6 +249,294 @@ body.reading-page {
     transition: width 0.3s ease;
 }
 
+/* PDF Viewer Controls */
+.pdf-viewer {
+    flex: 1;
+    overflow: auto;
+    background: #525659;
+    position: relative;
+}
+
+.pdf-canvas-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.pdf-canvas {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    background: white;
+}
+
+.page-navigation {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-input {
+    width: 60px;
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.zoom-input {
+    width: 60px;
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+}
+
+/* EPUB Viewer Specific */
+.epub-viewer {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 300px;
+    background: #fff;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+}
+
+.sidebar.hidden {
+    transform: translateX(-100%);
+    position: absolute;
+    z-index: 10;
+}
+
+.sidebar-header {
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toc-container {
+    padding: 10px 0;
+}
+
+.toc-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.2s ease;
+}
+
+.toc-item:hover {
+    background: #f8f9fa;
+    padding-left: 25px;
+}
+
+.toc-item.active {
+    background: #e9ecef;
+    border-left: 3px solid #667eea;
+    font-weight: 600;
+}
+
+.reading-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.reading-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    background: white;
+}
+
+#epub-viewer {
+    width: 100%;
+    height: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.navigation-controls {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 10;
+}
+
+.nav-btn {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: rgba(102, 126, 234, 0.9);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-btn:hover {
+    background: rgba(102, 126, 234, 1);
+    transform: scale(1.1);
+}
+
+.nav-prev {
+    left: 20px;
+}
+
+.nav-next {
+    right: 20px;
+}
+
+.reading-progress {
+    height: 4px;
+    background: #e9ecef;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+}
+
+.settings-panel {
+    position: absolute;
+    top: 70px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    padding: 20px;
+    min-width: 280px;
+    z-index: 100;
+    display: none;
+}
+
+.setting-group {
+    margin-bottom: 20px;
+}
+
+.setting-group:last-child {
+    margin-bottom: 0;
+}
+
+.setting-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.setting-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Dark Mode */
+body.dark-mode {
+    background: #1a202c;
+}
+
+body.dark-mode .reader-content {
+    background: #2d3748;
+}
+
+body.dark-mode .sidebar {
+    background: #2d3748;
+    border-right: 1px solid #4a5568;
+}
+
+body.dark-mode .toc-item {
+    color: #e2e8f0;
+    border-bottom: 1px solid #4a5568;
+}
+
+body.dark-mode .toc-item:hover {
+    background: #4a5568;
+}
+
+body.dark-mode .settings-panel {
+    background: #2d3748;
+    color: #e2e8f0;
+}
+
+body.dark-mode .setting-label {
+    color: #e2e8f0;
+}
+
+body.dark-mode .pdf-viewer {
+    background: #1a202c;
+}
+
+/* Buttons */
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.btn-dark {
+    background: #343a40;
+    color: white;
+}
+
+.btn-dark:hover {
+    background: #23272b;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .reader-header {
@@ -262,10 +558,39 @@ body.reading-page {
 
     .reader-controls {
         padding: 10px 15px;
+        flex-wrap: wrap;
     }
 
     .control-group {
-        gap: 10px;
+        gap: 8px;
+    }
+
+    .sidebar {
+        width: 250px;
+    }
+
+    #epub-viewer {
+        padding: 20px 10px;
+    }
+
+    .nav-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    .nav-prev {
+        left: 10px;
+    }
+
+    .nav-next {
+        right: 10px;
+    }
+
+    .settings-panel {
+        right: 10px;
+        left: 10px;
+        width: auto;
     }
 }
 

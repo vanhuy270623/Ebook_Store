@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test PDF.js Loading</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        #console { background: white; padding: 15px; border: 1px solid #ddd;
+                   max-height: 400px; overflow: auto; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test PDF.js Loading</h1>
+
+    <div id="status" class="status info">Đang kiểm tra...</div>
+
+    <h2>Console Log:</h2>
+    <pre id="console"></pre>
+
+    <script>
+        const consoleDiv = document.getElementById('console');
+        const statusDiv = document.getElementById('status');
+
+        function log(msg) {
+            console.log(msg);
+            consoleDiv.textContent += new Date().toLocaleTimeString() + ' - ' + msg + '\n';
+        }
+
+        function setStatus(msg, type) {
+            statusDiv.textContent = msg;
+            statusDiv.className = 'status ' + type;
+        }
+
+        log('Starting PDF.js loading test...');
+
+        const cdnSources = [
+            'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/build/pdf.min.js',
+            'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js'
+        ];
+
+        let currentIndex = 0;
+
+        function tryLoadPDFjs() {
+            if (currentIndex >= cdnSources.length) {
+                log('❌ ALL CDN SOURCES FAILED!');
+                setStatus('❌ Tất cả CDN đều bị chặn hoặc không kết nối được!', 'error');
+                return;
+            }
+
+            const url = cdnSources[currentIndex];
+            log('Trying CDN #' + (currentIndex + 1) + ': ' + url);
+            setStatus('Đang thử CDN #' + (currentIndex + 1) + '...', 'info');
+
+            const script = document.createElement('script');
+            script.src = url;
+            script.async = false;
+
+            const startTime = Date.now();
+
+            script.onload = function() {
+                const loadTime = Date.now() - startTime;
+                log('✅ SUCCESS! Loaded in ' + loadTime + 'ms');
+                log('CDN URL: ' + url);
+                setStatus('✅ PDF.js loaded thành công từ CDN #' + (currentIndex + 1), 'success');
+
+                // Check if pdfjsLib is available
+                setTimeout(function() {
+                    if (typeof pdfjsLib !== 'undefined') {
+                        log('✅ pdfjsLib is available!');
+                        log('Version: ' + pdfjsLib.version);
+                        setStatus('✅ PDF.js hoạt động hoàn toàn! Version: ' + pdfjsLib.version, 'success');
+                    } else {
+                        log('❌ Script loaded but pdfjsLib not defined!');
+                        setStatus('❌ Script loaded nhưng pdfjsLib không có!', 'error');
+                    }
+                }, 100);
+            };
+
+            script.onerror = function() {
+                const loadTime = Date.now() - startTime;
+                log('❌ FAILED after ' + loadTime + 'ms');
+                log('CDN URL: ' + url);
+                currentIndex++;
+
+                if (currentIndex < cdnSources.length) {
+                    log('Trying next CDN...');
+                    tryLoadPDFjs();
+                } else {
+                    setStatus('❌ Tất cả CDN đều failed!', 'error');
+                }
+            };
+
+            document.head.appendChild(script);
+        }
+
+        tryLoadPDFjs();
+    </script>
+</body>
+</html>
+

@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -130,6 +131,15 @@ public class Book {
 
     public boolean requiresSubscription() {
         return accessType == AccessType.SUBSCRIPTION || accessType == AccessType.BOTH;
+    }
+    public String getAuthorNames() {
+        if (authors == null || authors.isEmpty()) {
+            return "Unknown Author";
+        }
+        // Sử dụng Stream để nối tên: "Tác giả A, Tác giả B"
+        return authors.stream()
+                .map(Author::getName)
+                .collect(Collectors.joining(", "));
     }
 }
 

@@ -142,8 +142,8 @@
                 <!-- User Info -->
                 <div class="card-custom mt-3" sec:authorize="isAuthenticated()">
                     <h6><i class="fas fa-user"></i> Thông tin tài khoản</h6>
-                    <p class="mb-1"><strong>Tên:</strong> <span sec:authentication="principal.fullName">User</span></p>
-                    <p class="mb-0"><strong>Email:</strong> <span sec:authentication="principal.username">user@email.com</span></p>
+                    <p class="mb-1"><strong>Tên:</strong> <span th:text="${currentUser != null ? currentUser.fullName : 'User'}">User</span></p>
+                    <p class="mb-0"><strong>Email:</strong> <span th:text="${currentUser != null ? currentUser.email : 'user@email.com'}">user@email.com</span></p>
                 </div>
             </div>
         </div>

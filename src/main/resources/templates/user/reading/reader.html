@@ -4,7 +4,7 @@
     <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${book.title + ' - Reader'}">Universal Reader</title>
+    <title th:text="${book.title} + ' - Reader'">Universal Reader</title>
 
     
 </head>
@@ -13,24 +13,24 @@
         <!-- Header -->
         <div class="reader-header">
             <div class="book-info">
-                <img th:src="@{/uploads/covers/{cover}(cover=${book.coverImage ?: 'default-cover.jpg'})}"
+                <img th:src="${book.coverImageUrl != null ? book.coverImageUrl : '/images/default-cover.jpg'}"
                      alt="Book Cover" class="book-cover"
-                     th:onerror="this.src='@{/images/default-cover.jpg}'">
+                     onerror="this.src='/images/default-cover.jpg'">
                 <div class="book-details">
                     <h3 th:text="${book.title}">Tên Sách</h3>
-                    <p th:text="${book.author?.name ?: 'Unknown Author'}">Tác Giả</p>
+                    <p th:text="${book.authorNames ?: 'Unknown Author'}">Tác Giả</p>
                     <div class="book-stats">
                         <div class="stat-item">
                             <i class="fas fa-eye"></i>
-                            <span th:text="${book.viewCount ?: 0} + ' lượt xem'">0 lượt xem</span>
+                            <span th:text="${(book.viewCount ?: 0) + ' lượt xem'}">0 lượt xem</span>
                         </div>
                         <div class="stat-item">
                             <i class="fas fa-star"></i>
-                            <span th:text="${book.averageRating ?: 0} + '/5'">0/5</span>
+                            <span th:text="${(book.averageRating ?: 0) + '/5'}">0/5</span>
                         </div>
                         <div class="stat-item" th:if="${book.pages}">
                             <i class="fas fa-file-alt"></i>
-                            <span th:text="${book.pages} + ' trang'">0 trang</span>
+                            <span th:text="${book.pages + ' trang'}">0 trang</span>
                         </div>
                     </div>
                 </div>
@@ -58,33 +58,44 @@
                 </p>
 
                 <div class="format-options" id="formatOptions">
-                    <!-- PDF Option -->
-                    <div class="format-card" id="pdfCard" onclick="openReader('pdf')">
+                    <!-- PDF Option - Chỉ hiển thị nếu có PDF -->
+                    <div class="format-card" id="pdfCard" onclick="openReader('pdf')" th:classappend="${hasPDF ? 'available' : 'unavailable'}">
                         <i class="fas fa-file-pdf format-icon"></i>
                         <div class="format-name">PDF Reader</div>
                         <div class="format-details">
                             Định dạng gốc với layout cố định<br>
                             Phù hợp với máy tính và tablet
                         </div>
+                        <div th:if="${!hasPDF}" class="format-badge unavailable-badge">
+                            <i class="fas fa-ban"></i> Không khả dụng
+                        </div>
                     </div>
 
-                    <!-- EPUB Option -->
-                    <div class="format-card" id="epubCard" onclick="openReader('epub')">
+                    <!-- EPUB Option - Chỉ hiển thị nếu có EPUB -->
+                    <div class="format-card" id="epubCard" onclick="openReader('epub')" th:classappend="${hasEPUB ? 'available' : 'unavailable'}">
                         <i class="fas fa-book-open format-icon"></i>
                         <div class="format-name">EPUB Reader</div>
                         <div class="format-details">
                             Định dạng linh hoạt, có thể tùy chỉnh<br>
                             Phù hợp với điện thoại và e-reader
                         </div>
+                        <div th:if="${!hasEPUB}" class="format-badge unavailable-badge">
+                            <i class="fas fa-ban"></i> Không khả dụng
+                        </div>
                     </div>
 
-                    <!-- Auto-detect Option -->
+                    <!-- Auto-detect Option - Luôn hiển thị -->
                     <div class="format-card available" onclick="openReader('auto')">
                         <i class="fas fa-magic format-icon"></i>
                         <div class="format-name">Auto Reader</div>
                         <div class="format-details">
                             Tự động chọn định dạng tốt nhất<br>
-                            Khuyên dùng cho lần đầu đọc
+                            <span th:text="${hasPDF and hasEPUB ? 'Ưu tiên PDF' : (hasPDF ? 'Sẽ mở PDF' : 'Sẽ mở EPUB')}">
+                                Khuyên dùng cho lần đầu đọc
+                            </span>
+                        </div>
+                        <div class="format-badge recommended-badge">
+                            <i class="fas fa-star"></i> Khuyên dùng
                         </div>
                     </div>
                 </div>
@@ -98,22 +109,25 @@
                 <div class="progress-card">
                     <div class="progress-info">
                         <span>Tiến độ đọc</span>
-                        <span th:text="${progress.progressPercentage != null ? #numbers.formatDecimal(progress.progressPercentage, 1, 1) + '%' : '0%'}">0%</span>
+                        <span th:text="${progress.progressPercentage != null ? (#numbers.formatDecimal(progress.progressPercentage, 1, 1) + '%') : '0%'}">0%</span>
                     </div>
                     <div class="progress-bar-container">
-                        <div class="progress-bar" th:style="'width: ' + (${progress.progressPercentage ?: 0}) + '%'"></div>
+                        <div class="progress-bar" th:style="'width: ' + ${progress.progressPercentage ?: 0} + '%'"></div>
                     </div>
                     <div class="progress-info">
-                        <span th:if="${progress.currentPage}">
-                            Trang <span th:text="${progress.currentPage}">1</span>/<span th:text="${progress.totalPages ?: 'N/A'}">N/A</span>
+                        <span th:if="${progress != null}">
+                            Vị trí <span th:text="${progress.lastReadLocation ?: 'Chưa đọc'}">page-1</span>
+                            <span th:if="${book.pages}">
+                                / <span th:text="${book.pages}">300</span> trang
+                            </span>
                         </span>
-                        <span th:if="${progress.lastReadDate}">
+                        <span th:if="${progress.lastReadAt}">
                             <i class="fas fa-clock"></i>
-                            <span th:text="${#temporals.format(progress.lastReadDate, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</span>
+                            <span th:text="${#temporals.format(progress.lastReadAt, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</span>
                         </span>
                     </div>
-                    <div class="last-read" th:if="${progress.startDate}">
-                        Bắt đầu đọc từ <span th:text="${#temporals.format(progress.startDate, 'dd/MM/yyyy')}">01/01/2024</span>
+                    <div class="last-read" th:if="${progress.createdAt}">
+                        Bắt đầu đọc từ <span th:text="${#temporals.format(progress.createdAt, 'dd/MM/yyyy')}">01/01/2024</span>
                     </div>
                 </div>
             </div>
@@ -137,7 +151,8 @@
     <script th:inline="javascript">
         // Variables from Thymeleaf
         const bookId = /*[[${book.bookId}]]*/ 1;
-        const availableAssets = /*[[${@bookAssetService.getBookAssetsByBookId(book.bookId)}]]*/ [];
+        const hasPDF = /*[[${hasPDF}]]*/ false;
+        const hasEPUB = /*[[${hasEPUB}]]*/ false;
 
         // Check available formats when page loads
         document.addEventListener('DOMContentLoaded', function() {
@@ -145,55 +160,72 @@
         });
 
         function checkAvailableFormats() {
-            // This would typically be done server-side, but for demo purposes:
             const pdfCard = document.getElementById('pdfCard');
             const epubCard = document.getElementById('epubCard');
+            const autoCard = document.querySelector('.format-card.available');
 
-            // Assume both formats are available for now
-            // In real implementation, check availableAssets array
-            let hasPDF = false;
-            let hasEPUB = false;
+            console.log('Has PDF:', hasPDF);
+            console.log('Has EPUB:', hasEPUB);
 
-            // Check asset types (this would be populated from Thymeleaf)
-            if (availableAssets && availableAssets.length > 0) {
-                availableAssets.forEach(asset => {
-                    if (asset.assetType === 'PDF') hasPDF = true;
-                    if (asset.assetType === 'EPUB') hasEPUB = true;
-                });
-            } else {
-                // Default for demo - assume PDF is available
-                hasPDF = true;
-            }
-
+            // Cập nhật trạng thái các card
             if (hasPDF) {
                 pdfCard.classList.add('available');
+                pdfCard.classList.remove('unavailable');
             } else {
                 pdfCard.classList.add('unavailable');
-                pdfCard.onclick = () => alert('File PDF không khả dụng cho sách này');
+                pdfCard.classList.remove('available');
+                pdfCard.onclick = () => {
+                    alert('File PDF không khả dụng cho sách này');
+                    return false;
+                };
             }
 
             if (hasEPUB) {
                 epubCard.classList.add('available');
+                epubCard.classList.remove('unavailable');
             } else {
                 epubCard.classList.add('unavailable');
-                epubCard.onclick = () => alert('File EPUB không khả dụng cho sách này');
+                epubCard.classList.remove('available');
+                epubCard.onclick = () => {
+                    alert('File EPUB không khả dụng cho sách này');
+                    return false;
+                };
+            }
+
+            // Auto card luôn available vì nó sẽ chọn file tốt nhất
+            if (autoCard) {
+                autoCard.classList.add('available');
             }
         }
 
         function openReader(format) {
             // Add loading state
-            document.getElementById('formatOptions').classList.add('loading');
+            const formatOptions = document.getElementById('formatOptions');
+            if (formatOptions) {
+                formatOptions.classList.add('loading');
+            }
 
             let url;
             switch(format) {
                 case 'pdf':
+                    if (!hasPDF) {
+                        alert('File PDF không khả dụng cho sách này');
+                        if (formatOptions) formatOptions.classList.remove('loading');
+                        return;
+                    }
                     url = `/reading/pdf/${bookId}`;
                     break;
                 case 'epub':
+                    if (!hasEPUB) {
+                        alert('File EPUB không khả dụng cho sách này');
+                        if (formatOptions) formatOptions.classList.remove('loading');
+                        return;
+                    }
                     url = `/reading/epub/${bookId}`;
                     break;
                 case 'auto':
                 default:
+                    // Auto: Chọn PDF nếu có, không thì EPUB
                     url = `/reading/book/${bookId}`;
                     break;
             }

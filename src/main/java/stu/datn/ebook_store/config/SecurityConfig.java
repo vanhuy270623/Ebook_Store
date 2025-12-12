@@ -25,6 +25,9 @@ public class SecurityConfig {
 
                 // ===== AUTHORIZATION RULES =====
                 .authorizeHttpRequests(authorize -> authorize
+                        // === PROTECTED BOOK SOURCE FILES (MUST BE FIRST!) ===
+                        .requestMatchers("/book_asset/source/**", "/uploads/source/**").authenticated() // ⚠️ YÊU CẦU ĐĂNG NHẬP
+
                         // === PUBLIC ACCESS ===
                         .requestMatchers(
                                 "/", "/home", "/login", "/register", // Các trang chung
@@ -33,12 +36,10 @@ public class SecurityConfig {
                                 "/css/**", "/js/**", "/images/**", // Tài nguyên tĩnh
                                 "/user_template/**", "/admin_template/**", "/shared/**", // Template resources
                                 "/static/**", // Static resources path
-                                "/book_asset/**", // All book asset paths (images, previews)
+                                "/book_asset/**", // All book asset paths (images, previews, covers)
                                 "/uploads/**" // Upload directory access (alias)
                         ).permitAll()
 
-                        // === PROTECTED BOOK SOURCE FILES ===
-                        .requestMatchers("/book_asset/source/**").authenticated() // ⚠️ YÊU CẦU ĐĂNG NHẬP
 
                         // === ADMIN ACCESS ONLY ===
                         .requestMatchers("/admin/**").hasRole("ADMIN") // ⚠️ CHỈ ADMIN

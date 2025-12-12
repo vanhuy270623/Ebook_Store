@@ -14,7 +14,6 @@ import stu.datn.ebook_store.entity.User;
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.BookAssetService;
 import stu.datn.ebook_store.service.ReadingProgressService;
-import stu.datn.ebook_store.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,7 +33,16 @@ public class ReadingController {
     private final BookService bookService;
     private final BookAssetService bookAssetService;
     private final ReadingProgressService readingProgressService;
-    private final UserRepository userRepository;
+
+    /**
+     * Helper method: Lấy User hiện tại từ Authentication
+     */
+    private User getCurrentUser(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return null;
+        }
+        return (User) authentication.getPrincipal();
+    }
 
     /**
      * Mở sách để đọc - trang chung cho cả PDF và EPUB
@@ -45,25 +53,32 @@ public class ReadingController {
                           Model model,
                           RedirectAttributes redirectAttributes) {
         try {
+            log.info("Opening book with ID: {}", bookId);
+
             // Kiểm tra user đã đăng nhập
-            if (authentication == null) {
+            User user = getCurrentUser(authentication);
+            if (user == null) {
+                log.warn("User not authenticated, redirecting to login");
                 redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để đọc sách");
                 return "redirect:/auth/login";
             }
+            log.debug("User found: {} ({})", user.getUsername(), user.getUserId());
 
-            User user = userRepository.findByEmail(authentication.getName())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
             Book book = bookService.getBookById(bookId)
-                    .orElseThrow(() -> new RuntimeException("Book not found"));
+                    .orElseThrow(() -> new RuntimeException("Book not found: " + bookId));
+            log.debug("Book found: {}", book.getTitle());
 
             // Kiểm tra quyền truy cập
             if (!canUserAccessBook(user, book)) {
+                log.warn("User {} does not have access to book {}", user.getUserId(), bookId);
                 redirectAttributes.addFlashAttribute("error", "Bạn không có quyền đọc cuốn sách này");
                 return "redirect:/books/view/" + bookId;
             }
 
             // Lấy file asset của sách
             List<BookAsset> assets = bookAssetService.getAssetsByBookId(bookId);
+            log.debug("Found {} assets for book {}", assets.size(), bookId);
+
             BookAsset readableAsset = assets.stream()
                     .filter(asset -> BookAsset.FileType.PDF.equals(asset.getFileType()) ||
                                    BookAsset.FileType.EPUB.equals(asset.getFileType()))
@@ -71,19 +86,65 @@ public class ReadingController {
                     .orElse(null);
 
             if (readableAsset == null) {
+                log.warn("No readable asset found for book {}", bookId);
                 redirectAttributes.addFlashAttribute("error", "Sách này chưa có file đọc");
                 return "redirect:/books/view/" + bookId;
             }
 
-            // Lấy reading progress hiện tại
+            log.info("Readable asset found: {} - {}", readableAsset.getFileType(), readableAsset.getFileUrl());
+
+            // Kiểm tra file tồn tại trên disk
+            // fileUrl có dạng: /book_asset/source/tamly-kynangsong/Dac nhan tam.pdf
+            // Cần lấy phần sau /book_asset/source/ để ghép với base path
+            String fileUrl = readableAsset.getFileUrl();
+            String relativePath = fileUrl.replace("/book_asset/source/", "");
+            String fullPath = "F:/datn_uploads/book_asset/source/" + relativePath;
+
+            java.io.File file = new java.io.File(fullPath);
+            if (!file.exists()) {
+                log.error("File not found on disk: {}", fullPath);
+                log.error("FileUrl from DB: {}", fileUrl);
+                log.error("Relative path: {}", relativePath);
+                redirectAttributes.addFlashAttribute("error", "File sách không tồn tại trên hệ thống");
+                return "redirect:/books/view/" + bookId;
+            }
+            log.info("File exists on disk: {} (size: {} bytes)", fullPath, file.length());
+
+            // Lấy hoặc tạo mới reading progress
             ReadingProgress progress = null;
             try {
-                progress = readingProgressService.getReadingProgressByUserAndBook(user, book).orElse(null);
+                progress = readingProgressService
+                        .getReadingProgressByUserAndBook(user, book)
+                        .orElseGet(() -> {
+                            try {
+                                log.info("Creating new reading progress for user {} and book {}", user.getUserId(), book.getBookId());
+                                ReadingProgress newProgress = new ReadingProgress();
+                                newProgress.setProgressId(UUID.randomUUID().toString());
+                                newProgress.setUser(user);
+                                newProgress.setBook(book);
+                                newProgress.setBookAsset(readableAsset);
+                                newProgress.setProgressPercentage(0.0f);
+                                newProgress.setIsCompleted(false);
+                                newProgress.setIsFavorite(false);
+                                newProgress.setAccessType(determineAccessType(book));
+                                newProgress.setCreatedAt(LocalDateTime.now());
+                                newProgress.setLastReadAt(LocalDateTime.now());
+                                ReadingProgress saved = readingProgressService.saveReadingProgress(newProgress);
+                                log.info("Reading progress created successfully: {}", saved.getProgressId());
+                                return saved;
+                            } catch (Exception e) {
+                                log.error("Error creating reading progress: {}", e.getMessage(), e);
+                                throw new RuntimeException("Cannot create reading progress: " + e.getMessage(), e);
+                            }
+                        });
             } catch (Exception e) {
-                log.debug("No existing reading progress found");
+                log.error("Error with reading progress: {}", e.getMessage(), e);
+                // Nếu lỗi tạo progress, vẫn cho phép đọc nhưng không track progress
+                log.warn("Continuing without progress tracking");
+                progress = null;
             }
 
-            // Tăng view count - implement this method later
+            // Tăng view count nếu cần
             // bookService.incrementViewCount(bookId);
 
             model.addAttribute("book", book);
@@ -99,9 +160,78 @@ public class ReadingController {
             }
 
         } catch (Exception e) {
-            log.error("Error opening book {}: {}", bookId, e.getMessage());
-            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi mở sách");
+            log.error("Error opening book {}: {}", bookId, e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi mở sách: " + e.getMessage());
             return "redirect:/books";
+        }
+    }
+
+    /**
+     * Test page để kiểm tra PDF loading
+     */
+    @GetMapping("/test-pdf-load")
+    public String testPDFLoad() {
+        return "test/test-pdf-load";
+    }
+
+    /**
+     * Test endpoint để kiểm tra book assets
+     */
+    @GetMapping("/test/{bookId}")
+    @ResponseBody
+    public String testBook(@PathVariable String bookId) {
+        try {
+            StringBuilder result = new StringBuilder();
+            result.append("=== TEST BOOK: ").append(bookId).append(" ===\n\n");
+
+            // Check book exists
+            Book book = bookService.getBookById(bookId).orElse(null);
+            if (book == null) {
+                return result.append("❌ Book not found!").toString();
+            }
+            result.append("✅ Book found: ").append(book.getTitle()).append("\n");
+            result.append("   Access Type: ").append(book.getAccessType()).append("\n\n");
+
+            // Check assets
+            List<BookAsset> assets = bookAssetService.getAssetsByBookId(bookId);
+            result.append("📁 Total Assets: ").append(assets.size()).append("\n");
+
+            for (BookAsset asset : assets) {
+                result.append("\n   Asset ID: ").append(asset.getBookAssetId()).append("\n");
+                result.append("   File Type: ").append(asset.getFileType()).append("\n");
+                result.append("   File URL: ").append(asset.getFileUrl()).append("\n");
+                result.append("   File Size: ").append(asset.getFileSize()).append(" bytes\n");
+            }
+
+            // Check readable assets
+            BookAsset readable = assets.stream()
+                    .filter(asset -> BookAsset.FileType.PDF.equals(asset.getFileType()) ||
+                                   BookAsset.FileType.EPUB.equals(asset.getFileType()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (readable != null) {
+                result.append("\n✅ Readable asset found: ").append(readable.getFileType()).append("\n");
+                result.append("   URL: ").append(readable.getFileUrl()).append("\n");
+                String fullPath = "F:/datn_uploads/book_asset/source/" + readable.getFileUrl();
+                result.append("   Full Path: ").append(fullPath).append("\n");
+
+                // Check file exists
+                java.io.File file = new java.io.File(fullPath);
+                if (file.exists()) {
+                    result.append("   ✅ File exists on disk\n");
+                    result.append("   File size: ").append(file.length()).append(" bytes\n");
+                } else {
+                    result.append("   ❌ File NOT found on disk!\n");
+                }
+            } else {
+                result.append("\n❌ No readable asset found!\n");
+            }
+
+            return result.toString().replace("\n", "<br>");
+        } catch (Exception e) {
+            return "❌ ERROR: " + e.getMessage() + "<br><br>Stack trace:<br>" +
+                   java.util.Arrays.toString(e.getStackTrace()).replace(",", "<br>");
         }
     }
 
@@ -128,16 +258,34 @@ public class ReadingController {
     }
 
     /**
-     * Trang reader chung với auto-detect format
+     * Trang reader chung với auto-detect format - TỰ ĐỘNG CHUYỂN ĐẾN VIEWER
      */
     @GetMapping("/reader/{bookId}")
     public String reader(@PathVariable String bookId,
                         Authentication authentication,
                         Model model,
                         RedirectAttributes redirectAttributes) {
+        // Redirect đến /choose-format để kiểm tra số lượng file và tự động chọn
+        return "redirect:/reading/choose-format/" + bookId;
+    }
+
+    /**
+     * Trang chọn format đọc sách (PDF/EPUB)
+     * - Nếu chỉ có 1 file → TỰ ĐỘNG load luôn
+     * - Nếu có cả 2 file → Hiển thị trang chọn
+     */
+    @GetMapping("/choose-format/{bookId}")
+    public String chooseFormat(@PathVariable String bookId,
+                              Authentication authentication,
+                              Model model,
+                              RedirectAttributes redirectAttributes) {
         try {
-            User user = userRepository.findByEmail(authentication.getName())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = getCurrentUser(authentication);
+            if (user == null) {
+                redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để đọc sách");
+                return "redirect:/auth/login";
+            }
+
             Book book = bookService.getBookById(bookId)
                     .orElseThrow(() -> new RuntimeException("Book not found"));
 
@@ -147,34 +295,69 @@ public class ReadingController {
             }
 
             List<BookAsset> assets = bookAssetService.getAssetsByBookId(bookId);
-            BookAsset readableAsset = assets.stream()
+
+            // Lọc các file đọc được
+            List<BookAsset> readableAssets = assets.stream()
                     .filter(asset -> BookAsset.FileType.PDF.equals(asset.getFileType()) ||
                                    BookAsset.FileType.EPUB.equals(asset.getFileType()))
-                    .findFirst()
-                    .orElse(null);
+                    .toList();
 
-            if (readableAsset == null) {
+            if (readableAssets.isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "Sách này chưa có file đọc");
                 return "redirect:/books/view/" + bookId;
             }
 
-            ReadingProgress progress = null;
-            try {
-                progress = readingProgressService.getReadingProgressByUserAndBook(user, book).orElse(null);
-            } catch (Exception e) {
-                log.debug("No existing reading progress found in reader method");
+            // Kiểm tra có bao nhiêu loại file
+            boolean hasPDF = readableAssets.stream().anyMatch(a -> BookAsset.FileType.PDF.equals(a.getFileType()));
+            boolean hasEPUB = readableAssets.stream().anyMatch(a -> BookAsset.FileType.EPUB.equals(a.getFileType()));
+
+            // Nếu CHỈ có 1 loại file → TỰ ĐỘNG redirect
+            if (hasPDF && !hasEPUB) {
+                log.info("Book {} only has PDF, auto-redirecting to PDF viewer", bookId);
+                return "redirect:/reading/pdf/" + bookId;
             }
-            // bookService.incrementViewCount(bookId);
+
+            if (hasEPUB && !hasPDF) {
+                log.info("Book {} only has EPUB, auto-redirecting to EPUB viewer", bookId);
+                return "redirect:/reading/epub/" + bookId;
+            }
+
+            // Nếu có CẢ 2 loại → Hiển thị trang chọn format
+            log.info("Book {} has both PDF and EPUB, showing format chooser", bookId);
+
+            BookAsset firstAsset = readableAssets.get(0);
+
+            // Lấy hoặc tạo mới reading progress
+            ReadingProgress progress = readingProgressService
+                    .getReadingProgressByUserAndBook(user, book)
+                    .orElseGet(() -> {
+                        ReadingProgress newProgress = new ReadingProgress();
+                        newProgress.setProgressId(UUID.randomUUID().toString());
+                        newProgress.setUser(user);
+                        newProgress.setBook(book);
+                        newProgress.setBookAsset(firstAsset);
+                        newProgress.setProgressPercentage(0.0f);
+                        newProgress.setIsCompleted(false);
+                        newProgress.setIsFavorite(false);
+                        newProgress.setAccessType(determineAccessType(book));
+                        newProgress.setCreatedAt(LocalDateTime.now());
+                        newProgress.setLastReadAt(LocalDateTime.now());
+                        return readingProgressService.saveReadingProgress(newProgress);
+                    });
 
             model.addAttribute("book", book);
-            model.addAttribute("asset", readableAsset);
+            model.addAttribute("asset", firstAsset);
+            model.addAttribute("assets", readableAssets); // Truyền tất cả assets
+            model.addAttribute("hasPDF", hasPDF);
+            model.addAttribute("hasEPUB", hasEPUB);
             model.addAttribute("progress", progress);
             model.addAttribute("user", user);
 
+            // Hiển thị trang chọn format
             return "user/reading/reader";
 
         } catch (Exception e) {
-            log.error("Error loading reader for book {}: {}", bookId, e.getMessage());
+            log.error("Error loading format chooser for book {}: {}", bookId, e.getMessage());
             redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi mở sách");
             return "redirect:/books";
         }
@@ -191,8 +374,10 @@ public class ReadingController {
                               @RequestParam(required = false) String bookmarkData,
                               Authentication authentication) {
         try {
-            User user = userRepository.findByEmail(authentication.getName())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = getCurrentUser(authentication);
+            if (user == null) {
+                return "{\"status\":\"error\",\"message\":\"User not authenticated\"}";
+            }
 
             Book book = bookService.getBookById(bookId)
                     .orElseThrow(() -> new RuntimeException("Book not found"));
@@ -204,24 +389,35 @@ public class ReadingController {
                 progress.setUser(user);
                 progress.setBook(book);
                 progress.setCreatedAt(LocalDateTime.now());
+                progress.setAccessType(determineAccessType(book));
+                progress.setIsCompleted(false);
+                progress.setIsFavorite(false);
             }
 
-            progress.setLastReadLocation(String.valueOf(currentPage));
-            progress.setProgressPercentage((float) currentPage / totalPages * 100);
-            progress.setLastReadAt(LocalDateTime.now());
-            // progress.setUpdatedAt(LocalDateTime.now()); // This field may not exist
-
+            // Lưu location data (có thể là page number cho PDF hoặc CFI cho EPUB)
             if (bookmarkData != null && !bookmarkData.trim().isEmpty()) {
-                // Store bookmark data in lastReadLocation or create a separate field
                 progress.setLastReadLocation(bookmarkData);
+            } else {
+                progress.setLastReadLocation(String.valueOf(currentPage));
             }
+
+            // Tính phần trăm progress
+            float percentage = ((float) currentPage / totalPages) * 100;
+            progress.setProgressPercentage(percentage);
+
+            // Đánh dấu hoàn thành nếu đọc hết
+            if (percentage >= 99.0f) {
+                progress.setIsCompleted(true);
+            }
+
+            progress.setLastReadAt(LocalDateTime.now());
 
             readingProgressService.saveReadingProgress(progress);
 
-            return "{\"status\":\"success\",\"message\":\"Progress saved\"}";
+            return "{\"status\":\"success\",\"message\":\"Progress saved\",\"percentage\":" + percentage + "}";
         } catch (Exception e) {
             log.error("Error saving reading progress: {}", e.getMessage());
-            return "{\"status\":\"error\",\"message\":\"Failed to save progress\"}";
+            return "{\"status\":\"error\",\"message\":\"" + e.getMessage() + "\"}";
         }
     }
 
@@ -232,8 +428,11 @@ public class ReadingController {
     @ResponseBody
     public ReadingProgress getProgress(@PathVariable String bookId, Authentication authentication) {
         try {
-            User user = userRepository.findByEmail(authentication.getName())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = getCurrentUser(authentication);
+            if (user == null) {
+                log.error("User not authenticated");
+                return null;
+            }
             Book book = bookService.getBookById(bookId)
                     .orElseThrow(() -> new RuntimeException("Book not found"));
             return readingProgressService.getReadingProgressByUserAndBook(user, book).orElse(null);
@@ -264,13 +463,11 @@ public class ReadingController {
     private String prepareReaderView(String bookId, String expectedType, Authentication authentication,
                                    Model model, RedirectAttributes redirectAttributes, String viewName) {
         try {
-            if (authentication == null) {
+            User user = getCurrentUser(authentication);
+            if (user == null) {
                 redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để đọc sách");
                 return "redirect:/auth/login";
             }
-
-            User user = userRepository.findByEmail(authentication.getName())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
             Book book = bookService.getBookById(bookId)
                     .orElseThrow(() -> new RuntimeException("Book not found"));
 
@@ -290,12 +487,24 @@ public class ReadingController {
                 return "redirect:/books/view/" + bookId;
             }
 
-            ReadingProgress progress = null;
-            try {
-                progress = readingProgressService.getReadingProgressByUserAndBook(user, book).orElse(null);
-            } catch (Exception e) {
-                log.debug("No existing reading progress found in prepareReaderView");
-            }
+            // Lấy hoặc tạo mới reading progress
+            ReadingProgress progress = readingProgressService
+                    .getReadingProgressByUserAndBook(user, book)
+                    .orElseGet(() -> {
+                        ReadingProgress newProgress = new ReadingProgress();
+                        newProgress.setProgressId(UUID.randomUUID().toString());
+                        newProgress.setUser(user);
+                        newProgress.setBook(book);
+                        newProgress.setBookAsset(asset);
+                        newProgress.setProgressPercentage(0.0f);
+                        newProgress.setIsCompleted(false);
+                        newProgress.setIsFavorite(false);
+                        newProgress.setAccessType(determineAccessType(book));
+                        newProgress.setCreatedAt(LocalDateTime.now());
+                        newProgress.setLastReadAt(LocalDateTime.now());
+                        return readingProgressService.saveReadingProgress(newProgress);
+                    });
+
             // bookService.incrementViewCount(bookId);
 
             model.addAttribute("book", book);
@@ -332,5 +541,17 @@ public class ReadingController {
 
         // Tạm thời cho phép đọc tất cả để test
         return true;
+    }
+
+    /**
+     * Xác định loại access type dựa trên book
+     */
+    private ReadingProgress.AccessType determineAccessType(Book book) {
+        if (Book.AccessType.FREE.equals(book.getAccessType())) {
+            return ReadingProgress.AccessType.FREE;
+        }
+        // TODO: Check nếu user mua sách thì return PURCHASED
+        // TODO: Check nếu user có subscription thì return SUBSCRIPTION
+        return ReadingProgress.AccessType.FREE; // Default
     }
 }

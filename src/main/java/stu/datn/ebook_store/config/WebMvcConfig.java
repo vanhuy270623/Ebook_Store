@@ -13,6 +13,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // Handle source files FIRST (PDF, EPUB) - IMPORTANT for reading functionality
+        // Must be BEFORE /book_asset/** to take precedence
+        registry.addResourceHandler("/book_asset/source/**")
+                .addResourceLocations("file:F:/datn_uploads/book_asset/source/");
+
+        registry.addResourceHandler("/uploads/source/**")
+                .addResourceLocations("file:F:/datn_uploads/book_asset/source/");
+
         // Handle /book_asset/** requests - main upload directory
         registry.addResourceHandler("/book_asset/**")
                 .addResourceLocations("file:F:/datn_uploads/book_asset/");

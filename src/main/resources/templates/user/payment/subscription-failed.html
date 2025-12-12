@@ -17,55 +17,9 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
     <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/payment.css}">
 
-    <style>
-        body {
-            background: linear-gradient(135deg, #e53935 0%, #f44336 100%);
-            min-height: 100vh;
-        }
-        .failed-container {
-            max-width: 700px;
-            margin: 50px auto;
-            padding: 20px;
-        }
-        .failed-card {
-            background: white;
-            border-radius: 20px;
-            padding: 50px 30px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-        }
-        .failed-icon {
-            font-size: 100px;
-            color: #dc3545;
-            animation: shake 0.5s;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-        .failed-title {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #dc3545;
-            margin: 20px 0;
-        }
-        .error-info {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 20px;
-            border-radius: 5px;
-            margin: 30px 0;
-            text-align: left;
-        }
-        .btn-action {
-            padding: 12px 30px;
-            font-size: 1.1rem;
-            border-radius: 50px;
-            margin: 5px;
-        }
-    </style>
+    
 </head>
 <body>
     <!-- Navigation -->

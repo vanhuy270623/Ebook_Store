@@ -50,11 +50,9 @@ public class AdminCategoryController extends BaseAdminController {
      * Kiểm tra tên danh mục đã tồn tại (trừ danh mục đang sửa)
      */
     private boolean isCategoryNameDuplicate(String categoryName, String currentCategoryId) {
-        Category existingCategory = categoryService.getCategoryByName(categoryName).orElse(null);
-        if (existingCategory == null) {
-            return false;
-        }
-        return !existingCategory.getCategoryId().equals(currentCategoryId);
+        return categoryService.getCategoryByName(categoryName)
+                .map(existingCategory -> !existingCategory.getCategoryId().equals(currentCategoryId))
+                .orElse(false);
     }
 
     /**

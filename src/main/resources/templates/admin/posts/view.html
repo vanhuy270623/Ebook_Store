@@ -49,7 +49,7 @@
 							<h3 class="box-title">Thông tin</h3>
 						</div>
 						<div class="box-body">
-							<p><strong>Slug:</strong> <span th:text="${post.slug}">slug</span></p>
+							<p><strong>Slug:</strong> <span th:text="${post.slug ?: 'N/A'}">slug</span></p>
 							<p><strong>Trạng thái:</strong>
 								<span class="label label-success" th:if="${post.isPublished}">Xuất bản</span>
 								<span class="label label-warning" th:unless="${post.isPublished}">Nháp</span>

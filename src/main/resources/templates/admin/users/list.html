@@ -174,9 +174,15 @@
 								<tr th:each="user : ${users}"
 									th:classappend="${user.deletedAt != null ? 'danger' : ''}">
 									<td>
-										<img th:src="${user.avatarUrl != null && !user.avatarUrl.isEmpty() ? user.avatarUrl : '/admin_template/images/user-default.png'}"
-											 class="img-circle" style="width: 90px; height: 90px; object-fit: cover;"
+										<img th:if="${user.avatarUrl}"
+											 th:src="${user.avatarUrl}"
+											 class="img-circle"
+											 style="width: 90px; height: 90px; object-fit: cover;"
 											 th:style="${user.deletedAt != null ? 'width: 90px; height: 90px; object-fit: cover; opacity: 0.5;' : 'width: 90px; height: 90px; object-fit: cover;'}">
+										<i th:unless="${user.avatarUrl}"
+										   class="fas fa-user-circle text-muted"
+										   style="font-size: 90px;"
+										   th:style="${user.deletedAt != null ? 'font-size: 90px; opacity: 0.5;' : 'font-size: 90px;'}"></i>
 									</td>
 
 									<td>

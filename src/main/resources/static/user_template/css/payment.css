@@ -1,0 +1,248 @@
+/* Styles cho các trang thanh toán */
+.qr-code-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.qr-code-img {
+    max-width: 300px;
+    width: 100%;
+    height: auto;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    padding: 10px;
+    background: #fff;
+}
+
+.bank-info {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.copy-btn {
+    cursor: pointer;
+    color: #007bff;
+    margin-left: 10px;
+}
+
+.copy-btn:hover {
+    color: #0056b3;
+}
+
+.step-indicator {
+    background: #e3f2fd;
+    border-left: 4px solid #2196F3;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+}
+
+.payment-success-icon {
+    font-size: 80px;
+    color: #28a745;
+    animation: scaleIn 0.5s ease-in-out;
+}
+
+.payment-failed-icon {
+    font-size: 80px;
+    color: #dc3545;
+    animation: shake 0.5s ease-in-out;
+}
+
+.payment-waiting-icon {
+    font-size: 80px;
+    color: #ffc107;
+    animation: pulse 2s infinite;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.payment-details-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.subscription-card {
+    border: 2px solid #e0e0e0;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    padding: 30px;
+    text-align: center;
+}
+
+.subscription-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border-color: #007bff;
+}
+
+.subscription-card.featured {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #e8f5e9 0%, #ffffff 100%);
+}
+
+.price-tag-large {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.price-tag-large .currency {
+    font-size: 1.5rem;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+}
+
+.feature-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.feature-list li:last-child {
+    border-bottom: none;
+}
+
+.feature-list i {
+    color: #28a745;
+    margin-right: 10px;
+}
+
+/* Success/Failed page styles */
+body.payment-page {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    min-height: 100vh;
+}
+
+body.payment-failed-page {
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    min-height: 100vh;
+}
+
+body.payment-waiting-page {
+    background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
+    min-height: 100vh;
+}
+
+.success-container,
+.failed-container,
+.waiting-container {
+    max-width: 700px;
+    margin: 50px auto;
+    padding: 20px;
+}
+
+.success-card,
+.failed-card,
+.waiting-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 50px 30px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.success-icon {
+    font-size: 100px;
+    color: #28a745;
+    animation: scaleIn 0.5s ease-out;
+}
+
+.failed-icon {
+    font-size: 100px;
+    color: #dc3545;
+    animation: shake 0.6s ease-out;
+}
+
+.waiting-icon {
+    font-size: 100px;
+    color: #ffc107;
+    animation: pulse 2s infinite;
+}
+
+.success-title {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #28a745;
+    margin: 20px 0;
+}
+
+.failed-title {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #dc3545;
+    margin: 20px 0;
+}
+
+.waiting-title {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ffc107;
+    margin: 20px 0;
+}
+
+.order-info {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 30px 0;
+    text-align: left;
+}
+
+.order-info .row {
+    margin-bottom: 10px;
+}
+
+.btn-action {
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    border-radius: 50px;
+    margin: 5px;
+}

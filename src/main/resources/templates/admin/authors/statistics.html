@@ -92,9 +92,13 @@
 								<tbody>
 									<tr th:each="author : ${recentAuthors}">
 										<td>
-											<img th:src="${author.avatarUrl}" class="img-thumbnail"
-												 style="width: 40px; height: 40px; border-radius: 50%;"
-												 onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect fill=%22%23ddd%22 width=%2240%22 height=%2240%22/%3E%3C/svg%3E';">
+											<img th:if="${author.avatarUrl}"
+												 th:src="${author.avatarUrl}"
+												 class="img-thumbnail"
+												 style="width: 40px; height: 40px; border-radius: 50%;">
+											<i th:unless="${author.avatarUrl}"
+											   class="fas fa-user-circle text-muted"
+											   style="font-size: 40px;"></i>
 										</td>
 										<td th:text="${author.name}">Tên</td>
 										<td th:text="${#strings.abbreviate(author.biography ?: 'N/A', 40)}">Tiểu sử</td>

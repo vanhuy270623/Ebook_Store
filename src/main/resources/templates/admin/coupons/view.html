@@ -54,11 +54,11 @@
 
 								<dt>Số lượt sử dụng còn lại:</dt>
 								<dd>
-									<span class="label label-primary" th:text="${coupon.usageLimit}">50</span>
+									<span class="label label-primary" th:text="${coupon.usageLimit ?: 0}">50</span>
 								</dd>
 
 								<dt>Hạn sử dụng:</dt>
-								<dd th:text="${#temporals.format(coupon.endDate, 'dd/MM/yyyy HH:mm:ss')}">31/12/2024 23:59:59</dd>
+								<dd th:text="${coupon.endDate != null ? #temporals.format(coupon.endDate, 'dd/MM/yyyy HH:mm:ss') : 'Không giới hạn'}">31/12/2024 23:59:59</dd>
 
 								<dt>Trạng thái:</dt>
 								<dd>

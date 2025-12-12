@@ -55,11 +55,9 @@ public class AdminAuthorController extends BaseAdminController {
      * Kiểm tra tên tác giả đã tồn tại (trừ tác giả đang sửa)
      */
     private boolean isAuthorNameDuplicate(String name, String currentAuthorId) {
-        Author existingAuthor = authorService.getAuthorByName(name).orElse(null);
-        if (existingAuthor == null) {
-            return false;
-        }
-        return !existingAuthor.getAuthorId().equals(currentAuthorId);
+        return authorService.getAuthorByName(name)
+                .map(existingAuthor -> !existingAuthor.getAuthorId().equals(currentAuthorId))
+                .orElse(false);
     }
 
     /**

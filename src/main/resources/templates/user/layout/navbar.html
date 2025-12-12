@@ -2,6 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       lang="vi">
+<head>
+    <link rel="stylesheet" th:href="@{/user_template/css/components.css}">
+</head>
 <body>
 <!-- Breadcrumb Fragment -->
 <nav th:fragment="breadcrumb(items)" aria-label="breadcrumb">
@@ -152,117 +155,5 @@
     </div>
 </div>
 
-<style>
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-    }
-
-    .empty-state-icon {
-        margin-bottom: 24px;
-    }
-
-    .empty-state h3 {
-        font-size: 1.5rem;
-        margin-bottom: 12px;
-        color: var(--text-primary);
-    }
-
-    .empty-state p {
-        color: var(--text-muted);
-        margin-bottom: 24px;
-    }
-
-    /* Loading Container */
-    .loading-container {
-        text-align: center;
-        padding: 60px 20px;
-    }
-
-    /* Pagination */
-    .pagination {
-        margin-top: 32px;
-        margin-bottom: 32px;
-    }
-
-    .page-link {
-        color: var(--text-primary);
-        border: 1px solid var(--border-color);
-        padding: 8px 16px;
-        margin: 0 4px;
-        border-radius: 8px;
-    }
-
-    .page-link:hover {
-        color: var(--primary-color);
-        background-color: var(--bg-secondary);
-        border-color: var(--primary-color);
-    }
-
-    .page-item.active .page-link {
-        background-color: var(--primary-color);
-        border-color: var(--primary-color);
-        color: white;
-    }
-
-    .page-item.disabled .page-link {
-        color: var(--text-muted);
-        pointer-events: none;
-        background-color: var(--bg-secondary);
-    }
-
-    /* Filter Sidebar */
-    .filter-sidebar {
-        background: white;
-        border-radius: 12px;
-        padding: 24px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    .filter-section {
-        margin-bottom: 24px;
-        padding-bottom: 24px;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .filter-section:last-child {
-        margin-bottom: 0;
-        padding-bottom: 0;
-        border-bottom: none;
-    }
-
-    .filter-title {
-        font-size: 16px;
-        font-weight: 600;
-        margin-bottom: 16px;
-        color: var(--text-primary);
-    }
-
-    .filter-options {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .filter-option {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        cursor: pointer;
-        font-size: 14px;
-        color: var(--text-secondary);
-    }
-
-    .filter-option input {
-        cursor: pointer;
-        accent-color: var(--primary-color);
-    }
-
-    .filter-option:hover {
-        color: var(--primary-color);
-    }
-</style>
 </body>
 </html>
-

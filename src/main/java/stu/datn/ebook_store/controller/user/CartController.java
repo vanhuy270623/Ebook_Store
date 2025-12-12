@@ -104,9 +104,8 @@ public class CartController {
 
             // Kiểm tra sách đã có trong giỏ chưa
             CartItemId cartItemId = new CartItemId(cart.getCartId(), bookId);
-            Optional<CartItem> existingItem = cartItemService.getCartItemById(cartItemId);
 
-            if (existingItem.isPresent()) {
+            if (cartItemService.getCartItemById(cartItemId).isPresent()) {
                 redirectAttributes.addFlashAttribute("info", "Sách này đã có trong giỏ hàng");
                 return getRedirectPath(redirectUrl, bookId);
             }
@@ -267,3 +266,4 @@ public class CartController {
         return response;
     }
 }
+

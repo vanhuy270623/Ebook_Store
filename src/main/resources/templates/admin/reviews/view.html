@@ -26,13 +26,16 @@
 							<div class="form-group">
 								<label>Sách</label>
 								<p class="form-control-static">
-									<a th:href="@{/admin/books/view/{id}(id=${review.book?.bookId})}" th:text="${review.book?.title ?: 'N/A'}">Tên sách</a>
+									<a th:if="${review.book?.bookId}"
+									   th:href="@{/admin/books/view/{id}(id=${review.book.bookId})}"
+									   th:text="${review.book.title}">Tên sách</a>
+									<span th:unless="${review.book?.bookId}" class="text-muted">N/A</span>
 								</p>
 							</div>
 
 							<div class="form-group">
 								<label>Người dùng</label>
-								<p class="form-control-static" th:text="${review.user?.fullName ?: 'Ẩn danh'}">User</p>
+								<p class="form-control-static" th:text="${review.user?.fullName ?: review.user?.username ?: 'Ẩn danh'}">User</p>
 							</div>
 
 							<div class="form-group">
@@ -50,7 +53,7 @@
 
 							<div class="form-group">
 								<label>Nội dung</label>
-								<p class="form-control-static" th:text="${review.comment}">Nội dung</p>
+								<p class="form-control-static" th:text="${review.comment ?: 'Chưa có nội dung'}">Nội dung</p>
 							</div>
 
 							<div class="form-group">

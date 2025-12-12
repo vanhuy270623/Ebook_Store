@@ -154,10 +154,14 @@
 							<h3 class="box-title">Thông tin cá nhân</h3>
 						</div>
 						<div class="box-body box-profile">
-							<img class="profile-user-img img-responsive img-circle"
-								 th:src="${user.avatarUrl != null && !user.avatarUrl.isEmpty() ? user.avatarUrl : '/admin_template/images/user-default.png'}"
+							<img th:if="${user.avatarUrl}"
+								 th:src="${user.avatarUrl}"
+								 class="profile-user-img img-responsive img-circle"
 								 th:alt="${user.fullName ?: user.username}"
 								 style="width:100px; height:100px; object-fit:cover;">
+							<i th:unless="${user.avatarUrl}"
+							   class="fas fa-user-circle text-muted profile-user-img"
+							   style="font-size: 100px;"></i>
 
 							<h3 class="profile-username text-center" th:text="${user.fullName ?: user.username}">Tên người dùng</h3>
 

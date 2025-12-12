@@ -134,11 +134,11 @@
 
                         <!-- Popular Tags -->
                         <div class="hero-tags animate__animated animate__fadeInUp" style="animation-delay: 0.6s;">
-                            <span>Phổ biến:</span>
-                            <a href="/search?q=tiểu thuyết">Tiểu thuyết</a>
-                            <a href="/search?q=kỹ năng sống">Kỹ năng sống</a>
-                            <a href="/search?q=truyện tranh">Truyện tranh</a>
-                            <a href="/search?q=thiếu nhi">Thiếu nhi</a>
+                            <span>Từ khóa phổ biến:</span>
+                            <a href="/books/search?keyword=tiểu thuyết">Tiểu thuyết</a>
+                            <a href="/books/search?keyword=kỹ năng sống">Kỹ năng sống</a>
+                            <a href="/books/search?keyword=truyện tranh">Truyện tranh</a>
+                            <a href="/books/search?keyword=thiếu nhi">Thiếu nhi</a>
                         </div>
                     </div>
                 </div>
@@ -511,7 +511,7 @@
         function searchBooks() {
             const query = document.getElementById('searchInput').value;
             if (query.trim()) {
-                window.location.href = '/search?q=' + encodeURIComponent(query);
+                window.location.href = '/books/search?keyword=' + encodeURIComponent(query);
             }
         }
 

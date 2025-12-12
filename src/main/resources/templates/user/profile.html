@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
     <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/profile.css}">
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -34,11 +35,9 @@
                             <img th:if="${user.avatarUrl != null}"
                                  th:src="@{${user.avatarUrl}}"
                                  alt="Avatar"
-                                 class="rounded-circle me-2"
-                                 style="width: 32px; height: 32px; object-fit: cover;">
+                                 class="rounded-circle me-2 user-profile-avatar-sm">
                             <i th:if="${user.avatarUrl == null}"
-                               class="fas fa-user-circle me-2"
-                               style="font-size: 32px;"></i>
+                               class="fas fa-user-circle me-2 user-profile-icon-sm"></i>
                             <span th:text="${user.fullName}">Người dùng</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
@@ -100,11 +99,9 @@
                                 <img th:if="${user.avatarUrl != null}"
                                      th:src="@{${user.avatarUrl}}"
                                      alt="Avatar"
-                                     class="rounded-circle"
-                                     style="width: 120px; height: 120px; object-fit: cover;">
+                                     class="rounded-circle user-profile-avatar-lg">
                                 <i th:if="${user.avatarUrl == null}"
-                                   class="fas fa-user-circle text-muted"
-                                   style="font-size: 120px;"></i>
+                                   class="fas fa-user-circle text-muted user-profile-icon-lg"></i>
                             </div>
                             <h5 class="mb-1" th:text="${user.fullName}">Tên người dùng</h5>
                             <p class="text-muted mb-3" th:text="${user.email}">email@example.com</p>
@@ -154,12 +151,10 @@
                                                              th:if="${user.avatarUrl != null}"
                                                              th:src="@{${user.avatarUrl}}"
                                                              alt="Avatar Preview"
-                                                             class="rounded-circle border"
-                                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                                             class="rounded-circle border user-profile-avatar-upload">
                                                         <i id="avatarIcon"
                                                            th:if="${user.avatarUrl == null}"
-                                                           class="fas fa-user-circle text-muted"
-                                                           style="font-size: 100px;"></i>
+                                                           class="fas fa-user-circle text-muted user-profile-icon-upload"></i>
                                                     </div>
                                                     <div class="flex-grow-1">
                                                         <label for="avatarFile" class="form-label small">Upload file ảnh</label>
@@ -241,7 +236,7 @@
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <p class="text-muted mb-1">Lần đăng nhập cuối</p>
-                                            <p class="mb-0 fw-bold" th:text="${user.lastLogin != null ? #temporals.format(user.lastLogin, 'dd/MM/yyyy HH:mm') : 'Chưa có'}">--</p>
+                                            <p class="mb-0 fw-bold" th:text="${user.lastLogin != null ? #temporals.format(user.lastLogin, 'dd/MM/yyyy HH:mm') : 'Chưa đăng nhập'}">--</p>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <p class="text-muted mb-1">Trạng thái</p>
@@ -401,4 +396,3 @@
     </script>
 </body>
 </html>
-

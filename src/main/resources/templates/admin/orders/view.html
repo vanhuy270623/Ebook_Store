@@ -50,10 +50,10 @@
 								<dd><strong th:text="${order.orderId}">ORD001</strong></dd>
 
 								<dt>Khách hàng:</dt>
-								<dd th:text="${order.user.fullName}">Nguyễn Văn A</dd>
+ 								<dd th:text="${order.user?.fullName ?: 'N/A'}">Nguyễn Văn A</dd>
 
 								<dt>Email:</dt>
-								<dd th:text="${order.user.email}">email@example.com</dd>
+								<dd th:text="${order.user?.email ?: 'N/A'}">email@example.com</dd>
 
 								<dt>Loại đơn hàng:</dt>
 								<dd>

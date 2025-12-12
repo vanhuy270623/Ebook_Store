@@ -195,27 +195,28 @@ public class AdminUserController extends BaseAdminController {
                               Model model,
                               RedirectAttributes redirectAttributes) {
         User currentUser = getCurrentUser(authentication);
-        User user = userService.getUserById(id).orElse(null);
 
-        if (user == null) {
-            redirectAttributes.addFlashAttribute("error", "Không tìm thấy người dùng!");
-            return REDIRECT_USERS;
-        }
+        return userService.getUserById(id)
+                .map(user -> {
+                    // Kiểm tra quyền sửa
+                    boolean isEditingSelf = currentUser.getUserId().equals(id);
+                    if (!canManageAdmin(currentUser, user, isEditingSelf)) {
+                        redirectAttributes.addFlashAttribute("error", "Chỉ admin gốc mới có quyền chỉnh sửa admin khác!");
+                        return REDIRECT_USERS;
+                    }
 
-        // Kiểm tra quyền sửa
-        boolean isEditingSelf = currentUser.getUserId().equals(id);
-        if (!canManageAdmin(currentUser, user, isEditingSelf)) {
-            redirectAttributes.addFlashAttribute("error", "Chỉ admin gốc mới có quyền chỉnh sửa admin khác!");
-            return REDIRECT_USERS;
-        }
+                    // Chuyển đổi User entity sang DTO
+                    UserUpdateRequest userUpdateRequest = mapToUpdateRequest(user);
 
-        // Chuyển đổi User entity sang DTO
-        UserUpdateRequest userUpdateRequest = mapToUpdateRequest(user);
+                    addCommonFormAttributes(model, currentUser, user, true);
+                    model.addAttribute("userRequest", userUpdateRequest);
 
-        addCommonFormAttributes(model, currentUser, user, true);
-        model.addAttribute("userRequest", userUpdateRequest);
-
-        return "admin/users/form";
+                    return "admin/users/form";
+                })
+                .orElseGet(() -> {
+                    redirectAttributes.addFlashAttribute("error", "Không tìm thấy người dùng!");
+                    return REDIRECT_USERS;
+                });
     }
 
     /**

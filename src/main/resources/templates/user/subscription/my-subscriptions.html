@@ -3,118 +3,13 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       lang="vi">
 <head>
+    <link rel="stylesheet" th:href="@{/user_template/css/subscription.css}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gói Đăng Ký Của Tôi - Ebook Store</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .page-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 0;
-            margin-bottom: 30px;
-        }
-        .page-header h1 {
-            font-size: 2.5rem;
-            font-weight: bold;
-        }
-        .subscription-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .card-custom {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-        .active-subscription {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-        }
-        .active-subscription h3 {
-            font-size: 2rem;
-            margin-bottom: 20px;
-        }
-        .active-subscription .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-        .active-subscription .info-row:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-        }
-        .badge-status {
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
-        }
-        .badge-active {
-            background: #28a745;
-            color: white;
-        }
-        .badge-expired {
-            background: #dc3545;
-            color: white;
-        }
-        .badge-cancelled {
-            background: #6c757d;
-            color: white;
-        }
-        .history-card {
-            background: white;
-            border-left: 4px solid #667eea;
-            padding: 20px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            transition: all 0.3s;
-        }
-        .history-card:hover {
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transform: translateX(5px);
-        }
-        .history-card.expired {
-            border-left-color: #dc3545;
-            opacity: 0.7;
-        }
-        .history-card.cancelled {
-            border-left-color: #6c757d;
-            opacity: 0.6;
-        }
-        .btn-cancel {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 5px;
-        }
-        .btn-cancel:hover {
-            background: #c82333;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-        .empty-state i {
-            font-size: 5rem;
-            margin-bottom: 20px;
-        }
-    </style>
+    
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -263,7 +158,7 @@
                     <p class="text-muted">Bạn chưa đăng ký gói nào</p>
                 </div>
 
-                <div th:if="${subscriptions != null and !#lists.isEmpty(subscriptions)}">
+                <div th:if="${!#lists.isEmpty(subscriptions)}">
                     <div th:each="sub : ${subscriptions}"
                          th:class="${sub.status.name() == 'ACTIVE'} ? 'history-card' :
                                    (${sub.status.name() == 'EXPIRED'} ? 'history-card expired' : 'history-card cancelled')">

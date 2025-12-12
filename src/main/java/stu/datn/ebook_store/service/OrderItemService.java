@@ -1,8 +1,10 @@
 package stu.datn.ebook_store.service;
 
+import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.OrderItem;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -73,5 +75,17 @@ public interface OrderItemService {
      * @return Total number of sales
      */
     long getBookSalesCount(String bookId);
-}
 
+    /**
+     * Get a list of purchased book IDs by a user with specific order type, payment statuses, and access types
+     * @param userId The user ID
+     * @param orderType The order type
+     * @param paymentStatuses The collection of payment statuses
+     * @param accessTypes The collection of access types
+     * @return List of purchased book IDs
+     */
+    List<String> getPurchasedBookIds(String userId,
+                                     Order.OrderType orderType,
+                                     Collection<Order.PaymentStatus> paymentStatuses,
+                                     Collection<Book.AccessType> accessTypes);
+}

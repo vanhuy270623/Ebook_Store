@@ -180,6 +180,47 @@ footer a:hover {
     padding: 0.4em 0.8em;
 }
 
+.book-owned-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.5rem;
+    background: rgba(108, 117, 125, 0.25);
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: default;
+    border: 1px dashed rgba(108, 117, 125, 0.4);
+}
+
+.book-owned-wrapper {
+    position: relative;
+}
+
+.book-owned-wrapper .book-owned-tooltip {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    color: #495057;
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+
+.book-owned-wrapper:hover .book-owned-tooltip {
+    opacity: 1;
+}
+
+.book-owned-wrapper:hover .book-owned-badge {
+    opacity: 0.2;
+}
+
 /* ========== Alert Custom ========== */
 .alert {
     border: none;
@@ -500,4 +541,3 @@ img {
 @media (prefers-color-scheme: dark) {
     /* Add dark mode styles if needed */
 }
-

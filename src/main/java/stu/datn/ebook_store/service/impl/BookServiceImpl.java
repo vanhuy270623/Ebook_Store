@@ -179,12 +179,8 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Book updateBook(BookUpdateRequest request) {
-        Optional<Book> bookOpt = bookRepository.findById(request.getBookId());
-        if (bookOpt.isEmpty()) {
-            throw new RuntimeException("Book not found with id: " + request.getBookId());
-        }
-
-        Book book = bookOpt.get();
+        Book book = bookRepository.findById(request.getBookId())
+                .orElseThrow(() -> new RuntimeException("Book not found with id: " + request.getBookId()));
 
         // Update basic properties
         book.setTitle(request.getTitle());

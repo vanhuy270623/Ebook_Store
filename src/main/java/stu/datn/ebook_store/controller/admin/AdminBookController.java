@@ -193,12 +193,12 @@ public class AdminBookController extends BaseAdminController {
 
     @GetMapping("/view/{id}")
     public String viewBook(@PathVariable String id, Model model) {
-        Book book = bookService.getBookById(id).orElse(null);
-        if (book == null) {
-            return "redirect:/admin/books?error=notfound";
-        }
-        model.addAttribute("book", book);
-        return "admin/books/view";
+        return bookService.getBookById(id)
+                .map(book -> {
+                    model.addAttribute("book", book);
+                    return "admin/books/view";
+                })
+                .orElse("redirect:/admin/books?error=notfound");
     }
 
     @PostMapping("/delete/{id}")

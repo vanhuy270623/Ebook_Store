@@ -3,15 +3,16 @@ package stu.datn.ebook_store.service.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.OrderItem;
 import stu.datn.ebook_store.repository.OrderItemRepository;
 import stu.datn.ebook_store.repository.OrderRepository;
 import stu.datn.ebook_store.service.OrderItemService;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @Transactional
@@ -100,6 +101,15 @@ public class OrderItemServiceImpl implements OrderItemService {
                 .count();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getPurchasedBookIds(String userId,
+                                            Order.OrderType orderType,
+                                            Collection<Order.PaymentStatus> paymentStatuses,
+                                            Collection<Book.AccessType> accessTypes) {
+        return orderItemRepository.findPurchasedBookIds(userId, orderType, paymentStatuses, accessTypes);
+    }
+
     // Private helper methods
 
     /**
@@ -112,4 +122,3 @@ public class OrderItemServiceImpl implements OrderItemService {
         return "item_" + String.format("%02d", count + 1);
     }
 }
-

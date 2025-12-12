@@ -10,6 +10,7 @@
     <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
     <link rel="stylesheet" th:href="@{/user_template/css/homepage.css}">
     <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/books-shared.css}">
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -32,7 +33,7 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user-circle me-2" style="font-size: 32px;"></i>
+                            <i class="fas fa-user-circle me-2 nav-user-icon"></i>
                             <span>Người dùng</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
@@ -104,23 +105,25 @@
                 </div>
             </div>
 
-            <div th:if="${books.isEmpty()}" class="text-center py-5">
+            <div th:if="${#lists.isEmpty(books)}" class="text-center py-5">
                 <i class="fas fa-book fa-4x text-muted mb-3 opacity-50"></i>
                 <h5 class="text-muted">Chưa có sách trong danh mục này</h5>
             </div>
 
-            <div th:if="${!books.isEmpty()}" class="row g-4">
+            <div th:if="${!#lists.isEmpty(books)}" class="row g-4">
                 <div th:each="book : ${books}" class="col-lg-3 col-md-4 col-sm-6">
                     <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="book-card">
                         <div class="book-cover">
-                            <img th:if="${book.coverImageUrl != null}"
-                                 th:src="@{${book.coverImageUrl}}"
+                            <!-- Chỉ hiển thị ảnh nếu có, controller guarantee book tồn tại -->
+                            <img th:if="${book.coverImageUrl}"
+                                 th:src="${book.coverImageUrl}"
                                  th:alt="${book.title}"
-                                 >
-                            <div th:if="${book.coverImageUrl == null}"
-                                 class="bg-secondary d-flex align-items-center justify-content-center"
-                                 style="width: 100%; height: 300px;">
-                                <i class="fas fa-book fa-4x text-white"></i>
+                                 loading="lazy">
+                            <!-- Placeholder nếu không có ảnh -->
+                            <div th:unless="${book.coverImageUrl}"
+                                 class="d-flex align-items-center justify-content-center bg-light book-cover-placeholder"
+                                 style="height: 300px;">
+                                <i class="fas fa-book fa-3x text-muted"></i>
                             </div>
                             <span th:if="${accessType == T(stu.datn.ebook_store.entity.Book.AccessType).FREE}" class="book-badge free">Miễn phí</span>
                             <span th:if="${accessType == T(stu.datn.ebook_store.entity.Book.AccessType).SUBSCRIPTION}" class="book-badge hot">VIP</span>
@@ -128,14 +131,25 @@
                                 <button class="action-btn" title="Yêu thích">
                                     <i class="far fa-heart"></i>
                                 </button>
-                                <button th:if="${accessType == T(stu.datn.ebook_store.entity.Book.AccessType).PURCHASE}" class="action-btn" title="Thêm vào giỏ">
-                                    <i class="fas fa-cart-plus"></i>
-                                </button>
+                                <form th:if="${accessType == T(stu.datn.ebook_store.entity.Book.AccessType).PURCHASE && !purchasedBookIds.contains(book.bookId)}"
+                                      th:action="@{/cart/add/{id}(id=${book.bookId})}"
+                                      method="post"
+                                      class="d-inline add-to-cart-form">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <input type="hidden" name="redirect" th:value="@{/books/access/{type}(type=${accessType})}"/>
+                                    <button type="submit" class="action-btn" title="Thêm vào giỏ">
+                                        <i class="fas fa-cart-plus"></i>
+                                    </button>
+                                </form>
+                                <div th:if="${purchasedBookIds.contains(book.bookId)}" class="book-owned-wrapper ms-2">
+                                    <span class="book-owned-badge">ĐÃ MUA</span>
+                                    <small class="book-owned-tooltip">Bạn đã sở hữu ebook này</small>
+                                </div>
                             </div>
                         </div>
                         <div class="book-info">
                             <h3 class="book-title" th:text="${book.title}">Tên sách</h3>
-                            <p class="book-author" th:text="${book.firstAuthorName}">Tác giả</p>
+                            <p class="book-author" th:text="${book.firstAuthorName ?: 'Tác giả'}">Tác giả</p>
                             <div class="book-meta">
                                 <div class="book-rating">
                                     <i class="fas fa-star"></i>
@@ -209,4 +223,3 @@
     <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
 </body>
 </html>
-

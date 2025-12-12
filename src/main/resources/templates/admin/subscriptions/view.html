@@ -35,7 +35,7 @@
 								<dd><strong th:text="${subscription.packageName}">BASIC</strong></dd>
 
 								<dt>Mô tả:</dt>
-								<dd th:text="${subscription.description ?: 'Không có'}">Mô tả gói</dd>
+								<dd th:text="${subscription.description ?: 'Không có mô tả'}">Mô tả gói</dd>
 
 								<dt>Giá:</dt>
 								<dd><strong class="text-red" style="font-size: 18px;" th:text="${#numbers.formatDecimal(subscription.price, 0, 'COMMA', 0, 'POINT') + ' đ'}">99,000 đ</strong></dd>

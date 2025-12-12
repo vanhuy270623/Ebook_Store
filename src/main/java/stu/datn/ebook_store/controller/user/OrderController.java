@@ -12,8 +12,11 @@ import stu.datn.ebook_store.service.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
-import java.util.UUID;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Controller xử lý đơn hàng và thanh toán
@@ -28,6 +31,11 @@ public class OrderController {
     private final CartService cartService;
     private final CartItemService cartItemService;
     private final CouponService couponService;
+
+    private static final Set<Order.PaymentStatus> PAID_STATUSES =
+            EnumSet.of(Order.PaymentStatus.COMPLETED, Order.PaymentStatus.PAID);
+    private static final Set<Book.AccessType> RETAIL_ACCESS_TYPES =
+            EnumSet.of(Book.AccessType.PURCHASE, Book.AccessType.BOTH);
 
     @Autowired
     public OrderController(OrderService orderService, OrderItemService orderItemService,
@@ -61,22 +69,33 @@ public class OrderController {
             return "redirect:/auth/login";
         }
 
-        // Lấy giỏ hàng
         Cart cart = cartService.getCartByUser(currentUser).orElse(null);
         if (cart == null) {
             redirectAttributes.addFlashAttribute("error", "Giỏ hàng trống");
             return "redirect:/cart";
         }
 
-        // Lấy danh sách items trong giỏ (cần implement trong CartItemService)
         List<CartItem> cartItems = cartItemService.getCartItemsByCart(cart);
-
         if (cartItems.isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "Giỏ hàng trống");
             return "redirect:/cart";
         }
 
-        // Tính tổng tiền
+        Set<String> purchasedBookIds = new HashSet<>(orderItemService.getPurchasedBookIds(
+                currentUser.getUserId(), Order.OrderType.BOOK, PAID_STATUSES, RETAIL_ACCESS_TYPES));
+        List<CartItem> duplicateItems = cartItems.stream()
+                .filter(item -> purchasedBookIds.contains(item.getBook().getBookId()))
+                .collect(Collectors.toList());
+
+        if (!duplicateItems.isEmpty()) {
+            String titles = duplicateItems.stream()
+                    .map(item -> item.getBook().getTitle())
+                    .collect(Collectors.joining(", "));
+            redirectAttributes.addFlashAttribute("error",
+                    "Bạn đã mua các ebook: " + titles + ". Vui lòng truy cập thư viện hoặc gỡ khỏi giỏ hàng.");
+            return "redirect:/cart";
+        }
+
         BigDecimal totalAmount = cartItems.stream()
                 .map(item -> item.getBook().getPrice() != null ? item.getBook().getPrice() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -106,7 +125,6 @@ public class OrderController {
         }
 
         try {
-            // Lấy giỏ hàng
             Cart cart = cartService.getCartByUser(currentUser)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy giỏ hàng"));
 
@@ -115,16 +133,24 @@ public class OrderController {
                 throw new RuntimeException("Giỏ hàng trống");
             }
 
-            // Tính tổng tiền
+            Set<String> purchasedBookIds = new HashSet<>(orderItemService.getPurchasedBookIds(
+                    currentUser.getUserId(), Order.OrderType.BOOK, PAID_STATUSES, RETAIL_ACCESS_TYPES));
+            List<String> duplicateTitles = cartItems.stream()
+                    .filter(item -> purchasedBookIds.contains(item.getBook().getBookId()))
+                    .map(item -> item.getBook().getTitle())
+                    .collect(Collectors.toList());
+
+            if (!duplicateTitles.isEmpty()) {
+                throw new RuntimeException("Bạn đã sở hữu: " + String.join(", ", duplicateTitles));
+            }
+
             BigDecimal totalAmount = cartItems.stream()
                     .map(item -> item.getBook().getPrice() != null ? item.getBook().getPrice() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // Áp dụng coupon nếu có
             if (couponCode != null && !couponCode.trim().isEmpty()) {
                 Coupon appliedCoupon = couponService.getCouponByCode(couponCode).orElse(null);
                 if (appliedCoupon != null && appliedCoupon.getUsageLimit() != null && appliedCoupon.getUsageLimit() > 0) {
-                    // Tính giảm giá
                     BigDecimal discount = BigDecimal.ZERO;
                     if (appliedCoupon.getDiscountType() == Coupon.DiscountType.PERCENT) {
                         discount = totalAmount.multiply(appliedCoupon.getDiscountValue())
@@ -134,16 +160,12 @@ public class OrderController {
                     }
 
                     totalAmount = totalAmount.subtract(discount);
-
-                    // Giảm số lượng coupon
                     appliedCoupon.setUsageLimit(appliedCoupon.getUsageLimit() - 1);
                     couponService.saveCoupon(appliedCoupon);
                 }
             }
 
-            // Tạo order
             Order order = new Order();
-            // Don't set orderId - let OrderService generate it with proper format
             order.setUser(currentUser);
             order.setOrderType(Order.OrderType.BOOK);
             order.setTotalAmount(totalAmount);
@@ -153,30 +175,24 @@ public class OrderController {
 
             Order savedOrder = orderService.saveOrder(order);
 
-            // Tạo order items
             for (CartItem cartItem : cartItems) {
                 OrderItem orderItem = new OrderItem();
-                // Don't set orderItemId - let OrderItemService generate it with proper format
                 orderItem.setOrder(savedOrder);
                 orderItem.setBook(cartItem.getBook());
                 orderItem.setPriceAtPurchase(cartItem.getBook().getPrice());
                 orderItemService.saveOrderItem(orderItem);
             }
 
-            // Xóa giỏ hàng
             for (CartItem item : cartItems) {
                 CartItemId id = new CartItemId(cart.getCartId(), item.getBook().getBookId());
                 cartItemService.deleteCartItem(id);
             }
 
-            // Chuyển đến payment gateway hoặc confirmation
             if ("VNPAY".equals(paymentMethod)) {
                 return "redirect:/payment/vnpay?orderId=" + savedOrder.getOrderId();
             } else if ("BANK_TRANSFER".equals(paymentMethod)) {
-                // Chuyển đến trang thanh toán QR
                 return "redirect:/payment/bank-transfer?orderId=" + savedOrder.getOrderId();
             } else {
-                // Thanh toán khác - chuyển về trang xác nhận
                 redirectAttributes.addFlashAttribute("success", "Đặt hàng thành công! Mã đơn: " + savedOrder.getOrderId());
                 return "redirect:/user/orders";
             }
@@ -277,26 +293,25 @@ public class OrderController {
                 return response;
             }
 
-            Order order = orderService.getOrderById(orderId).orElse(null);
-
-            if (order == null) {
-                response.put("success", false);
-                response.put("message", "Order not found");
-                return response;
-            }
-
-            // Check permission
-            if (!order.getUser().getUserId().equals(currentUser.getUserId())) {
-                response.put("success", false);
-                response.put("message", "Unauthorized");
-                return response;
-            }
-
-            response.put("success", true);
-            response.put("orderId", order.getOrderId());
-            response.put("paymentStatus", order.getPaymentStatus().toString());
-            response.put("paymentMethod", order.getPaymentMethod().toString());
-            response.put("totalAmount", order.getTotalAmount());
+            orderService.getOrderById(orderId).ifPresentOrElse(
+                    order -> {
+                        // Check permission
+                        if (!order.getUser().getUserId().equals(currentUser.getUserId())) {
+                            response.put("success", false);
+                            response.put("message", "Unauthorized");
+                        } else {
+                            response.put("success", true);
+                            response.put("orderId", order.getOrderId());
+                            response.put("paymentStatus", order.getPaymentStatus().toString());
+                            response.put("paymentMethod", order.getPaymentMethod().toString());
+                            response.put("totalAmount", order.getTotalAmount());
+                        }
+                    },
+                    () -> {
+                        response.put("success", false);
+                        response.put("message", "Order not found");
+                    }
+            );
 
         } catch (Exception e) {
             response.put("success", false);
@@ -306,4 +321,3 @@ public class OrderController {
         return response;
     }
 }
-

@@ -18,67 +18,9 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
     <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/payment.css}">
 
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        .checkout-container {
-            max-width: 1200px;
-            margin: 50px auto;
-            padding: 20px;
-        }
-        .card-custom {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            padding: 30px;
-            margin-bottom: 20px;
-        }
-        .card-header-custom {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 15px 15px 0 0;
-            margin: -30px -30px 30px -30px;
-        }
-        .payment-method {
-            border: 2px solid #e0e0e0;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .payment-method:hover {
-            border-color: #667eea;
-            background: #f8f9ff;
-        }
-        .payment-method.selected {
-            border-color: #667eea;
-            background: #f8f9ff;
-        }
-        .price-display {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #667eea;
-        }
-        .btn-checkout {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
-            font-size: 1.1rem;
-            border: none;
-            border-radius: 10px;
-            width: 100%;
-            transition: all 0.3s;
-        }
-        .btn-checkout:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-    </style>
+    
 </head>
 <body>
     <!-- Navigation -->

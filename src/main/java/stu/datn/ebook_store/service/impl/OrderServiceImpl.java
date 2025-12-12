@@ -105,12 +105,10 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void updateOrderStatus(String orderId, Order.PaymentStatus status) {
-        Optional<Order> orderOpt = orderRepository.findById(orderId);
-        if (orderOpt.isPresent()) {
-            Order order = orderOpt.get();
+        orderRepository.findById(orderId).ifPresent(order -> {
             order.setPaymentStatus(status);
             orderRepository.save(order);
-        }
+        });
     }
 
     @Override

@@ -17,7 +17,7 @@
 		<section class="content-header">
 			<h1>
 				Chi tiết sách
-				<small th:text="${book?.title}">Tên sách</small>
+				<small th:text="${book.title}">Tên sách</small>
 			</h1>
 			<ol class="breadcrumb">
 				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
@@ -39,8 +39,7 @@
 							<img class="profile-user-img img-responsive"
 								 th:src="${book.coverImageUrl != null && !book.coverImageUrl.isEmpty() ? book.coverImageUrl : '/admin_template/images/default-book.jpg'}"
 								 th:alt="${book.title}"
-								 onerror="if(this.src!='/admin_template/images/default-book.jpg'){this.onerror=null; this.src='/admin_template/images/default-book.jpg';}"
-								 style="width: 200px; height: 280px; border-radius: 8px; object-fit: cover; display: block; margin: 0 auto;">
+								>
 
 							<h3 class="profile-username text-center" th:text="${book.title}">Tên sách</h3>
 
@@ -142,10 +141,14 @@
 											<div class="col-md-12">
 												<div class="media">
 													<div class="media-left">
-														<img th:src="${author.avatarUrl != null && !author.avatarUrl.isEmpty() ? author.avatarUrl : '/admin_template/images/user.png'}"
-															 class="media-object img-circle" style="width: 60px; height: 60px; object-fit: cover;"
-															 th:alt="${author.name}"
-															 onerror="if(this.src!='/admin_template/images/user.png'){this.onerror=null; this.src='/admin_template/images/user.png'};">
+														<img th:if="${author.avatarUrl}"
+															 th:src="${author.avatarUrl}"
+															 class="media-object img-circle"
+															 style="width: 60px; height: 60px; object-fit: cover;"
+															 th:alt="${author.name}">
+														<i th:unless="${author.avatarUrl}"
+														   class="fas fa-user-circle text-muted"
+														   style="font-size: 60px;"></i>
 													</div>
 													<div class="media-body">
 														<h5 class="media-heading" th:text="${author.name}">Tên tác giả</h5>

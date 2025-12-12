@@ -84,10 +84,15 @@
 									<tbody>
 									<tr th:each="user : ${recentUsers}">
 										<td class="text-center">
-											<img th:src="${user.avatarUrl != null && !user.avatarUrl.isEmpty() ? user.avatarUrl : '/admin_template/images/user-default.png'}"
+											<img th:if="${user.avatarUrl}"
+												 th:src="${user.avatarUrl}"
 												 class="img-circle"
-												 width="40" height="40" style="object-fit: cover;"
+												 width="40" height="40"
+												 style="object-fit: cover;"
 												 th:alt="${user.username}">
+											<i th:unless="${user.avatarUrl}"
+											   class="fas fa-user-circle text-muted"
+											   style="font-size: 40px;"></i>
 										</td>
 										<td th:text="${user.userId}">user_id</td>
 										<td>

@@ -121,26 +121,25 @@ public class AdminOrderController extends BaseAdminController {
      */
     @GetMapping("/view/{id}")
     public String viewOrder(@PathVariable String id, Model model, RedirectAttributes redirectAttributes) {
-        Optional<Order> orderOpt = orderService.getOrderById(id);
+        return orderService.getOrderById(id)
+                .map(order -> {
+                    model.addAttribute("order", order);
 
-        if (orderOpt.isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn hàng!");
-            return REDIRECT_ORDERS;
-        }
+                    // Get order items if order type is BOOK
+                    if (order.getOrderType() == Order.OrderType.BOOK) {
+                        List<OrderItem> orderItems = orderItemService.getOrderItemsByOrderId(order.getOrderId());
+                        model.addAttribute("orderItems", orderItems);
+                    }
 
-        Order order = orderOpt.get();
-        model.addAttribute("order", order);
+                    // Payment statuses for status update dropdown
+                    model.addAttribute("paymentStatuses", Order.PaymentStatus.values());
 
-        // Get order items if order type is BOOK
-        if (order.getOrderType() == Order.OrderType.BOOK) {
-            List<OrderItem> orderItems = orderItemService.getOrderItemsByOrderId(order.getOrderId());
-            model.addAttribute("orderItems", orderItems);
-        }
-
-        // Payment statuses for status update dropdown
-        model.addAttribute("paymentStatuses", Order.PaymentStatus.values());
-
-        return "admin/orders/view";
+                    return "admin/orders/view";
+                })
+                .orElseGet(() -> {
+                    redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn hàng!");
+                    return REDIRECT_ORDERS;
+                });
     }
 
     /**

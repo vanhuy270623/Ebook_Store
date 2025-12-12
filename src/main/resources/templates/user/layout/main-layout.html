@@ -68,34 +68,8 @@
               xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
         <head>
             <th:block th:replace="~{user/layout/head :: head}"></th:block>
+            <link rel="stylesheet" th:href="@{/user_template/css/dashboard.css}">
             <title th:text="${title} + ' - Dashboard'">Dashboard</title>
-            <style>
-                .dashboard-wrapper {
-                    display: flex;
-                    gap: 24px;
-                    margin-top: 32px;
-                }
-
-                .dashboard-sidebar {
-                    width: 260px;
-                    flex-shrink: 0;
-                }
-
-                .dashboard-content {
-                    flex: 1;
-                    min-width: 0;
-                }
-
-                @media (max-width: 992px) {
-                    .dashboard-wrapper {
-                        flex-direction: column;
-                    }
-
-                    .dashboard-sidebar {
-                        width: 100%;
-                    }
-                }
-            </style>
         </head>
         <body>
             <!-- Header -->
@@ -158,4 +132,3 @@
     </th:block>
 </body>
 </html>
-

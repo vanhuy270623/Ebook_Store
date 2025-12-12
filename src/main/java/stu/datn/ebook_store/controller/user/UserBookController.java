@@ -1,14 +1,21 @@
 package stu.datn.ebook_store.controller.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import stu.datn.ebook_store.entity.Book;
+import stu.datn.ebook_store.entity.Order;
+import stu.datn.ebook_store.entity.User;
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.CategoryService;
+import stu.datn.ebook_store.service.OrderItemService;
 
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Controller xử lý trang user - duyệt sách, tìm kiếm, xem chi tiết
@@ -19,14 +26,34 @@ import java.util.List;
 public class UserBookController {
 
     private static final int PAGE_SIZE = 12;
+    private static final Set<Order.PaymentStatus> PAID_STATUSES =
+            EnumSet.of(Order.PaymentStatus.COMPLETED, Order.PaymentStatus.PAID);
+    private static final Set<Book.AccessType> RETAIL_ACCESS_TYPES =
+            EnumSet.of(Book.AccessType.PURCHASE, Book.AccessType.BOTH);
 
     private final BookService bookService;
     private final CategoryService categoryService;
+    private final OrderItemService orderItemService;
 
     @Autowired
-    public UserBookController(BookService bookService, CategoryService categoryService) {
+    public UserBookController(BookService bookService, CategoryService categoryService,
+                              OrderItemService orderItemService) {
         this.bookService = bookService;
         this.categoryService = categoryService;
+        this.orderItemService = orderItemService;
+    }
+
+    private User getCurrentUser(Authentication authentication) {
+        return authentication != null && authentication.getPrincipal() instanceof User user ? user : null;
+    }
+
+    private Set<String> getPurchasedBookIds(Authentication authentication) {
+        User currentUser = getCurrentUser(authentication);
+        if (currentUser == null) {
+            return Set.of();
+        }
+        return new HashSet<>(orderItemService.getPurchasedBookIds(
+                currentUser.getUserId(), Order.OrderType.BOOK, PAID_STATUSES, RETAIL_ACCESS_TYPES));
     }
 
     /**
@@ -38,7 +65,7 @@ public class UserBookController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String access,
-            Model model) {
+            Model model, Authentication authentication) {
 
         // Lấy danh sách sách
         List<Book> books = bookService.getAllBooks();
@@ -101,6 +128,7 @@ public class UserBookController {
         model.addAttribute("accessTypes", Book.AccessType.values());
         model.addAttribute("sortOptions", new String[]{"newest", "popular", "rating"});
         model.addAttribute("sort", sort);
+        model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
 
         return "user/books/list";
     }
@@ -109,31 +137,31 @@ public class UserBookController {
      * Trang chi tiết sách
      */
     @GetMapping("/view/{id}")
-    public String viewBook(@PathVariable String id, Model model) {
-        Book book = bookService.getBookById(id).orElse(null);
+    public String viewBook(@PathVariable String id, Model model, Authentication authentication) {
+        return bookService.getBookById(id)
+                .map(book -> {
+                    // Tăng view count
+                    book.setViewCount(book.getViewCount() != null ? book.getViewCount() + 1 : 1);
+                    bookService.saveBook(book);
 
-        if (book == null) {
-            return "redirect:/books?error=notfound";
-        }
+                    // Lấy sách liên quan (cùng category)
+                    List<Book> relatedBooks = new java.util.ArrayList<>();
+                    if (book.getBookCategory() != null) {
+                        relatedBooks = bookService.getBooksByCategory(book.getBookCategory()).stream()
+                                .filter(b -> !b.getBookId().equals(id))
+                                .limit(4)
+                                .toList();
+                    }
 
-        // Tăng view count
-        book.setViewCount(book.getViewCount() != null ? book.getViewCount() + 1 : 1);
-        bookService.saveBook(book);
+                    model.addAttribute("book", book);
+                    model.addAttribute("relatedBooks", relatedBooks);
+                    model.addAttribute("categories", categoryService.getAllCategories());
+                    model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
+                    model.addAttribute("currentUser", getCurrentUser(authentication));
 
-        // Lấy sách liên quan (cùng category)
-        List<Book> relatedBooks = new java.util.ArrayList<>();
-        if (book.getBookCategory() != null) {
-            relatedBooks = bookService.getBooksByCategory(book.getBookCategory()).stream()
-                    .filter(b -> !b.getBookId().equals(id))
-                    .limit(4)
-                    .toList();
-        }
-
-        model.addAttribute("book", book);
-        model.addAttribute("relatedBooks", relatedBooks);
-        model.addAttribute("categories", categoryService.getAllCategories());
-
-        return "user/books/view";
+                    return "user/books/view";
+                })
+                .orElse("redirect:/books?error=notfound");
     }
 
     /**
@@ -143,7 +171,7 @@ public class UserBookController {
     public String searchBooks(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
-            Model model) {
+            Model model, Authentication authentication) {
 
         List<Book> books = new java.util.ArrayList<>();
 
@@ -167,6 +195,7 @@ public class UserBookController {
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("totalBooks", totalBooks);
+        model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
 
         return "user/books/search";
     }
@@ -178,7 +207,7 @@ public class UserBookController {
     public String booksByCategory(
             @PathVariable String categoryId,
             @RequestParam(defaultValue = "0") int page,
-            Model model) {
+            Model model, Authentication authentication) {
 
         // CategoryService trả về Category, nhưng BookService cần BookCategory
         // Sử dụng getBooksByCategory với lọc theo category ID
@@ -204,6 +233,7 @@ public class UserBookController {
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("totalBooks", totalBooks);
         model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
 
         return "user/books/category";
     }
@@ -215,7 +245,7 @@ public class UserBookController {
     public String booksByAccessType(
             @PathVariable String accessType,
             @RequestParam(defaultValue = "0") int page,
-            Model model) {
+            Model model, Authentication authentication) {
 
         try {
             Book.AccessType type = Book.AccessType.valueOf(accessType.toUpperCase());
@@ -237,6 +267,7 @@ public class UserBookController {
             model.addAttribute("currentPage", page);
             model.addAttribute("totalPages", totalPages);
             model.addAttribute("totalBooks", totalBooks);
+            model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
 
             return "user/books/by-access-type";
         } catch (IllegalArgumentException e) {
@@ -248,10 +279,11 @@ public class UserBookController {
      * Sách hot/trending
      */
     @GetMapping("/trending")
-    public String trendingBooks(Model model) {
+    public String trendingBooks(Model model, Authentication authentication) {
         List<Book> books = bookService.getTopViewedBooks();
         model.addAttribute("books", books);
         model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
 
         return "user/books/trending";
     }
@@ -260,10 +292,11 @@ public class UserBookController {
      * Sách mới nhất
      */
     @GetMapping("/newest")
-    public String newestBooks(Model model) {
+    public String newestBooks(Model model, Authentication authentication) {
         List<Book> books = bookService.getNewestBooks();
         model.addAttribute("books", books);
         model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
 
         return "user/books/newest";
     }
@@ -272,10 +305,11 @@ public class UserBookController {
      * Sách được đánh giá cao
      */
     @GetMapping("/top-rated")
-    public String topRatedBooks(Model model) {
+    public String topRatedBooks(Model model, Authentication authentication) {
         List<Book> books = bookService.getTopRatedBooks(20);
         model.addAttribute("books", books);
         model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
 
         return "user/books/top-rated";
     }

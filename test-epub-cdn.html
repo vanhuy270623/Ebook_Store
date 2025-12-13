@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test EPUB CDN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Kiểm Tra CDN EPUB Viewer</h1>
+
+    <div class="test-box">
+        <h2>1. Kiểm tra CDN hiện tại (jsdelivr)</h2>
+        <p><strong>URL:</strong> <code>https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js</code></p>
+        <div id="status-jsdelivr" class="status info">⏳ Đang kiểm tra...</div>
+        <button onclick="testJsdelivr()">Kiểm tra lại</button>
+    </div>
+
+    <div class="test-box">
+        <h2>2. Kiểm tra CDN thay thế (unpkg)</h2>
+        <p><strong>URL:</strong> <code>https://unpkg.com/epubjs@0.3/dist/epub.min.js</code></p>
+        <div id="status-unpkg" class="status info">⏳ Chưa kiểm tra</div>
+        <button onclick="testUnpkg()">Kiểm tra</button>
+    </div>
+
+    <div class="test-box">
+        <h2>3. Kiểm tra CDN mới nhất (jsdelivr latest)</h2>
+        <p><strong>URL:</strong> <code>https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js</code></p>
+        <div id="status-latest" class="status info">⏳ Chưa kiểm tra</div>
+        <button onclick="testLatest()">Kiểm tra</button>
+    </div>
+
+    <div class="test-box">
+        <h2>Kết quả chi tiết:</h2>
+        <div id="result">Nhấn các nút trên để kiểm tra...</div>
+    </div>
+
+    <!-- Script CDN hiện tại -->
+    <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
+
+    <script>
+        let results = [];
+
+        function updateResult(message) {
+            results.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+            document.getElementById('result').textContent = results.join('\n');
+        }
+
+        function testJsdelivr() {
+            const statusDiv = document.getElementById('status-jsdelivr');
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '⏳ Đang kiểm tra...';
+
+            updateResult('🔍 Kiểm tra jsdelivr CDN...');
+
+            setTimeout(() => {
+                if (typeof ePub !== 'undefined') {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = '✅ Thành công! ePub.js đã được tải từ jsdelivr';
+                    updateResult('✅ ePub object có sẵn');
+                    updateResult(`✅ Version: ${typeof ePub.VERSION !== 'undefined' ? ePub.VERSION : 'Không xác định'}`);
+                    updateResult(`✅ Các methods: ${Object.keys(ePub).join(', ')}`);
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '❌ Lỗi! Không tải được ePub.js từ jsdelivr';
+                    updateResult('❌ ePub object không tồn tại');
+                }
+            }, 500);
+        }
+
+        function testUnpkg() {
+            const statusDiv = document.getElementById('status-unpkg');
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '⏳ Đang kiểm tra...';
+
+            updateResult('\n🔍 Kiểm tra unpkg CDN...');
+
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/epubjs@0.3/dist/epub.min.js';
+
+            script.onload = () => {
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '✅ Thành công! Có thể tải từ unpkg';
+                updateResult('✅ unpkg CDN hoạt động tốt');
+            };
+
+            script.onerror = () => {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ Lỗi! Không tải được từ unpkg';
+                updateResult('❌ unpkg CDN không khả dụng');
+            };
+
+            // Không thêm vào DOM để tránh conflict
+            fetch(script.src)
+                .then(response => {
+                    if (response.ok) {
+                        statusDiv.className = 'status success';
+                        statusDiv.innerHTML = '✅ Thành công! Có thể tải từ unpkg';
+                        updateResult('✅ unpkg CDN hoạt động tốt (HTTP ' + response.status + ')');
+                    } else {
+                        statusDiv.className = 'status error';
+                        statusDiv.innerHTML = '❌ Lỗi! HTTP ' + response.status;
+                        updateResult('❌ unpkg CDN lỗi (HTTP ' + response.status + ')');
+                    }
+                })
+                .catch(err => {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '❌ Lỗi! ' + err.message;
+                    updateResult('❌ unpkg CDN lỗi: ' + err.message);
+                });
+        }
+
+        function testLatest() {
+            const statusDiv = document.getElementById('status-latest');
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '⏳ Đang kiểm tra...';
+
+            updateResult('\n🔍 Kiểm tra jsdelivr latest CDN...');
+
+            fetch('https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js')
+                .then(response => {
+                    if (response.ok) {
+                        statusDiv.className = 'status success';
+                        statusDiv.innerHTML = '✅ Thành công! Có thể tải từ jsdelivr (latest)';
+                        updateResult('✅ jsdelivr latest CDN hoạt động tốt (HTTP ' + response.status + ')');
+                    } else {
+                        statusDiv.className = 'status error';
+                        statusDiv.innerHTML = '❌ Lỗi! HTTP ' + response.status;
+                        updateResult('❌ jsdelivr latest lỗi (HTTP ' + response.status + ')');
+                    }
+                })
+                .catch(err => {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '❌ Lỗi! ' + err.message;
+                    updateResult('❌ jsdelivr latest lỗi: ' + err.message);
+                });
+        }
+
+        // Tự động kiểm tra khi tải trang
+        window.addEventListener('load', () => {
+            updateResult('📋 Bắt đầu kiểm tra tự động...');
+            testJsdelivr();
+        });
+    </script>
+</body>
+</html>
+

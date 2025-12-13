@@ -1,0 +1,167 @@
+═══════════════════════════════════════════════════════════
+  🔧 KHÔNG ĐỌC ĐƯỢC FILE EPUB - HƯỚNG DẪN DEBUG
+═══════════════════════════════════════════════════════════
+
+🎯 VẤN ĐỀ
+───────────────────────────────────────────────────────────
+Không đọc được file EPUB - màn hình treo ở "Đang tải EPUB..."
+
+✅ ĐÃ LÀM
+───────────────────────────────────────────────────────────
+1. ✅ Fix CDN duplicate
+2. ✅ Thêm mechanism chờ library load
+3. ✅ Thêm validation file path
+4. ✅ Thêm debug logs chi tiết
+5. ✅ Tạo test page để debug
+
+🚀 BẮT ĐẦU DEBUG TỪ ĐÂY
+───────────────────────────────────────────────────────────
+
+BƯỚC 1: Restart Spring Boot
+   cd C:\Projects\Ebook_Store
+   mvn clean spring-boot:run
+
+BƯỚC 2: Mở Test Page
+   http://localhost:8080/reading/test-epub-load
+
+BƯỚC 3: Test Theo Thứ Tự
+   1. Xem CDN test (tự động) → phải ✅
+   2. Click "Test Path 1" → phải ✅ File accessible
+   3. Click "Test Path 2" → phải ✅ File accessible
+   4. Click "Load EPUB" → sách phải hiển thị
+
+BƯỚC 4: Xem Console Logs
+   Trong test page, mục "4. Console Logs"
+   Phải thấy: "SUCCESS: Book displayed successfully!"
+
+───────────────────────────────────────────────────────────
+  KẾT QUẢ MONG ĐỢI
+───────────────────────────────────────────────────────────
+
+✅ NẾU TEST PAGE THÀNH CÔNG:
+   • CDN loaded ✅
+   • Files accessible ✅
+   • EPUB displayed ✅
+
+   → Test trong viewer thật:
+     http://localhost:8080/reading/epub/book_03
+     http://localhost:8080/reading/epub/book_13
+
+❌ NẾU TEST PAGE THẤT BẠI:
+   Xem phần TROUBLESHOOTING bên dưới
+
+───────────────────────────────────────────────────────────
+  TROUBLESHOOTING
+───────────────────────────────────────────────────────────
+
+LỖI 1: "ePub.js NOT loaded"
+───────────────────────────────────────────────────────────
+Nguyên nhân: CDN bị block
+
+Giải pháp:
+  # Download về local
+  Invoke-WebRequest -Uri "https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js" `
+    -OutFile "C:\Projects\Ebook_Store\src\main\resources\static\libs\epub.min.js"
+
+  # Sau đó sửa epub-viewer.html (dòng 10):
+  <script th:src="@{/libs/epub.min.js}"></script>
+
+LỖI 2: "File NOT accessible (404)"
+───────────────────────────────────────────────────────────
+Nguyên nhân: File không tồn tại
+
+Kiểm tra:
+  # File có tồn tại không?
+  Test-Path "F:\datn_uploads\book_asset\source\khoahoc-vientuong\Chien Tranh Giua Cac The Gioi - H. G. Wells.epub"
+
+  # Liệt kê tất cả EPUB
+  Get-ChildItem -Path "F:\datn_uploads\book_asset\source" -Recurse -Filter "*.epub"
+
+Nếu file KHÔNG tồn tại:
+  → Upload file vào F:\datn_uploads\book_asset\source\
+  → Đảm bảo folder structure đúng với DB
+
+LỖI 3: "Failed to load EPUB"
+───────────────────────────────────────────────────────────
+Nguyên nhân: File corrupt hoặc không hợp lệ
+
+Giải pháp:
+  • Test file bằng Calibre
+  • Test file bằng Adobe Digital Editions
+  • Thử file EPUB khác
+  • Re-download file gốc
+
+───────────────────────────────────────────────────────────
+  FILES EPUB TRONG DB
+───────────────────────────────────────────────────────────
+
+book_03: Chiến Tranh Giữa Các Thế Giới
+  Path: /book_asset/source/khoahoc-vientuong/Chien Tranh Giua Cac The Gioi - H. G. Wells.epub
+  Size: 2.5 MB
+
+book_13: Siêu Kinh Tế Học Hài Hước
+  Path: /book_asset/source/kinhte-quanly/Sieu Kinh Te Hoc Hai Huoc - STEVEN D. LEVITT.epub
+  Size: 3.6 MB
+
+───────────────────────────────────────────────────────────
+  NẾU VẪN KHÔNG ĐƯỢC
+───────────────────────────────────────────────────────────
+
+GỬI CHO TÔI:
+
+1. Screenshot test page (cả 4 sections)
+2. Screenshot Browser Console (F12)
+3. Screenshot Network tab (F12, filter: epub)
+4. Output của lệnh:
+   Get-ChildItem -Path "F:\datn_uploads\book_asset\source" -Recurse -Filter "*.epub"
+
+───────────────────────────────────────────────────────────
+  TOOLS ĐÃ TẠO
+───────────────────────────────────────────────────────────
+
+✅ Test Page:
+   http://localhost:8080/reading/test-epub-load
+
+✅ Documentation:
+   docs/DEBUG_EPUB_NOT_LOADING.md - Full guide
+   docs/FIX_EPUB_NOT_LOADING.md - Previous fixes
+   docs/EPUB_VIEWER_FIX_SUMMARY.md - Summary
+
+✅ Updated Files:
+   epub-viewer.html - Đã sửa logic
+   ReadingController.java - Đã thêm test route
+
+───────────────────────────────────────────────────────────
+  LOGIC DEBUG
+───────────────────────────────────────────────────────────
+
+Test page sẽ chỉ rõ vấn đề ở đâu:
+
+❌ CDN fail → Download local
+❌ File 404 → Check files trên disk
+❌ EPUB load fail → File corrupt
+✅ All OK → Vấn đề ở epub-viewer.html logic
+
+Sau khi test page OK:
+→ Test trong EPUB viewer thật
+→ Nếu viewer fail → Check Thymeleaf variables
+→ Nếu viewer OK → Problem solved! 🎉
+
+───────────────────────────────────────────────────────────
+
+🎯 ACTION ITEMS:
+
+[ ] 1. Restart Spring Boot
+[ ] 2. Mở http://localhost:8080/reading/test-epub-load
+[ ] 3. Test CDN (tự động)
+[ ] 4. Test File Path 1
+[ ] 5. Test File Path 2
+[ ] 6. Load EPUB
+[ ] 7. Xem Console Logs
+[ ] 8. Report kết quả
+
+═══════════════════════════════════════════════════════════
+HÃY BẮT ĐẦU TỪ TEST PAGE!
+Ngày: 13/12/2025
+═══════════════════════════════════════════════════════════
+

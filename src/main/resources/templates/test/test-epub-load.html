@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Debug EPUB Loading</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .test-box {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #667eea;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        #viewer {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug EPUB Loading</h1>
+
+    <div class="section">
+        <h2>1. Test CDN ePub.js</h2>
+        <div id="cdnTest" class="test-box">⏳ Đang kiểm tra...</div>
+        <button onclick="testCDN()">Test lại</button>
+
+        <div class="test-box" style="margin-top: 15px;">
+            <strong>⚠️ Nếu version hiện tại không hoạt động, thử version khác:</strong><br>
+            <button onclick="switchEpubVersion('0.3.93')">v0.3.93 (current)</button>
+            <button onclick="switchEpubVersion('0.3.88')">v0.3.88</button>
+            <button onclick="switchEpubVersion('0.3.95')">v0.3.95</button>
+            <div id="versionInfo" style="margin-top: 10px; font-size: 12px; color: #666;">
+                Current: 0.3.93 - <span style="color: red;">Reload page sau khi switch</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>2. Test File Paths & ZIP Validity</h2>
+        <div class="test-box">
+            <strong>Test các paths sau:</strong><br>
+            <input type="text" id="testPath1" value="/book_asset/source/khoahoc-vientuong/Chien Tranh Giua Cac The Gioi - H. G. Wells.epub" style="width: 100%; padding: 8px; margin: 5px 0;">
+            <button onclick="testFilePath('testPath1')">Test HTTP</button>
+            <button onclick="testZipFile('testPath1')">Test ZIP</button>
+        </div>
+        <div class="test-box">
+            <input type="text" id="testPath2" value="/book_asset/source/kinhte-quanly/Sieu Kinh Te Hoc Hai Huoc - STEVEN D. LEVITT.epub" style="width: 100%; padding: 8px; margin: 5px 0;">
+            <button onclick="testFilePath('testPath2')">Test HTTP</button>
+            <button onclick="testZipFile('testPath2')">Test ZIP</button>
+        </div>
+        <div id="pathTestResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Test Load EPUB</h2>
+        <div class="test-box">
+            <label>EPUB Path:</label><br>
+            <input type="text" id="epubPath" value="/book_asset/source/khoahoc-vientuong/Chien Tranh Giua Cac The Gioi - H. G. Wells.epub" style="width: 100%; padding: 8px; margin: 5px 0;">
+            <button onclick="loadTestEPUB()">Load EPUB</button>
+            <button onclick="clearViewer()">Clear</button>
+        </div>
+
+        <div class="test-box" style="background: #fff3cd; border-left-color: #ffc107;">
+            <strong>⚠️ Nếu file của bạn không load, test với file EPUB mẫu:</strong><br>
+            <button onclick="testPublicEPUB()">Test với Moby Dick (Public EPUB)</button>
+            <button onclick="manualLoad()">Manual Load (JSZip)</button>
+            <small style="display: block; margin-top: 5px; color: #666;">
+                • Moby Dick: Test với file public standard<br>
+                • Manual Load: Load EPUB content trực tiếp bằng JSZip
+            </small>
+        </div>
+
+        <div id="loadResult"></div>
+        <div id="viewer"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Console Logs</h2>
+        <pre id="consoleLog">Logs sẽ hiển thị ở đây...</pre>
+        <button onclick="clearLog()">Clear Logs</button>
+    </div>
+
+    <!-- ePub.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
+
+    <!-- JSZip for testing ZIP validity -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <script>
+        let logs = [];
+        let book = null;
+        let rendition = null;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            // Convert message to string if it's an object
+            const msgStr = typeof message === 'object' ? JSON.stringify(message, null, 2) : String(message);
+            const typeStr = String(type).toUpperCase();
+            const logEntry = `[${timestamp}] ${typeStr}: ${msgStr}`;
+            logs.push(logEntry);
+            document.getElementById('consoleLog').textContent = logs.join('\n');
+            console.log(logEntry);
+        }
+
+        function testCDN() {
+            const div = document.getElementById('cdnTest');
+            if (typeof ePub !== 'undefined') {
+                div.className = 'test-box success';
+                div.innerHTML = `
+                    ✅ ePub.js loaded successfully!<br>
+                    Version: ${ePub.VERSION || 'Unknown'}<br>
+                    Object keys: ${Object.keys(ePub).slice(0, 5).join(', ')}...
+                `;
+                log('CDN ePub.js loaded successfully', 'success');
+            } else {
+                div.className = 'test-box error';
+                div.innerHTML = '❌ ePub.js NOT loaded!';
+                log('CDN ePub.js failed to load', 'error');
+            }
+        }
+
+        async function testFilePath(inputId) {
+            const path = document.getElementById(inputId).value;
+            const resultDiv = document.getElementById('pathTestResult');
+
+            log(`Testing file path: ${path}`);
+            resultDiv.innerHTML = '<div class="test-box">⏳ Testing HTTP...</div>';
+
+            try {
+                const response = await fetch(path, { method: 'HEAD' });
+
+                if (response.ok) {
+                    const contentType = response.headers.get('content-type');
+                    const contentLength = response.headers.get('content-length');
+
+                    resultDiv.innerHTML = `
+                        <div class="test-box success">
+                            ✅ File accessible!<br>
+                            Path: ${path}<br>
+                            Status: ${response.status}<br>
+                            Content-Type: ${contentType}<br>
+                            Size: ${contentLength ? (parseInt(contentLength) / 1024 / 1024).toFixed(2) + ' MB' : 'Unknown'}
+                        </div>
+                    `;
+                    log(`File accessible: ${path} (${response.status})`, 'success');
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="test-box error">
+                            ❌ File NOT accessible!<br>
+                            Path: ${path}<br>
+                            Status: ${response.status} ${response.statusText}
+                        </div>
+                    `;
+                    log(`File not accessible: ${path} (${response.status})`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="test-box error">
+                        ❌ Error testing file!<br>
+                        Path: ${path}<br>
+                        Error: ${error.message}
+                    </div>
+                `;
+                log(`Error testing file: ${error.message}`, 'error');
+            }
+        }
+
+        async function testZipFile(inputId) {
+            const path = document.getElementById(inputId).value;
+            const resultDiv = document.getElementById('pathTestResult');
+
+            log(`Testing ZIP validity: ${path}`);
+            resultDiv.innerHTML = '<div class="test-box">⏳ Downloading and testing ZIP...</div>';
+
+            try {
+                // Download file
+                log('Downloading file...');
+                const response = await fetch(path);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                log('Converting to array buffer...');
+                const arrayBuffer = await response.arrayBuffer();
+                const sizeKB = (arrayBuffer.byteLength / 1024).toFixed(2);
+                log(`Downloaded ${sizeKB} KB`);
+
+                // Test with JSZip
+                log('Testing ZIP structure with JSZip...');
+                if (typeof JSZip === 'undefined') {
+                    throw new Error('JSZip library not loaded');
+                }
+
+                const zip = new JSZip();
+                const loaded = await zip.loadAsync(arrayBuffer);
+
+                log('ZIP loaded successfully, checking contents...');
+                const fileNames = Object.keys(loaded.files);
+                log(`Found ${fileNames.length} files in ZIP`);
+
+                // Check for required EPUB files
+                const hasMimetype = fileNames.includes('mimetype');
+                const hasContainer = fileNames.some(f => f.includes('container.xml'));
+                const hasOPF = fileNames.some(f => f.endsWith('.opf'));
+
+                let result = `
+                    <div class="test-box ${hasMimetype && hasContainer && hasOPF ? 'success' : 'error'}">
+                        ${hasMimetype && hasContainer && hasOPF ? '✅' : '⚠️'} ZIP Structure Test<br>
+                        Path: ${path}<br>
+                        Size: ${sizeKB} KB<br>
+                        Files in ZIP: ${fileNames.length}<br><br>
+                        EPUB Structure:<br>
+                        ${hasMimetype ? '✅' : '❌'} mimetype file<br>
+                        ${hasContainer ? '✅' : '❌'} container.xml<br>
+                        ${hasOPF ? '✅' : '❌'} .opf file<br><br>
+                        <details>
+                            <summary>Show files (first 20)</summary>
+                            ${fileNames.slice(0, 20).map(f => `• ${f}`).join('<br>')}
+                        </details>
+                    </div>
+                `;
+
+                resultDiv.innerHTML = result;
+
+                if (hasMimetype && hasContainer && hasOPF) {
+                    log('✅ Valid EPUB structure!', 'success');
+                } else {
+                    log('⚠️ ZIP is valid but EPUB structure incomplete', 'warn');
+                }
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="test-box error">
+                        ❌ ZIP Test Failed!<br>
+                        Path: ${path}<br>
+                        Error: ${error.message}<br>
+                        <small>File may be corrupt or not a valid ZIP/EPUB</small>
+                    </div>
+                `;
+                log(`❌ ZIP test failed: ${error.message}`, 'error');
+                console.error('ZIP test error:', error);
+            }
+        }
+
+        async function loadTestEPUB() {
+            const path = document.getElementById('epubPath').value;
+            const resultDiv = document.getElementById('loadResult');
+            const viewerDiv = document.getElementById('viewer');
+
+            log(`Starting EPUB load: ${path}`);
+            resultDiv.innerHTML = '<div class="test-box">⏳ Loading EPUB...</div>';
+
+            try {
+                // Clear previous
+                if (rendition) {
+                    rendition.destroy();
+                }
+                viewerDiv.innerHTML = '';
+
+                // Test file first
+                log('Testing file accessibility...');
+                const testResponse = await fetch(path, { method: 'HEAD' });
+                if (!testResponse.ok) {
+                    throw new Error(`File not accessible (HTTP ${testResponse.status})`);
+                }
+                log(`File test passed (${testResponse.status})`);
+
+                // Create book - Try different initialization methods
+                log('Creating ePub instance...');
+
+                // Method 1: Standard ePub() factory
+                log('Method 1: ePub() factory');
+                book = ePub(path);
+                console.log('Book object:', book);
+
+                // Wait a bit for initialization
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                log('Checking book state...');
+                console.log('book.isOpen:', book.isOpen);
+                console.log('book.opened:', book.opened);
+                console.log('book.ready:', book.ready);
+
+                // Try to open the book explicitly
+                log('Calling book.open()...');
+                try {
+                    const openResult = await Promise.race([
+                        book.open(path),
+                        new Promise((_, reject) =>
+                            setTimeout(() => reject(new Error('open() timeout')), 5000)
+                        )
+                    ]);
+                    log('✅ book.open() completed');
+                    console.log('Open result:', openResult);
+                } catch (openErr) {
+                    log('⚠️ book.open() failed/timeout: ' + openErr.message, 'warn');
+                    // Try alternative - maybe book is already opened by ePub()
+                }
+
+                // Check if book is now ready
+                if (book.isOpen) {
+                    log('✅ Book is open (isOpen = true)');
+                } else {
+                    log('⚠️ Book not open yet (isOpen = false)', 'warn');
+                }
+
+                // Try to access spine directly without waiting for ready
+                log('Trying to access spine directly...');
+                try {
+                    const spine = await book.loaded.spine;
+                    log('✅ Spine loaded: ' + spine.length + ' items');
+
+                    const metadata = await book.loaded.metadata;
+                    log('✅ Metadata loaded: ' + (metadata.title || 'No title'));
+
+                    // If we got here, book is ready even if ready promise didn't resolve
+                    log('✅ Book data accessible, proceeding...');
+                } catch (spineErr) {
+                    log('❌ Cannot access spine: ' + spineErr.message, 'error');
+
+                    // Last resort - wait for ready with timeout
+                    log('Waiting for book.ready as last resort...');
+                    try {
+                        await Promise.race([
+                            book.ready,
+                            new Promise((_, reject) =>
+                                setTimeout(() => reject(new Error('ready timeout')), 10000)
+                            )
+                        ]);
+                        log('✅ Book ready');
+                    } catch (readyErr) {
+                        log('❌ All methods failed', 'error');
+                        throw new Error('Cannot initialize book: ' + readyErr.message);
+                    }
+                }
+
+                // Get metadata
+                try {
+                    const meta = book.package?.metadata || book.packaging?.metadata || {};
+                    log(`Book metadata - Title: ${meta.title || 'N/A'}, Creator: ${meta.creator || 'N/A'}`);
+                } catch (e) {
+                    log('Cannot get metadata: ' + e.message, 'warn');
+                }
+
+                // Create rendition
+                log('Creating rendition...');
+                rendition = book.renderTo('viewer', {
+                    width: '100%',
+                    height: '100%',
+                    spread: 'none'
+                });
+                log('Rendition created');
+                console.log('Rendition object:', rendition);
+
+                // Display with timeout
+                log('Displaying book...');
+                const displayPromise = rendition.display();
+                const displayTimeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Timeout displaying book (15s)')), 15000)
+                );
+
+                await Promise.race([displayPromise, displayTimeoutPromise]);
+                log('✅ Book displayed successfully!');
+
+                resultDiv.innerHTML = `
+                    <div class="test-box success">
+                        ✅ EPUB loaded successfully!<br>
+                        Path: ${path}<br>
+                        Title: ${book.packaging?.metadata?.title || 'Unknown'}<br>
+                        Creator: ${book.packaging?.metadata?.creator || 'Unknown'}
+                    </div>
+                `;
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="test-box error">
+                        ❌ Failed to load EPUB!<br>
+                        Path: ${path}<br>
+                        Error: ${error.message}<br>
+                        Stack: ${error.stack ? error.stack.substring(0, 200) : 'N/A'}
+                    </div>
+                `;
+                log(`Failed to load EPUB: ${error.message}`, 'error');
+                console.error('Full error:', error);
+            }
+        }
+
+        function clearViewer() {
+            if (rendition) {
+                rendition.destroy();
+                rendition = null;
+            }
+            document.getElementById('viewer').innerHTML = '';
+            document.getElementById('loadResult').innerHTML = '';
+            log('Viewer cleared');
+        }
+
+        function testPublicEPUB() {
+            const publicURL = 'https://s3.amazonaws.com/moby-dick/OPS/package.opf';
+            log('Testing with public EPUB: Moby Dick');
+            log('URL: ' + publicURL);
+
+            document.getElementById('epubPath').value = publicURL;
+            loadTestEPUB();
+        }
+
+        async function manualLoad() {
+            const path = document.getElementById('epubPath').value;
+            const resultDiv = document.getElementById('loadResult');
+            const viewerDiv = document.getElementById('viewer');
+
+            log('Manual load with JSZip: ' + path);
+            resultDiv.innerHTML = '<div class="test-box">⏳ Manual loading...</div>';
+
+            try {
+                // Download EPUB
+                log('Downloading EPUB...');
+                const response = await fetch(path);
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+
+                const arrayBuffer = await response.arrayBuffer();
+                log('Downloaded ' + (arrayBuffer.byteLength / 1024).toFixed(2) + ' KB');
+
+                // Unzip with JSZip
+                log('Extracting with JSZip...');
+                const zip = new JSZip();
+                const epub = await zip.loadAsync(arrayBuffer);
+
+                // Find and read container.xml
+                log('Reading container.xml...');
+                const containerXML = await epub.file('META-INF/container.xml').async('text');
+                log('Container.xml loaded');
+
+                // Parse to find OPF path
+                const parser = new DOMParser();
+                const containerDoc = parser.parseFromString(containerXML, 'text/xml');
+                const rootfile = containerDoc.querySelector('rootfile');
+                const opfPath = rootfile.getAttribute('full-path');
+                log('OPF path: ' + opfPath);
+
+                // Read OPF
+                const opfContent = await epub.file(opfPath).async('text');
+                const opfDoc = parser.parseFromString(opfContent, 'text/xml');
+
+                // Get metadata
+                const titleEl = opfDoc.querySelector('title');
+                const creatorEl = opfDoc.querySelector('creator');
+                const title = titleEl ? titleEl.textContent : 'Unknown';
+                const creator = creatorEl ? creatorEl.textContent : 'Unknown';
+
+                log('Title: ' + title);
+                log('Creator: ' + creator);
+
+                // Get spine
+                const spineItems = opfDoc.querySelectorAll('spine itemref');
+                log('Spine items: ' + spineItems.length);
+
+                // Get first content file
+                const firstItemRef = spineItems[0].getAttribute('idref');
+                const manifestItem = opfDoc.querySelector('item[id="' + firstItemRef + '"]');
+                const firstContentPath = manifestItem.getAttribute('href');
+
+                // Read first chapter
+                const opfDir = opfPath.substring(0, opfPath.lastIndexOf('/') + 1);
+                const firstContentFullPath = opfDir + firstContentPath;
+                log('Reading first content: ' + firstContentFullPath);
+
+                const firstContent = await epub.file(firstContentFullPath).async('text');
+                log('Content loaded: ' + firstContent.length + ' chars');
+
+                // Display in viewer
+                viewerDiv.innerHTML = `
+                    <div style="padding: 20px; background: white; max-width: 800px; margin: 0 auto;">
+                        <h2>${title}</h2>
+                        <p><em>by ${creator}</em></p>
+                        <hr>
+                        <div>${firstContent}</div>
+                    </div>
+                `;
+
+                resultDiv.innerHTML = `
+                    <div class="test-box success">
+                        ✅ Manual load successful!<br>
+                        Title: ${title}<br>
+                        Creator: ${creator}<br>
+                        Chapters: ${spineItems.length}<br>
+                        <small>Showing first chapter (manual parsing)</small>
+                    </div>
+                `;
+
+                log('✅ Manual load complete!', 'success');
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="test-box error">
+                        ❌ Manual load failed!<br>
+                        Error: ${error.message}
+                    </div>
+                `;
+                log('❌ Manual load error: ' + error.message, 'error');
+                console.error('Full error:', error);
+            }
+        }
+
+        function clearLog() {
+            logs = [];
+            document.getElementById('consoleLog').textContent = 'Logs cleared...';
+        }
+
+        function switchEpubVersion(version) {
+            const versionInfo = document.getElementById('versionInfo');
+            versionInfo.innerHTML = `Switching to v${version}... <strong style="color: red;">Please reload page!</strong>`;
+
+            // Store in localStorage
+            localStorage.setItem('epubVersion', version);
+
+            log(`Version switch requested: ${version}`);
+            log('Please reload the page to apply changes', 'warn');
+
+            setTimeout(() => {
+                if (confirm(`Switch to ePub.js v${version}?\n\nPage will reload.`)) {
+                    window.location.reload();
+                }
+            }, 500);
+        }
+
+        // Auto-test CDN on load
+        window.addEventListener('load', () => {
+            log('Page loaded, testing CDN...');
+
+            // Check if version is stored
+            const storedVersion = localStorage.getItem('epubVersion');
+            if (storedVersion) {
+                document.getElementById('versionInfo').innerHTML =
+                    `Current: ${storedVersion} - <button onclick="localStorage.removeItem('epubVersion'); location.reload()">Reset</button>`;
+            }
+
+            setTimeout(testCDN, 500);
+        });
+    </script>
+</body>
+</html>
+

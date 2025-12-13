@@ -47,10 +47,13 @@ public class SecurityConfig {
                         // === USER & ADMIN ACCESS ===
                         .requestMatchers(
                                 "/user/**", // All user routes
+                                "/books/**", // Book browsing, search, view (requires login)
+                                "/reading/**", // Reading interface (requires login)
+                                "/subscription/**", // Subscription management
                                 "/payment/**", // Payment routes (VNPay, Bank Transfer)
                                 "/order/**", // Order routes
-                                "/cart/**", // Cart routes
-                                "/subscription/manage" // Manage subscription
+                                "/cart/**" // Cart routes
+
                         ).hasAnyRole("USER", "ADMIN") // ⚠️ USER hoặc ADMIN
 
                         // === DEFAULT ===

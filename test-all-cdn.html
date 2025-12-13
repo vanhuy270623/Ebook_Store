@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test All EPUB CDN Options</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .cdn-test {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .cdn-url {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .loading { background: #fff3cd; color: #856404; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .details {
+            font-size: 13px;
+            color: #666;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Kiểm Tra Tất Cả CDN EPUB.js</h1>
+
+    <div id="cdn1" class="cdn-test">
+        <h3>1. jsdelivr (0.3.95)</h3>
+        <div class="cdn-url">https://cdn.jsdelivr.net/npm/epubjs@0.3.95/dist/epub.min.js</div>
+        <div class="status loading">⏳ Chưa test</div>
+        <button onclick="testCDN1()">Test CDN này</button>
+        <div id="details1" class="details" style="display:none;"></div>
+    </div>
+
+    <div id="cdn2" class="cdn-test">
+        <h3>2. jsdelivr (0.3.93)</h3>
+        <div class="cdn-url">https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js</div>
+        <div class="status loading">⏳ Chưa test</div>
+        <button onclick="testCDN2()">Test CDN này</button>
+        <div id="details2" class="details" style="display:none;"></div>
+    </div>
+
+    <div id="cdn3" class="cdn-test">
+        <h3>3. unpkg (0.3)</h3>
+        <div class="cdn-url">https://unpkg.com/epubjs@0.3/dist/epub.min.js</div>
+        <div class="status loading">⏳ Chưa test</div>
+        <button onclick="testCDN3()">Test CDN này</button>
+        <div id="details3" class="details" style="display:none;"></div>
+    </div>
+
+    <div id="cdn4" class="cdn-test">
+        <h3>4. cdnjs (0.3.93)</h3>
+        <div class="cdn-url">https://cdnjs.cloudflare.com/ajax/libs/epub.js/0.3.93/epub.min.js</div>
+        <div class="status loading">⏳ Chưa test</div>
+        <button onclick="testCDN4()">Test CDN này</button>
+        <div id="details4" class="details" style="display:none;"></div>
+    </div>
+
+    <div id="cdn5" class="cdn-test">
+        <h3>5. unpkg (Latest)</h3>
+        <div class="cdn-url">https://unpkg.com/epubjs/dist/epub.min.js</div>
+        <div class="status loading">⏳ Chưa test</div>
+        <button onclick="testCDN5()">Test CDN này</button>
+        <div id="details5" class="details" style="display:none;"></div>
+    </div>
+
+    <div class="cdn-test" style="background: #e7f3ff; border: 2px solid #004085;">
+        <h3>📋 Kết quả tổng hợp:</h3>
+        <div id="summary">Nhấn các nút test ở trên...</div>
+    </div>
+
+    <script>
+        const results = [];
+
+        function testCDN(num, url) {
+            const container = document.getElementById(`cdn${num}`);
+            const statusDiv = container.querySelector('.status');
+            const detailsDiv = document.getElementById(`details${num}`);
+
+            statusDiv.className = 'status loading';
+            statusDiv.innerHTML = '⏳ Đang kiểm tra...';
+            detailsDiv.style.display = 'block';
+            detailsDiv.innerHTML = 'Đang tải script...<br>';
+
+            // Xóa script cũ nếu có
+            const oldScript = document.getElementById(`test-script-${num}`);
+            if (oldScript) oldScript.remove();
+
+            // Tạo script mới
+            const script = document.createElement('script');
+            script.id = `test-script-${num}`;
+            script.src = url;
+
+            let startTime = Date.now();
+
+            script.onload = () => {
+                const loadTime = Date.now() - startTime;
+                detailsDiv.innerHTML += `Tải xong trong ${loadTime}ms<br>`;
+
+                // Kiểm tra ePub object
+                setTimeout(() => {
+                    if (typeof ePub !== 'undefined') {
+                        statusDiv.className = 'status success';
+                        statusDiv.innerHTML = '✅ HOẠT ĐỘNG TÔT!';
+
+                        detailsDiv.innerHTML += `✅ ePub object: Có<br>`;
+                        detailsDiv.innerHTML += `📌 Version: ${ePub.VERSION || 'N/A'}<br>`;
+
+                        // Test create book
+                        try {
+                            const book = ePub();
+                            detailsDiv.innerHTML += `✅ Có thể tạo Book instance<br>`;
+                            detailsDiv.innerHTML += `📦 Methods: ${Object.keys(ePub).slice(0, 5).join(', ')}...<br>`;
+
+                            results.push({
+                                num: num,
+                                url: url,
+                                status: 'success',
+                                time: loadTime
+                            });
+                        } catch (e) {
+                            detailsDiv.innerHTML += `❌ Lỗi tạo Book: ${e.message}<br>`;
+                            results.push({
+                                num: num,
+                                url: url,
+                                status: 'partial',
+                                time: loadTime
+                            });
+                        }
+                    } else {
+                        statusDiv.className = 'status error';
+                        statusDiv.innerHTML = '❌ LỖI: ePub undefined';
+                        detailsDiv.innerHTML += `❌ ePub object không tồn tại sau khi load<br>`;
+
+                        results.push({
+                            num: num,
+                            url: url,
+                            status: 'failed',
+                            time: loadTime
+                        });
+                    }
+                    updateSummary();
+                }, 100);
+            };
+
+            script.onerror = () => {
+                const loadTime = Date.now() - startTime;
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ KHÔNG TẢI ĐƯỢC';
+                detailsDiv.innerHTML += `❌ Lỗi network hoặc 404<br>`;
+                detailsDiv.innerHTML += `⏱️ Thời gian: ${loadTime}ms<br>`;
+
+                results.push({
+                    num: num,
+                    url: url,
+                    status: 'network-error',
+                    time: loadTime
+                });
+                updateSummary();
+            };
+
+            document.head.appendChild(script);
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            let html = '';
+
+            const success = results.filter(r => r.status === 'success');
+            const failed = results.filter(r => r.status !== 'success');
+
+            html += `<strong>Đã test: ${results.length}/5</strong><br><br>`;
+
+            if (success.length > 0) {
+                html += `<div style="color: green;">✅ <strong>CDN hoạt động (${success.length}):</strong><br>`;
+                success.forEach(r => {
+                    html += `&nbsp;&nbsp;• CDN ${r.num} - ${r.time}ms<br>`;
+                });
+                html += `</div>`;
+            }
+
+            if (failed.length > 0) {
+                html += `<div style="color: red; margin-top: 10px;">❌ <strong>CDN lỗi (${failed.length}):</strong><br>`;
+                failed.forEach(r => {
+                    html += `&nbsp;&nbsp;• CDN ${r.num} - ${r.status}<br>`;
+                });
+                html += `</div>`;
+            }
+
+            if (success.length > 0) {
+                const best = success.sort((a, b) => a.time - b.time)[0];
+                html += `<div style="background: #d4edda; padding: 10px; margin-top: 15px; border-radius: 4px;">`;
+                html += `<strong>🏆 Đề xuất: Dùng CDN ${best.num}</strong><br>`;
+                html += `Nhanh nhất (${best.time}ms) và hoạt động ổn định`;
+                html += `</div>`;
+            }
+
+            summary.innerHTML = html;
+        }
+
+        function testCDN1() { testCDN(1, 'https://cdn.jsdelivr.net/npm/epubjs@0.3.95/dist/epub.min.js'); }
+        function testCDN2() { testCDN(2, 'https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js'); }
+        function testCDN3() { testCDN(3, 'https://unpkg.com/epubjs@0.3/dist/epub.min.js'); }
+        function testCDN4() { testCDN(4, 'https://cdnjs.cloudflare.com/ajax/libs/epub.js/0.3.93/epub.min.js'); }
+        function testCDN5() { testCDN(5, 'https://unpkg.com/epubjs/dist/epub.min.js'); }
+
+        // Auto test all
+        window.addEventListener('load', () => {
+            console.log('🔍 Bắt đầu test tất cả CDN...');
+            setTimeout(() => testCDN1(), 500);
+            setTimeout(() => testCDN2(), 2000);
+            setTimeout(() => testCDN3(), 4000);
+            setTimeout(() => testCDN4(), 6000);
+            setTimeout(() => testCDN5(), 8000);
+        });
+    </script>
+</body>
+</html>
+

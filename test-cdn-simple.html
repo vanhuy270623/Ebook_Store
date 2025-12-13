@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test EPUB CDN - Simple</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .result {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+        .info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        .code {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .detail {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Kiểm Tra CDN EPUB.js</h1>
+
+        <div id="mainResult" class="result" style="background: #e7f3ff; color: #004085; border: 2px solid #004085;">
+            ⏳ Đang kiểm tra CDN...
+        </div>
+
+        <div class="info-box">
+            <h3>📦 CDN đang test:</h3>
+            <div class="code">
+                https://cdn.jsdelivr.net/npm/epubjs@0.3.95/dist/epub.min.js
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>📊 Chi tiết kiểm tra:</h3>
+            <div id="details"></div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="runTest()">🔄 Kiểm Tra Lại</button>
+            <button onclick="showInConsole()">📋 Xem trong Console</button>
+        </div>
+    </div>
+
+    <!-- Load ePub.js từ CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.95/dist/epub.min.js"></script>
+
+    <script>
+        function addDetail(text, icon = '•') {
+            const div = document.getElementById('details');
+            div.innerHTML += `<div class="detail">${icon} ${text}</div>`;
+        }
+
+        function runTest() {
+            const resultDiv = document.getElementById('mainResult');
+            const detailsDiv = document.getElementById('details');
+            detailsDiv.innerHTML = '';
+
+            addDetail('Bắt đầu kiểm tra...', '🔍');
+
+            // Kiểm tra ePub object
+            if (typeof ePub === 'undefined') {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '❌ CDN KHÔNG HOẠT ĐỘNG<br><small>ePub object không tồn tại</small>';
+                addDetail('ePub object: KHÔNG TÌM THẤY', '❌');
+                addDetail('CDN có thể bị block hoặc chưa load xong', '⚠️');
+                return;
+            }
+
+            addDetail('ePub object: TÌM THẤY', '✅');
+
+            // Kiểm tra version
+            const version = ePub.VERSION || 'Unknown';
+            addDetail(`Version: ${version}`, '📌');
+
+            // Kiểm tra methods
+            const methods = ['Book', 'Rendition', 'Layout', 'Contents'];
+            let methodsOK = 0;
+            methods.forEach(method => {
+                if (typeof ePub[method] !== 'undefined') {
+                    addDetail(`${method}: OK`, '✅');
+                    methodsOK++;
+                } else {
+                    addDetail(`${method}: MISSING`, '❌');
+                }
+            });
+
+            // Kiểm tra có thể tạo instance
+            try {
+                const testBook = ePub();
+                addDetail('Có thể tạo Book instance', '✅');
+
+                // SUCCESS
+                if (methodsOK === methods.length) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        ✅ CDN HOẠT ĐỘNG HOÀN HẢO!
+                        <br><small>Version ${version} - ${methodsOK}/${methods.length} methods OK</small>
+                    `;
+                    addDetail('Kết luận: CDN sẵn sàng sử dụng', '🎉');
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        ⚠️ CDN HOẠT ĐỘNG KHÔNG ĐẦY ĐỦ
+                        <br><small>Chỉ ${methodsOK}/${methods.length} methods khả dụng</small>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '❌ LỖI KHI TẠO BOOK INSTANCE';
+                addDetail(`Lỗi: ${error.message}`, '❌');
+            }
+
+            // Kiểm tra script element
+            const scripts = document.querySelectorAll('script[src*="epub"]');
+            addDetail(`Số script ePub.js: ${scripts.length}`, 'ℹ️');
+            scripts.forEach((s, i) => {
+                addDetail(`Script ${i+1}: ${s.src.substring(0, 50)}...`, '  →');
+            });
+        }
+
+        function showInConsole() {
+            console.clear();
+            console.log('%c🔍 KIỂM TRA CDN EPUB.JS', 'font-size: 20px; font-weight: bold; color: #667eea;');
+            console.log('═'.repeat(60));
+
+            if (typeof ePub !== 'undefined') {
+                console.log('%c✅ ePub object:', 'color: green; font-weight: bold;', ePub);
+                console.log('📌 Version:', ePub.VERSION || 'Unknown');
+                console.log('📋 All properties:', Object.keys(ePub));
+
+                try {
+                    const test = ePub();
+                    console.log('%c✅ Test Book instance:', 'color: green;', test);
+                } catch (e) {
+                    console.error('❌ Error creating Book:', e);
+                }
+            } else {
+                console.error('%c❌ ePub object NOT FOUND!', 'color: red; font-weight: bold;');
+            }
+
+            console.log('═'.repeat(60));
+            alert('✅ Kết quả đã được in ra Console (F12)');
+        }
+
+        // Auto-run khi load xong
+        window.addEventListener('load', () => {
+            setTimeout(runTest, 500);
+        });
+    </script>
+</body>
+</html>
+

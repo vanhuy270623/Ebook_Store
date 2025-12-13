@@ -175,6 +175,14 @@ public class ReadingController {
     }
 
     /**
+     * Test page để kiểm tra EPUB loading
+     */
+    @GetMapping("/test-epub-load")
+    public String testEPUBLoad() {
+        return "test/test-epub-load";
+    }
+
+    /**
      * Test endpoint để kiểm tra book assets
      */
     @GetMapping("/test/{bookId}")

@@ -330,6 +330,10 @@ public class UserController {
             Model model) {
 
         User currentUser = getCurrentUser(authentication);
+
+        // Thêm user vào model để hiển thị trong navbar
+        model.addAttribute("user", currentUser);
+
         List<Order> orders = orderService.getOrdersByUser(currentUser).stream()
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .toList();

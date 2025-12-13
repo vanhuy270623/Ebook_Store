@@ -120,6 +120,12 @@ public class UserBookController {
         int endIndex = Math.min(startIndex + PAGE_SIZE, totalBooks);
         List<Book> pagedBooks = books.subList(startIndex, endIndex);
 
+        // Thêm user vào model để hiển thị trong navbar (giống HomeController)
+        User currentUser = getCurrentUser(authentication);
+        if (currentUser != null) {
+            model.addAttribute("user", currentUser);
+        }
+
         model.addAttribute("books", pagedBooks);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", totalPages);
@@ -191,6 +197,12 @@ public class UserBookController {
         int endIndex = Math.min(startIndex + PAGE_SIZE, totalBooks);
         List<Book> pagedBooks = books.subList(startIndex, endIndex);
 
+        // Thêm user vào model để hiển thị trong navbar (giống HomeController)
+        User currentUser = getCurrentUser(authentication);
+        if (currentUser != null) {
+            model.addAttribute("user", currentUser);
+        }
+
         model.addAttribute("books", pagedBooks);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", totalPages);
@@ -227,6 +239,12 @@ public class UserBookController {
         int endIndex = Math.min(startIndex + PAGE_SIZE, totalBooks);
         List<Book> pagedBooks = books.subList(startIndex, endIndex);
 
+        // Thêm user vào model để hiển thị trong navbar (giống HomeController)
+        User currentUser = getCurrentUser(authentication);
+        if (currentUser != null) {
+            model.addAttribute("user", currentUser);
+        }
+
         model.addAttribute("books", pagedBooks);
         model.addAttribute("categoryId", categoryId);
         model.addAttribute("currentPage", page);
@@ -262,6 +280,12 @@ public class UserBookController {
             int endIndex = Math.min(startIndex + PAGE_SIZE, totalBooks);
             List<Book> pagedBooks = books.subList(startIndex, endIndex);
 
+            // Thêm user vào model để hiển thị trong navbar (giống HomeController)
+            User currentUser = getCurrentUser(authentication);
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+            }
+
             model.addAttribute("books", pagedBooks);
             model.addAttribute("accessType", type);
             model.addAttribute("currentPage", page);
@@ -281,6 +305,13 @@ public class UserBookController {
     @GetMapping("/trending")
     public String trendingBooks(Model model, Authentication authentication) {
         List<Book> books = bookService.getTopViewedBooks();
+
+        // Thêm user vào model để hiển thị trong navbar (giống HomeController)
+        User currentUser = getCurrentUser(authentication);
+        if (currentUser != null) {
+            model.addAttribute("user", currentUser);
+        }
+
         model.addAttribute("books", books);
         model.addAttribute("categories", categoryService.getAllCategories());
         model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
@@ -294,6 +325,13 @@ public class UserBookController {
     @GetMapping("/newest")
     public String newestBooks(Model model, Authentication authentication) {
         List<Book> books = bookService.getNewestBooks();
+
+        // Thêm user vào model để hiển thị trong navbar (giống HomeController)
+        User currentUser = getCurrentUser(authentication);
+        if (currentUser != null) {
+            model.addAttribute("user", currentUser);
+        }
+
         model.addAttribute("books", books);
         model.addAttribute("categories", categoryService.getAllCategories());
         model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
@@ -307,6 +345,13 @@ public class UserBookController {
     @GetMapping("/top-rated")
     public String topRatedBooks(Model model, Authentication authentication) {
         List<Book> books = bookService.getTopRatedBooks(20);
+
+        // Thêm user vào model để hiển thị trong navbar (giống HomeController)
+        User currentUser = getCurrentUser(authentication);
+        if (currentUser != null) {
+            model.addAttribute("user", currentUser);
+        }
+
         model.addAttribute("books", books);
         model.addAttribute("categories", categoryService.getAllCategories());
         model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));

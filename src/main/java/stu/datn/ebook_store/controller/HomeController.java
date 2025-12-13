@@ -22,11 +22,13 @@ public class HomeController {
         // Authentication info
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
+        // If user is logged in, redirect to user dashboard (user/index)
         if (auth != null && auth.isAuthenticated() &&
-            auth.getPrincipal() instanceof stu.datn.ebook_store.entity.User user) {
-            model.addAttribute("user", user);
+            auth.getPrincipal() instanceof stu.datn.ebook_store.entity.User) {
+            return "redirect:/user/index";
         }
 
+        // For anonymous users, show landing page
         try {
             // Get free books (ACCESS_TYPE = 'FREE')
             List<Book> freeBooks = bookService.getBooksByAccessType(Book.AccessType.FREE);

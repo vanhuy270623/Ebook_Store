@@ -56,6 +56,9 @@ public class CartController {
         BigDecimal cartTotal = BigDecimal.ZERO;
 
         if (currentUser != null) {
+            // Thêm user vào model để hiển thị trong navbar (giống HomeController)
+            model.addAttribute("user", currentUser);
+
             Optional<Cart> cartOpt = cartService.getCartByUser(currentUser);
             if (cartOpt.isPresent()) {
                 Cart cart = cartOpt.get();

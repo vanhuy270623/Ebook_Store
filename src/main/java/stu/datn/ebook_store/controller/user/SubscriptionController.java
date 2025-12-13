@@ -1,5 +1,7 @@
 package stu.datn.ebook_store.controller.user;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -28,6 +30,8 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/subscription")
 public class SubscriptionController {
+
+    private static final Logger log = LoggerFactory.getLogger(SubscriptionController.class);
 
     @Autowired
     private SubscriptionService subscriptionService;
@@ -77,28 +81,96 @@ public class SubscriptionController {
     }
 
     /**
+     * TEST endpoint - Simple template
+     * URL: /subscription/plans-test
+     */
+    @GetMapping("/plans-test")
+    public String showSubscriptionPlansTest(Model model) {
+        try {
+            log.info("=== TEST ENDPOINT ===");
+            List<Subscription> subscriptions = subscriptionService.getActiveSubscriptions();
+            log.info("Subscriptions count: {}", subscriptions != null ? subscriptions.size() : "NULL");
+
+            if (subscriptions != null) {
+                for (Subscription sub : subscriptions) {
+                    log.info("Sub: id={}, name={}, price={}",
+                        sub.getSubscriptionId(),
+                        sub.getPackageName(),
+                        sub.getPrice());
+                }
+            }
+
+            model.addAttribute("subscriptions", subscriptions);
+            return "user/subscription/plans-simple";
+        } catch (Exception e) {
+            log.error("TEST ERROR: ", e);
+            throw e;
+        }
+    }
+
+    /**
      * Hiển thị trang danh sách các gói đăng ký
      * URL: /subscription/plans
      */
     @GetMapping("/plans")
     public String showSubscriptionPlans(Authentication authentication, Model model) {
-        // Lấy tất cả gói đang active
-        List<Subscription> subscriptions = subscriptionService.getActiveSubscriptions();
-        model.addAttribute("subscriptions", subscriptions);
+        try {
+            log.info("=== START showSubscriptionPlans ===");
 
-        // Nếu user đã đăng nhập, kiểm tra gói hiện tại
-        User currentUser = getCurrentUser(authentication);
-        if (currentUser != null) {
-            Optional<UserSubscription> activeSubscription =
-                getActiveSubscription(currentUser.getUserId());
+            // Lấy tất cả gói đang active
+            List<Subscription> subscriptions = subscriptionService.getActiveSubscriptions();
+            log.info("Found {} active subscriptions", subscriptions != null ? subscriptions.size() : 0);
 
-            model.addAttribute("currentSubscription", activeSubscription.orElse(null));
-            model.addAttribute("hasActiveSubscription", activeSubscription.isPresent());
-        } else {
+            if (subscriptions != null && !subscriptions.isEmpty()) {
+                for (Subscription sub : subscriptions) {
+                    log.info("Subscription: id={}, packageName={}, price={}, durationDays={}, features={}, maxDevices={}, hasAds={}",
+                        sub.getSubscriptionId(),
+                        sub.getPackageName(),
+                        sub.getPrice(),
+                        sub.getDurationDays(),
+                        sub.getFeatures(),
+                        sub.getMaxDevices(),
+                        sub.getHasAds());
+                }
+            }
+
+            model.addAttribute("subscriptions", subscriptions);
+
+            // Nếu user đã đăng nhập, kiểm tra gói hiện tại
+            User currentUser = getCurrentUser(authentication);
+            log.info("Current user: {}", currentUser != null ? currentUser.getUserId() : "anonymous");
+
+            if (currentUser != null) {
+                // Thêm user vào model để hiển thị trong navbar (giống HomeController)
+                model.addAttribute("user", currentUser);
+
+                Optional<UserSubscription> activeSubscription =
+                    getActiveSubscription(currentUser.getUserId());
+
+                log.info("Has active subscription: {}", activeSubscription.isPresent());
+                if (activeSubscription.isPresent()) {
+                    UserSubscription userSub = activeSubscription.get();
+                    log.info("Active subscription: userSubscriptionId={}, subscriptionId={}",
+                        userSub.getUserSubscriptionId(),
+                        userSub.getSubscription() != null ? userSub.getSubscription().getSubscriptionId() : "null");
+                }
+
+                model.addAttribute("currentSubscription", activeSubscription.orElse(null));
+                model.addAttribute("hasActiveSubscription", activeSubscription.isPresent());
+            } else {
+                model.addAttribute("hasActiveSubscription", false);
+            }
+
+            log.info("=== END showSubscriptionPlans - Returning view ===");
+            return "user/subscription/view-plans";
+
+        } catch (Exception e) {
+            log.error("ERROR in showSubscriptionPlans: ", e);
+            model.addAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            model.addAttribute("subscriptions", List.of());
             model.addAttribute("hasActiveSubscription", false);
+            return "user/subscription/view-plans";
         }
-
-        return "user/subscription/plans";
     }
 
     /**
@@ -116,6 +188,9 @@ public class SubscriptionController {
             return "redirect:/auth/login";
         }
 
+        // Thêm user vào model để hiển thị trong navbar (giống HomeController)
+        model.addAttribute("user", currentUser);
+
         // Lấy lịch sử tất cả gói đăng ký
         List<UserSubscription> subscriptions =
             getUserSubscriptionHistory(currentUser.getUserId());
@@ -124,8 +199,24 @@ public class SubscriptionController {
         // Lấy gói đang active (nếu có)
         Optional<UserSubscription> activeSubscription =
             getActiveSubscription(currentUser.getUserId());
-        model.addAttribute("activeSubscription", activeSubscription.orElse(null));
+        model.addAttribute("currentSubscription", activeSubscription.orElse(null));
         model.addAttribute("hasActiveSubscription", activeSubscription.isPresent());
+
+        // Thống kê
+        long totalSubs = subscriptions.size();
+        long activeSubs = subscriptions.stream().filter(s -> s.isActive()).count();
+        long expiredSubs = totalSubs - activeSubs;
+        long daysRemaining = activeSubscription.map(s ->
+            java.time.temporal.ChronoUnit.DAYS.between(
+                java.time.LocalDateTime.now(),
+                s.getEndDate()
+            )
+        ).orElse(0L);
+
+        model.addAttribute("totalSubscriptions", totalSubs);
+        model.addAttribute("activeSubscriptions", activeSubs);
+        model.addAttribute("expiredSubscriptions", expiredSubs);
+        model.addAttribute("daysRemaining", daysRemaining);
 
         return "user/subscription/my-subscriptions";
     }

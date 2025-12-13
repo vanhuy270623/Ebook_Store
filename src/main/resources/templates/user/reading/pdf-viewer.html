@@ -9,56 +9,6 @@
     <!-- PDF.js CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/web/viewer.min.css">
 
-    <!-- Custom CSS -->
-    <style>
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .loading-overlay.show {
-            display: flex;
-        }
-
-        .loading-content {
-            text-align: center;
-            color: white;
-            padding: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-        }
-
-        .loading-content h4 {
-            color: white;
-            margin-bottom: 10px;
-        }
-
-        .progress-container {
-            margin: 20px 0;
-        }
-
-        .progress-bar {
-            transition: width 0.3s ease;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .pdf-canvas {
-            transition: opacity 0.2s ease;
-        }
-    </style>
-
 </head>
 <body>
     <div class="reader-container">
@@ -104,15 +54,31 @@
                 <!-- Mode & Actions -->
                 <div class="control-group">
                     <button class="btn btn-dark" id="darkModeBtn" onclick="toggleDarkMode()">
-                        <i class="fas fa-moon"></i> Dark
+                        <i class="fas fa-moon"></i> Chế độ tối
                     </button>
-                    <button class="btn btn-primary" onclick="saveBookmark()">
-                        <i class="fas fa-bookmark"></i> Bookmark
+                    <button class="btn btn-info" onclick="toggleBookmarksSidebar()">
+                        <i class="fas fa-bookmark"></i> Bookmarks
+                    </button>
+                    <button class="btn btn-primary" onclick="saveManualBookmark()">
+                        <i class="fas fa-plus"></i> Thêm Bookmark
                     </button>
                     <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="btn btn-secondary">
                         <i class="fas fa-times"></i> Thoát
                     </a>
                 </div>
+            </div>
+        </div>
+
+        <!-- Bookmarks Sidebar -->
+        <div class="bookmarks-sidebar" id="bookmarksSidebar">
+            <div class="bookmarks-header">
+                <h5><i class="fas fa-bookmark"></i> Bookmarks</h5>
+                <button class="btn btn-sm btn-link" onclick="toggleBookmarksSidebar()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="bookmarks-content" id="bookmarksList">
+                <p class="text-muted text-center">Đang tải...</p>
             </div>
         </div>
 
@@ -185,16 +151,48 @@
     </script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 
-    <script defer th:inline="javascript">
-        // Variables from Thymeleaf
-        const bookId = /*[[${book.bookId}]]*/ 1;
-        const assetPath = /*[[${asset.fileUrl}]]*/ '';
-        const initialPage = /*[[${progress?.lastReadLocation ?: '1'}]]*/ '1';
-        const bookmarkData = /*[[${progress?.lastReadLocation ?: '[]'}]]*/ '[]';
+    <!-- Data container for Thymeleaf variables -->
+    <div id="pdf-data"
+         th:data-book-id="${book.bookId}"
+         th:data-asset-path="${asset.fileUrl}"
+         th:data-encoded-location="${encodedLocation}"
+         th:data-progress-percentage="${progress?.progressPercentage ?: 0}"
+         style="display: none;"></div>
+
+    <script defer>
+        // Variables from data attributes (safer for special characters)
+        const dataContainer = document.getElementById('pdf-data');
+        const bookId = dataContainer.dataset.bookId;
+        const assetPath = dataContainer.dataset.assetPath;
+        const progressPercentage = parseFloat(dataContainer.dataset.progressPercentage) || 0;
+
+        // Decode Base64 encoded location
+        let lastReadLocation = 'page-1';
+        const encodedLocation = dataContainer.dataset.encodedLocation;
+        if (encodedLocation && encodedLocation !== 'null' && encodedLocation.trim() !== '') {
+            try {
+                lastReadLocation = atob(encodedLocation);
+                console.log('Decoded last location:', lastReadLocation);
+            } catch (e) {
+                console.warn('Could not decode location:', e);
+                lastReadLocation = 'page-1';
+            }
+        }
+
+        // Parse page number from location (format: "page-X" or just number)
+        function parsePageNumber(location) {
+            if (!location) return 1;
+            // If format is "page-X", extract X
+            if (typeof location === 'string' && location.startsWith('page-')) {
+                return parseInt(location.split('-')[1]) || 1;
+            }
+            // If it's already a number
+            return parseInt(location) || 1;
+        }
 
         // PDF.js variables
         let pdfDoc = null;
-        let pageNum = parseInt(initialPage) || 1;
+        let pageNum = parsePageNumber(lastReadLocation);
         let pageCount = 0;
         let scale = 1.0;
         let canvas = null;
@@ -334,6 +332,16 @@
                 await renderPage(pageNum);
 
                 updateLoadingProgress(100, 'Hoàn thành!');
+
+                // Test API authentication ngay khi load
+                try {
+                    const testResponse = await fetch('/reading/api/test', { credentials: 'same-origin' });
+                    const testData = await testResponse.text();
+                    console.log('=== API AUTH TEST ===');
+                    console.log('Response:', testData);
+                } catch (e) {
+                    console.error('API test failed:', e);
+                }
 
                 // Delay một chút để user thấy 100%
                 setTimeout(() => {
@@ -504,9 +512,11 @@
             const btn = document.getElementById('darkModeBtn');
 
             if (isDark) {
-                btn.innerHTML = '<i class="fas fa-sun"></i> Light';
+                btn.innerHTML = '<i class="fas fa-sun"></i> Chế độ sáng';
+                console.log('✅ Dark mode enabled for PDF viewer');
             } else {
-                btn.innerHTML = '<i class="fas fa-moon"></i> Dark';
+                btn.innerHTML = '<i class="fas fa-moon"></i> Chế độ tối';
+                console.log('✅ Light mode enabled for PDF viewer');
             }
 
             // Save preference
@@ -516,50 +526,238 @@
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: `mode=${isDark ? 'dark' : 'light'}`
+            }).catch(error => {
+                console.warn('Could not save dark mode preference:', error);
             });
         }
 
         async function saveProgress() {
             try {
+                console.log('=== SAVING PROGRESS ===');
+                console.log('Sending: currentPage=' + pageNum + ', totalPages=' + pageCount + ', bookId=' + bookId);
+
                 const formData = new FormData();
                 formData.append('currentPage', pageNum);
                 formData.append('totalPages', pageCount);
-                formData.append('bookmarkData', JSON.stringify(getBookmarks()));
 
                 const response = await fetch(`/reading/api/progress/${bookId}`, {
                     method: 'POST',
+                    credentials: 'same-origin', // Đảm bảo gửi session cookie
                     body: formData
                 });
 
+                const responseText = await response.text();
+                console.log('Server response status:', response.status);
+                console.log('Server response body:', responseText);
+
                 if (!response.ok) {
-                    console.error('Failed to save progress');
+                    console.error('Failed to save progress:', responseText);
+                } else {
+                    try {
+                        const data = JSON.parse(responseText);
+                        console.log('Progress saved successfully - page:', pageNum, ', percentage:', data.percentage + '%');
+                    } catch (e) {
+                        console.log('Progress saved: page', pageNum);
+                    }
                 }
             } catch (error) {
                 console.error('Error saving progress:', error);
             }
         }
 
-        function saveBookmark() {
-            const bookmarks = getBookmarks();
-            const bookmark = {
-                page: pageNum,
-                timestamp: new Date().toISOString(),
-                note: prompt('Ghi chú cho bookmark (tùy chọn):') || ''
-            };
+        // ========== BOOKMARKS MANAGEMENT ==========
 
-            bookmarks.push(bookmark);
-            localStorage.setItem(`bookmarks_${bookId}`, JSON.stringify(bookmarks));
+        // Toggle bookmarks sidebar
+        function toggleBookmarksSidebar() {
+            const sidebar = document.getElementById('bookmarksSidebar');
+            sidebar.classList.toggle('show');
 
-            alert(`Đã lưu bookmark tại trang ${pageNum}`);
+            // Load bookmarks when opening
+            if (sidebar.classList.contains('show')) {
+                loadBookmarks();
+            }
         }
 
-        function getBookmarks() {
+        // Load bookmarks from server
+        async function loadBookmarks() {
             try {
-                const stored = localStorage.getItem(`bookmarks_${bookId}`);
-                return stored ? JSON.parse(stored) : [];
-            } catch {
-                return [];
+                const response = await fetch(`/reading/api/bookmarks/${bookId}`, {
+                    credentials: 'same-origin'
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to load bookmarks');
+                }
+
+                const bookmarks = await response.json();
+                displayBookmarks(bookmarks);
+            } catch (error) {
+                console.error('Error loading bookmarks:', error);
+                document.getElementById('bookmarksList').innerHTML = `
+                    <p class="text-danger text-center">Lỗi tải bookmarks</p>
+                `;
             }
+        }
+
+        // Display bookmarks list
+        function displayBookmarks(bookmarks) {
+            const container = document.getElementById('bookmarksList');
+
+            if (!bookmarks || bookmarks.length === 0) {
+                container.innerHTML = `
+                    <div class="no-bookmarks">
+                        <i class="fas fa-bookmark"></i>
+                        <p>Chưa có bookmark nào</p>
+                        <small>Nhấn "Thêm Bookmark" để lưu vị trí đọc</small>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by page number
+            bookmarks.sort((a, b) => (a.pageNumber || 0) - (b.pageNumber || 0));
+
+            // Store bookmarks data for click handlers (avoid escaping issues)
+            window.bookmarksData = {};
+            bookmarks.forEach(bm => {
+                window.bookmarksData[bm.id] = bm.location;
+            });
+
+            container.innerHTML = bookmarks.map(bm => `
+                <div class="bookmark-item" onclick="jumpToBookmarkById('${bm.id}')">
+                    <div class="bookmark-header">
+                        <strong>📖 Trang ${bm.pageNumber || '?'}</strong>
+                        <button class="bookmark-delete-btn"
+                                onclick="deleteBookmark('${bm.id}', event)"
+                                title="Xóa bookmark">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    ${bm.note ? `<div class="bookmark-note">"${escapeHtml(bm.note)}"</div>` : ''}
+                    <div class="bookmark-meta">
+                        <span>${bm.percentage ? bm.percentage.toFixed(1) + '%' : ''}</span>
+                        <span>${formatBookmarkDate(bm.createdAt)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Save manual bookmark
+        async function saveManualBookmark() {
+            const note = prompt('Ghi chú cho bookmark (tùy chọn):');
+            if (note === null) return; // User cancelled
+
+            try {
+                const formData = new FormData();
+                formData.append('location', `page-${pageNum}`);
+                formData.append('pageNumber', pageNum);
+                formData.append('percentage', ((pageNum / pageCount) * 100).toFixed(2));
+                formData.append('note', note || '');
+
+                console.log('=== SAVING BOOKMARK ===');
+                console.log('Location:', `page-${pageNum}`, 'Note:', note);
+
+                const response = await fetch(`/reading/api/bookmarks/${bookId}`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: formData
+                });
+
+                const responseText = await response.text();
+                console.log('Bookmark save response:', response.status, responseText);
+
+                if (!response.ok) {
+                    throw new Error('Failed to save bookmark: ' + responseText);
+                }
+
+                alert('✅ Bookmark đã lưu!');
+
+                // Reload bookmarks if sidebar is open
+                if (document.getElementById('bookmarksSidebar').classList.contains('show')) {
+                    loadBookmarks();
+                }
+            } catch (error) {
+                console.error('Error saving bookmark:', error);
+                alert('❌ Lỗi khi lưu bookmark: ' + error.message);
+            }
+        }
+
+        // Jump to bookmark by ID (to avoid escaping issues)
+        function jumpToBookmarkById(bookmarkId) {
+            const location = window.bookmarksData[bookmarkId];
+            if (location) {
+                jumpToBookmark(location);
+            }
+        }
+
+        // Jump to bookmark
+        function jumpToBookmark(location) {
+            console.log('Jumping to bookmark location:', location);
+            const pageNumber = parseInt(location.split('-')[1]);
+            if (pageNumber && pageNumber >= 1 && pageNumber <= pageCount) {
+                renderPage(pageNumber);
+
+                // Optional: Close sidebar after jump
+                // document.getElementById('bookmarksSidebar').classList.remove('show');
+            }
+        }
+
+        // Delete bookmark
+        async function deleteBookmark(bookmarkId, event) {
+            event.stopPropagation(); // Prevent jump
+
+            if (!confirm('Xóa bookmark này?')) return;
+
+            try {
+                console.log('=== DELETING BOOKMARK ===', bookmarkId);
+
+                const response = await fetch(
+                    `/reading/api/bookmarks/${bookId}/${bookmarkId}`,
+                    {
+                        method: 'DELETE',
+                        credentials: 'same-origin'
+                    }
+                );
+
+                const responseText = await response.text();
+                console.log('Delete bookmark response:', response.status, responseText);
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete bookmark: ' + responseText);
+                }
+
+                // Reload bookmarks
+                loadBookmarks();
+            } catch (error) {
+                console.error('Error deleting bookmark:', error);
+                alert('❌ Lỗi khi xóa bookmark: ' + error.message);
+            }
+        }
+
+        // Helper: Format date
+        function formatBookmarkDate(dateString) {
+            if (!dateString) return '';
+
+            try {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diff = now - date;
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+                if (days === 0) return 'Hôm nay';
+                if (days === 1) return 'Hôm qua';
+                if (days < 7) return `${days} ngày trước`;
+
+                return date.toLocaleDateString('vi-VN');
+            } catch {
+                return '';
+            }
+        }
+
+        // Helper: Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         function showLoading(show) {

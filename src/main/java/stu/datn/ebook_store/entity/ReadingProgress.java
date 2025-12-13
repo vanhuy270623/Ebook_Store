@@ -51,6 +51,9 @@ public class ReadingProgress {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "bookmarks_data", columnDefinition = "JSON")
+    private String bookmarksData;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -64,6 +67,31 @@ public class ReadingProgress {
 
     public enum AccessType {
         PURCHASED, SUBSCRIPTION, FREE
+    }
+
+    /**
+     * Helper class để parse bookmarks JSON
+     */
+    @Getter
+    @Setter
+    public static class BookmarkData {
+        private String id;
+        private String location;
+        private Integer pageNumber;
+        private Float percentage;
+        private String note;
+        private String createdAt;
+
+        public BookmarkData() {}
+
+        public BookmarkData(String location, Integer pageNumber, Float percentage, String note) {
+            this.id = "bm_" + System.currentTimeMillis();
+            this.location = location;
+            this.pageNumber = pageNumber;
+            this.percentage = percentage;
+            this.note = note;
+            this.createdAt = LocalDateTime.now().toString();
+        }
     }
 }
 

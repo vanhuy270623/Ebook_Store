@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Dec 07, 2025 at 12:34 AM
+-- Generation Time: Dec 13, 2025 at 05:50 AM
 -- Server version: 9.1.0
 -- PHP Version: 8.3.14
 
@@ -147,23 +147,23 @@ CREATE TABLE IF NOT EXISTS `books` (
 --
 
 INSERT INTO `books` (`book_id`, `book_category_id`, `title`, `description`, `price`, `cover_image_url`, `publisher`, `publication_year`, `language`, `pages`, `isbn`, `access_type`, `is_downloadable`, `average_rating`, `total_reviews`, `view_count`, `created_at`, `updated_at`) VALUES
-('book_02', 'bcat_2', 'Đắc Nhân Tâm', 'Nghệ thuật thu phục lòng người', 120000.00, '/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg', 'NXB Tổng Hợp', 2015, 'vi', 320, '978-2', 'PURCHASE', 1, 4.7, 243, 38927, '2025-11-20 19:16:58', '2025-12-07 04:47:21'),
-('book_03', 'bcat_1', 'Mắt biếc', 'Chuyện tình đơn phương', 90000.00, '/book_asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 'NXB Trẻ', 2008, 'vi', 252, '978-3', 'BOTH', 1, 4.85, 189, 32103, '2025-11-20 19:16:58', '2025-12-07 04:43:44'),
-('book_04', 'bcat_3', 'Conan Tập 1', 'Thám tử bị teo nhỏ', 0.00, '/book_asset/image/covers/kienthuc-hocthuat/bi-quyet-thuyet-trinh-cua-steve-jobs.jpg', 'NXB Kim Đồng', 2000, 'vi', 180, '978-4', 'FREE', 1, 4.9, 523, 45673, '2025-11-20 19:16:58', '2025-12-07 05:16:17'),
+('book_02', 'bcat_2', 'Đắc Nhân Tâm', 'Nghệ thuật thu phục lòng người', 120000.00, '/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg', 'NXB Tổng Hợp', 2015, 'vi', 320, '978-2', 'PURCHASE', 1, 4.7, 243, 38967, '2025-11-20 19:16:58', '2025-12-13 12:42:01'),
+('book_03', 'bcat_1', 'Mắt biếc', 'Chuyện tình đơn phương', 90000.00, '/book_asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 'NXB Trẻ', 2008, 'vi', 252, '978-3', 'BOTH', 1, 4.85, 189, 32104, '2025-11-20 19:16:58', '2025-12-13 04:34:28'),
+('book_04', 'bcat_3', 'Conan Tập 1', 'Thám tử bị teo nhỏ', 0.00, '/book_asset/image/covers/kienthuc-hocthuat/bi-quyet-thuyet-trinh-cua-steve-jobs.jpg', 'NXB Kim Đồng', 2000, 'vi', 180, '978-4', 'FREE', 1, 4.9, 523, 45679, '2025-11-20 19:16:58', '2025-12-13 05:00:21'),
 ('book_05', 'bcat_3', 'Doraemon Tập 1', 'Mèo máy tương lai', 20000.00, '/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 'NXB Kim Đồng', 1995, 'vi', 196, '978-5', 'SUBSCRIPTION', 0, 5, 678, 52340, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_06', 'bcat_1', 'Tôi thấy hoa vàng trên cỏ xanh', 'Tuổi thơ êm đềm', 85000.00, '/book_asset/image/covers/kienthuc-hocthuat/phi-ly-tri.jpg', 'NXB Trẻ', 2011, 'vi', 312, '978-6', 'PURCHASE', 0, 4.75, 298, 42100, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_07', 'bcat_5', 'Dế Mèn phiêu lưu ký', 'Bài học đường đời đầu tiên', 75000.00, '/book_asset/image/covers/kienthuc-hocthuat/steve-jobs-thien-tai-gan-do.jpg', 'NXB Kim Đồng', 1941, 'vi', 264, '978-7', 'BOTH', 1, 4.95, 412, 38920, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_08', 'bcat_1', 'Lão Hạc', 'Bi kịch người nông dân', 0.00, '/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 'NXB Văn học', 1943, 'vi', 128, '978-8', 'FREE', 1, 4.65, 289, 28450, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_09', 'bcat_1', 'Chí Phèo', 'Ai cho tôi lương thiện?', 0.00, '/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg', 'NXB Văn học', 1941, 'vi', 96, '978-9', 'FREE', 1, 4.55, 234, 22340, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_07', 'bcat_5', 'Dế Mèn phiêu lưu ký', 'Bài học đường đời đầu tiên', 75000.00, '/book_asset/image/covers/kienthuc-hocthuat/steve-jobs-thien-tai-gan-do.jpg', 'NXB Kim Đồng', 1941, 'vi', 264, '978-7', 'BOTH', 1, 4.95, 412, 38921, '2025-11-20 19:16:58', '2025-12-13 04:37:28'),
+('book_08', 'bcat_1', 'Lão Hạc', 'Bi kịch người nông dân', 0.00, '/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 'NXB Văn học', 1943, 'vi', 128, '978-8', 'FREE', 1, 4.65, 289, 28459, '2025-11-20 19:16:58', '2025-12-13 07:46:40'),
+('book_09', 'bcat_1', 'Chí Phèo', 'Ai cho tôi lương thiện?', 0.00, '/book_asset/image/covers/tamly-kynangsong/datnhantam.jpg', 'NXB Văn học', 1941, 'vi', 96, '978-9', 'FREE', 1, 4.55, 234, 22343, '2025-11-20 19:16:58', '2025-12-13 07:17:09'),
 ('book_10', 'bcat_1', 'Tắt đèn', 'Chị Dậu bán chó', 65000.00, '/book_asset/image/covers/kienthuc-hocthuat/tu-duy-phan-bien.jpg', 'NXB Văn học', 1937, 'vi', 248, '978-10', 'SUBSCRIPTION', 0, 4.7, 187, 19280, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_11', 'bcat_1', 'Số đỏ', 'Xuân Tóc Đỏ', 78000.00, '/book_asset/image/covers/kinhte-quanly/sieukinhtehochaihuoc.jpg', 'NXB Văn học', 1936, 'vi', 312, '978-11', 'BOTH', 1, 4.6, 298, 25670, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_12', 'bcat_2', 'Trên đường băng', 'Hộ chiếu công dân toàn cầu', 95000.00, '/book_asset/image/covers/tamly-kynangsong/40-guong-thanh-cong.jpg', 'NXB Thế Giới', 2015, 'vi', 288, '978-12', 'PURCHASE', 1, 4.4, 345, 31200, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_13', 'bcat_1', 'Nhà giả kim', 'Kho báu ở ngay bên ta', 110000.00, '/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 'NXB Hội Nhà Văn', 2013, 'vi', 224, '978-13', 'BOTH', 1, 4.85, 567, 48920, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
+('book_13', 'bcat_1', 'Nhà giả kim', 'Kho báu ở ngay bên ta', 110000.00, '/book_asset/image/covers/khoahoc-vientuong/cacthegioisongsong.jpg', 'NXB Hội Nhà Văn', 2013, 'vi', 224, '978-13', 'BOTH', 1, 4.85, 567, 48949, '2025-11-20 19:16:58', '2025-12-13 12:43:10'),
 ('book_14', 'bcat_1', 'Truyện Kiều', 'Trăm năm trong cõi người ta', 0.00, '/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 'NXB Văn học', 1820, 'vi', 368, '978-14', 'FREE', 1, 5, 892, 67890, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_15', 'bcat_1', 'Rừng Na Uy', 'Nỗi buồn tuổi trẻ', 135000.00, '/book_asset/image/covers/kienthuc-hocthuat/phi-ly-tri.jpg', 'NXB Hội Nhà Văn', 2017, 'vi', 456, '978-15', 'BOTH', 1, 4.75, 678, 52340, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_16', 'bcat_1', 'Cô gái đến từ hôm qua', 'Mối tình thơ dại', 92000.00, '/book_asset/image/covers/kienthuc-hocthuat/steve-jobs-thien-tai-gan-do.jpg', 'NXB Trẻ', 2016, 'vi', 336, '978-16', 'BOTH', 1, 4.7, 423, 39870, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_17', 'bcat_2', 'Bạn đắt giá bao nhiêu?', 'Phụ nữ hiện đại', 88000.00, '/book_asset/image/covers/tamly-kynangsong/40-guong-thanh-cong.jpg', 'NXB Thế Giới', 2013, 'vi', 256, '978-17', 'PURCHASE', 1, 4.35, 289, 27890, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('book_1765056382778_20', 'bcat_1', 'a', 'a', 50000.00, '/book_asset/image/covers/38af1d72-d73a-4e21-9901-39ac54caa0be.png', 'NXB Trẻ', NULL, 'vi', 25, '978-1', 'PURCHASE', 1, 0, 0, 0, '2025-12-07 04:26:23', '2025-12-07 04:26:23'),
+('book_1765056382778_20', 'bcat_1', 'a', 'a', 50000.00, '/book_asset/image/covers/38af1d72-d73a-4e21-9901-39ac54caa0be.png', 'NXB Trẻ', NULL, 'vi', 25, '978-1', 'PURCHASE', 1, 0, 0, 1, '2025-12-07 04:26:23', '2025-12-13 10:32:18'),
 ('book_18', 'bcat_3', 'Conan Tập 2', 'Vụ án mới', 25000.00, '/book_asset/image/covers/khoahoc-vientuong/chientraanhgiucacthegioi.jpg', 'NXB Kim Đồng', 2000, 'vi', 180, '978-18', 'SUBSCRIPTION', 0, 4.88, 456, 41230, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_19', 'bcat_3', 'Doraemon Tập 2', 'Bảo bối thần kỳ', 20000.00, '/book_asset/image/covers/kinhte-quanly/sieukinhtehochaihuoc.jpg', 'NXB Kim Đồng', 1995, 'vi', 196, '978-19', 'SUBSCRIPTION', 0, 5, 589, 49870, '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
 ('book_20', 'bcat_1', 'Kafka bên bờ biển', 'Hành trình siêu thực', 145000.00, '/book_asset/image/covers/tieuthuyet-vanhoc/ba-nguoi-linh-ngu-lam.jpg', 'NXB Hội Nhà Văn', 2018, 'vi', 528, '978-20', 'BOTH', 1, 4.8, 512, 44560, '2025-11-20 19:16:58', '2025-11-20 19:16:58');
@@ -359,11 +359,18 @@ INSERT INTO `orders` (`order_id`, `user_id`, `subscription_id`, `order_type`, `t
 ('order_book_02', 'user_normal_01', NULL, 'BOOK', 120000.00, 'FAILED', 'VNPAY', NULL, NULL, NULL, '2025-12-07 03:47:46'),
 ('order_book_03', 'user_normal_01', NULL, 'BOOK', 90000.00, 'COMPLETED', 'VNPAY', '15324709', NULL, NULL, '2025-12-07 06:27:16'),
 ('order_book_04', 'user_normal_01', NULL, 'BOOK', 120000.00, 'CANCELLED', 'BANK_TRANSFER', NULL, NULL, NULL, '2025-12-07 07:06:07'),
+('order_book_05', 'user_normal_01', NULL, 'BOOK', 210000.00, 'PENDING', 'BANK_TRANSFER', NULL, NULL, NULL, '2025-12-07 08:56:19'),
+('order_book_06', 'user_normal_01', NULL, 'BOOK', 120000.00, 'WAITING_APPROVAL', 'BANK_TRANSFER', NULL, NULL, NULL, '2025-12-07 08:56:55'),
+('order_book_07', 'user_normal_01', NULL, 'BOOK', 210000.00, 'PENDING', 'VNPAY', NULL, NULL, NULL, '2025-12-07 08:59:37'),
+('order_book_08', 'user_normal_01', NULL, 'BOOK', 120000.00, 'COMPLETED', 'BANK_TRANSFER', NULL, NULL, NULL, '2025-12-07 09:00:52'),
+('order_book_09', 'user_normal_01', NULL, 'BOOK', 110000.00, 'COMPLETED', 'BANK_TRANSFER', NULL, NULL, NULL, '2025-12-13 07:00:28'),
 ('order_sub_admin_vip', 'user_admin_01', 'sub_vip', 'SUBSCRIPTION', 0.00, 'COMPLETED', 'BANK_TRANSFER', 'ADMIN_GRANT', '2025-12-07 07:01:24', '2026-01-06 07:01:24', '2025-12-07 07:01:24'),
 ('order_sub_user_normal_02_free', 'user_normal_02', 'sub_free', 'SUBSCRIPTION', 0.00, 'COMPLETED', 'BANK_TRANSFER', 'FREE_GRANT', '2025-12-07 07:01:24', '2035-12-05 07:01:24', '2025-12-07 07:01:24'),
 ('order_sub_user_normal_03_free', 'user_normal_03', 'sub_free', 'SUBSCRIPTION', 0.00, 'COMPLETED', 'BANK_TRANSFER', 'FREE_GRANT', '2025-12-07 07:01:24', '2035-12-05 07:01:24', '2025-12-07 07:01:24'),
 ('order_sub_user01_premium', 'user_normal_01', 'sub_premium', 'SUBSCRIPTION', 0.00, 'COMPLETED', 'BANK_TRANSFER', 'ADMIN_GRANT', '2025-12-07 07:01:24', '2026-01-06 07:01:24', '2025-12-07 07:01:24'),
-('SUB_B42FB377', 'user_normal_01', 'sub_vip', 'SUBSCRIPTION', 99000.00, 'COMPLETED', 'VNPAY', '15324717', '2025-12-07 07:15:11', '2026-01-06 07:15:11', '2025-12-07 07:14:04');
+('SUB_894B82A8', 'user_normal_01', 'sub_vip', 'SUBSCRIPTION', 99000.00, 'PENDING', 'BANK_TRANSFER', NULL, '2025-12-07 09:04:25', '2026-01-06 09:04:25', '2025-12-07 09:04:25'),
+('SUB_B191E15C', 'user_normal_01', 'sub_vip', 'SUBSCRIPTION', 99000.00, 'FAILED', 'VNPAY', NULL, '2025-12-07 09:05:01', '2026-01-06 09:05:01', '2025-12-07 09:05:01'),
+('SUB_B42FB377', 'user_normal_01', 'sub_vip', 'SUBSCRIPTION', 99000.00, 'CANCELLED', 'VNPAY', '15324717', '2025-12-07 07:15:11', '2026-01-06 07:15:11', '2025-12-07 07:14:04');
 
 -- --------------------------------------------------------
 
@@ -390,7 +397,14 @@ INSERT INTO `order_items` (`order_item_id`, `order_id`, `book_id`, `price_at_pur
 ('item_01', 'order_book_01', 'book_02', 120000.00),
 ('item_02', 'order_book_02', 'book_02', 120000.00),
 ('item_03', 'order_book_03', 'book_03', 90000.00),
-('item_04', 'order_book_04', 'book_02', 120000.00);
+('item_04', 'order_book_04', 'book_02', 120000.00),
+('item_05', 'order_book_05', 'book_02', 120000.00),
+('item_06', 'order_book_05', 'book_03', 90000.00),
+('item_07', 'order_book_06', 'book_02', 120000.00),
+('item_08', 'order_book_07', 'book_02', 120000.00),
+('item_09', 'order_book_07', 'book_03', 90000.00),
+('item_10', 'order_book_08', 'book_02', 120000.00),
+('item_11', 'order_book_09', 'book_13', 110000.00);
 
 -- --------------------------------------------------------
 
@@ -444,6 +458,7 @@ CREATE TABLE IF NOT EXISTS `reading_progress` (
   `access_type` enum('PURCHASED','SUBSCRIPTION','FREE') DEFAULT NULL,
   `last_read_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `bookmarks_data` json DEFAULT NULL COMMENT 'Lưu danh sách bookmarks dạng JSON',
   PRIMARY KEY (`progress_id`),
   UNIQUE KEY `user_book_unique` (`user_id`,`book_id`),
   KEY `book_asset_id` (`book_asset_id`),
@@ -454,10 +469,11 @@ CREATE TABLE IF NOT EXISTS `reading_progress` (
 -- Dumping data for table `reading_progress`
 --
 
-INSERT INTO `reading_progress` (`progress_id`, `user_id`, `book_id`, `book_asset_id`, `last_read_location`, `progress_percentage`, `is_completed`, `is_favorite`, `access_type`, `last_read_at`, `created_at`) VALUES
-('prog_01', 'user_normal_01', 'book_01', 'asset_01', 'page-50', 17.9, 0, 1, 'SUBSCRIPTION', '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('prog_02', 'user_normal_01', 'book_02', 'asset_02', 'page-35', 10.5, 0, 1, 'PURCHASED', '2025-11-20 19:16:58', '2025-11-20 19:16:58'),
-('prog_03', 'user_normal_02', 'book_13', 'asset_13', 'page-100', 50, 0, 1, 'SUBSCRIPTION', '2025-11-20 19:16:58', '2025-11-20 19:16:58');
+INSERT INTO `reading_progress` (`progress_id`, `user_id`, `book_id`, `book_asset_id`, `last_read_location`, `progress_percentage`, `is_completed`, `is_favorite`, `access_type`, `last_read_at`, `created_at`, `bookmarks_data`) VALUES
+('4ba2d6ac-d172-47d1-b673-47a1627392d1', 'user_normal_01', 'book_13', 'asset_13', NULL, 0, 0, 0, 'FREE', '2025-12-13 07:02:06', '2025-12-13 07:02:06', NULL),
+('prog_01', 'user_normal_01', 'book_01', 'asset_01', 'page-50', 17.9, 0, 1, 'SUBSCRIPTION', '2025-11-20 19:16:58', '2025-11-20 19:16:58', NULL),
+('prog_02', 'user_normal_01', 'book_02', 'asset_02', 'page-35', 10.5, 0, 1, 'PURCHASED', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '{\"bookmarks\": [{\"id\": \"bm_1765603350000\", \"note\": \"Chương mở đầu hay\", \"location\": \"page-20\", \"createdAt\": \"2025-12-13T12:22:30\", \"pageNumber\": 20, \"percentage\": 7.14}, {\"id\": \"bm_1765603350001\", \"note\": \"Phần climax\", \"location\": \"page-80\", \"createdAt\": \"2025-12-13T12:22:30\", \"pageNumber\": 80, \"percentage\": 28.57}]}'),
+('prog_03', 'user_normal_02', 'book_13', 'asset_13', 'page-100', 50, 0, 1, 'SUBSCRIPTION', '2025-11-20 19:16:58', '2025-11-20 19:16:58', NULL);
 
 -- --------------------------------------------------------
 
@@ -579,9 +595,9 @@ CREATE TABLE IF NOT EXISTS `users` (
 --
 
 INSERT INTO `users` (`user_id`, `role_id`, `username`, `email`, `password_hash`, `full_name`, `phone`, `avatar_url`, `is_active`, `is_verified`, `preferred_reading_mode`, `last_login`, `created_at`, `updated_at`, `deleted_at`, `restored_at`) VALUES
-('user_admin_01', 'role_admin', 'admin', 'admin@ebook.com', '$2a$10$FtNONIM6oxPVPAC8hXsCBu3iR9IoFy8ANRw.Smj1nfi17UKJtIh9y', 'Quản Trị Viên', '0901234567', '/book_asset/image/avatars/admin.jpg', 1, 1, 'DARK', '2025-12-07 07:05:37', '2025-11-20 19:16:58', '2025-12-07 07:05:37', NULL, NULL),
-('user_admin_02', 'role_admin', 'admin4', 'aa@gmail.com', '$2a$10$UxIPZEc19RPX//IAsUxOWuyNG1OC9WYUtczZiqw9jaq3/Ub59uyAi', 'Nguyễn Văn A', '0912345678', '', 1, 0, 'AUTO', '2025-11-30 10:23:04', '2025-11-30 10:21:49', '2025-12-06 06:07:03', '2025-12-06 06:07:03', NULL),
-('user_normal_01', 'role_user', 'vana', 'vana@gmail.com', '$2a$10$FtNONIM6oxPVPAC8hXsCBu3iR9IoFy8ANRw.Smj1nfi17UKJtIh9y', 'Nguyễn Văn An', '0912345678', '/book_asset/image/avatars/user_normal_01.png', 1, 1, 'AUTO', '2025-12-07 07:26:56', '2025-11-20 19:16:58', '2025-12-07 07:26:56', NULL, NULL),
+('user_admin_01', 'role_admin', 'admin', 'admin@ebook.com', '$2a$10$FtNONIM6oxPVPAC8hXsCBu3iR9IoFy8ANRw.Smj1nfi17UKJtIh9y', 'Quản Trị Viên', '0901234567', '/book_asset/image/avatars/admin.jpg', 1, 1, 'DARK', '2025-12-13 07:01:19', '2025-11-20 19:16:58', '2025-12-13 07:01:19', NULL, NULL),
+('user_admin_02', 'role_admin', 'admin4', 'aa@gmail.com', '$2a$10$UxIPZEc19RPX//IAsUxOWuyNG1OC9WYUtczZiqw9jaq3/Ub59uyAi', 'Nguyễn Văn A', '0912345678', '', 1, 0, 'AUTO', '2025-11-30 10:23:04', '2025-11-30 10:21:49', '2025-12-07 08:55:29', NULL, '2025-12-07 08:55:29'),
+('user_normal_01', 'role_user', 'vana', 'vana@gmail.com', '$2a$10$FtNONIM6oxPVPAC8hXsCBu3iR9IoFy8ANRw.Smj1nfi17UKJtIh9y', 'Nguyễn Văn An', '0912345678', '/book_asset/image/avatars/user_normal_01.png', 1, 1, 'AUTO', '2025-12-13 12:41:05', '2025-11-20 19:16:58', '2025-12-13 12:41:05', NULL, NULL),
 ('user_normal_02', 'role_user', 'thib', 'thib@gmail.com', '$2a$10$hash_user2', 'Trần Thị B', '0923456789', '/book_asset/image/avatars/thib.jpg', 1, 1, 'LIGHT', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58', NULL, NULL),
 ('user_normal_03', 'role_user', 'minhc', 'minhc@gmail.com', '$2a$10$hash_user3', 'Lê Minh C', '0934567890', '/book_asset/image/avatars/minhc.jpg', 1, 1, 'AUTO', '2025-11-20 19:16:58', '2025-11-20 19:16:58', '2025-11-20 19:16:58', NULL, NULL);
 

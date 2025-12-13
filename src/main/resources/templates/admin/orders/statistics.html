@@ -142,42 +142,21 @@
 </div>
 
 <th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<!-- Data initialization (must be inline for Thymeleaf processing) -->
 <script th:inline="javascript">
 	/*<![CDATA[*/
-	var bookOrders = /*[[${bookOrders}]]*/ 0;
-	var subscriptionOrders = /*[[${subscriptionOrders}]]*/ 0;
-	var pendingOrders = /*[[${pendingOrders}]]*/ 0;
-	var completedOrders = /*[[${completedOrders}]]*/ 0;
-	var failedOrders = /*[[${failedOrders}]]*/ 0;
-	var cancelledOrders = /*[[${cancelledOrders}]]*/ 0;
-
-	// Order Type Chart
-	var ctxType = document.getElementById('orderTypeChart').getContext('2d');
-	new Chart(ctxType, {
-		type: 'doughnut',
-		data: {
-			labels: ['Mua sách', 'Gói subscription'],
-			datasets: [{
-				data: [bookOrders, subscriptionOrders],
-				backgroundColor: ['#3c8dbc', '#00c0ef']
-			}]
-		}
-	});
-
-	// Order Status Chart
-	var ctxStatus = document.getElementById('orderStatusChart').getContext('2d');
-	new Chart(ctxStatus, {
-		type: 'pie',
-		data: {
-			labels: ['Chờ xử lý', 'Hoàn thành', 'Thất bại', 'Đã hủy'],
-			datasets: [{
-				data: [pendingOrders, completedOrders, failedOrders, cancelledOrders],
-				backgroundColor: ['#f39c12', '#00a65a', '#dd4b39', '#d2d6de']
-			}]
-		}
-	});
+	window.orderStats = {
+		bookOrders: /*[[${bookOrders}]]*/ 0,
+		subscriptionOrders: /*[[${subscriptionOrders}]]*/ 0,
+		pendingOrders: /*[[${pendingOrders}]]*/ 0,
+		completedOrders: /*[[${completedOrders}]]*/ 0,
+		failedOrders: /*[[${failedOrders}]]*/ 0,
+		cancelledOrders: /*[[${cancelledOrders}]]*/ 0
+	};
 	/*]]>*/
 </script>
+<!-- Page specific script -->
+<script th:src="@{/admin_template/js/admin-orders-statistics.js}"></script>
 </body>
 </html>
 

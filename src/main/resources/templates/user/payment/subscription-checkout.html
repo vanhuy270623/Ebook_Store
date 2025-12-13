@@ -151,22 +151,7 @@
 
     <!-- Scripts -->
     <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
-    <script>
-        function selectPayment(method) {
-            document.querySelectorAll('.payment-method').forEach(el => {
-                el.classList.remove('selected');
-            });
-            const radio = document.querySelector(`input[value="${method}"]`);
-            radio.checked = true;
-            radio.closest('.payment-method').classList.add('selected');
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const checkedRadio = document.querySelector('input[name="paymentMethod"]:checked');
-            if (checkedRadio) {
-                checkedRadio.closest('.payment-method').classList.add('selected');
-            }
-        });
-    </script>
+    <!-- Page specific script -->
+    <script th:src="@{/user_template/js/user-payment.js}"></script>
 </body>
 </html>

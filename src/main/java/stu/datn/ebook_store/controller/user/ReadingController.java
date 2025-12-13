@@ -17,7 +17,6 @@ import stu.datn.ebook_store.service.ReadingProgressService;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Controller xử lý chức năng đọc sách
@@ -119,7 +118,7 @@ public class ReadingController {
                             try {
                                 log.info("Creating new reading progress for user {} and book {}", user.getUserId(), book.getBookId());
                                 ReadingProgress newProgress = new ReadingProgress();
-                                newProgress.setProgressId(UUID.randomUUID().toString());
+                                // Không set progressId - để service tự generate với format prog_XX
                                 newProgress.setUser(user);
                                 newProgress.setBook(book);
                                 newProgress.setBookAsset(readableAsset);
@@ -166,82 +165,6 @@ public class ReadingController {
         }
     }
 
-    /**
-     * Test page để kiểm tra PDF loading
-     */
-    @GetMapping("/test-pdf-load")
-    public String testPDFLoad() {
-        return "test/test-pdf-load";
-    }
-
-    /**
-     * Test page để kiểm tra EPUB loading
-     */
-    @GetMapping("/test-epub-load")
-    public String testEPUBLoad() {
-        return "test/test-epub-load";
-    }
-
-    /**
-     * Test endpoint để kiểm tra book assets
-     */
-    @GetMapping("/test/{bookId}")
-    @ResponseBody
-    public String testBook(@PathVariable String bookId) {
-        try {
-            StringBuilder result = new StringBuilder();
-            result.append("=== TEST BOOK: ").append(bookId).append(" ===\n\n");
-
-            // Check book exists
-            Book book = bookService.getBookById(bookId).orElse(null);
-            if (book == null) {
-                return result.append("❌ Book not found!").toString();
-            }
-            result.append("✅ Book found: ").append(book.getTitle()).append("\n");
-            result.append("   Access Type: ").append(book.getAccessType()).append("\n\n");
-
-            // Check assets
-            List<BookAsset> assets = bookAssetService.getAssetsByBookId(bookId);
-            result.append("📁 Total Assets: ").append(assets.size()).append("\n");
-
-            for (BookAsset asset : assets) {
-                result.append("\n   Asset ID: ").append(asset.getBookAssetId()).append("\n");
-                result.append("   File Type: ").append(asset.getFileType()).append("\n");
-                result.append("   File URL: ").append(asset.getFileUrl()).append("\n");
-                result.append("   File Size: ").append(asset.getFileSize()).append(" bytes\n");
-            }
-
-            // Check readable assets
-            BookAsset readable = assets.stream()
-                    .filter(asset -> BookAsset.FileType.PDF.equals(asset.getFileType()) ||
-                                   BookAsset.FileType.EPUB.equals(asset.getFileType()))
-                    .findFirst()
-                    .orElse(null);
-
-            if (readable != null) {
-                result.append("\n✅ Readable asset found: ").append(readable.getFileType()).append("\n");
-                result.append("   URL: ").append(readable.getFileUrl()).append("\n");
-                String fullPath = "F:/datn_uploads/book_asset/source/" + readable.getFileUrl();
-                result.append("   Full Path: ").append(fullPath).append("\n");
-
-                // Check file exists
-                java.io.File file = new java.io.File(fullPath);
-                if (file.exists()) {
-                    result.append("   ✅ File exists on disk\n");
-                    result.append("   File size: ").append(file.length()).append(" bytes\n");
-                } else {
-                    result.append("   ❌ File NOT found on disk!\n");
-                }
-            } else {
-                result.append("\n❌ No readable asset found!\n");
-            }
-
-            return result.toString().replace("\n", "<br>");
-        } catch (Exception e) {
-            return "❌ ERROR: " + e.getMessage() + "<br><br>Stack trace:<br>" +
-                   java.util.Arrays.toString(e.getStackTrace()).replace(",", "<br>");
-        }
-    }
 
     /**
      * PDF Viewer - sử dụng PDF.js
@@ -340,7 +263,7 @@ public class ReadingController {
                     .getReadingProgressByUserAndBook(user, book)
                     .orElseGet(() -> {
                         ReadingProgress newProgress = new ReadingProgress();
-                        newProgress.setProgressId(UUID.randomUUID().toString());
+                        // Không set progressId - để service tự generate với format prog_XX
                         newProgress.setUser(user);
                         newProgress.setBook(book);
                         newProgress.setBookAsset(firstAsset);
@@ -371,6 +294,7 @@ public class ReadingController {
         }
     }
 
+
     /**
      * API: Lưu reading progress
      */
@@ -382,49 +306,79 @@ public class ReadingController {
                               @RequestParam(required = false) String bookmarkData,
                               Authentication authentication) {
         try {
+            log.info("=== SAVE PROGRESS API CALLED ===");
+            log.info("bookId: {}, currentPage: {}, totalPages: {}, bookmarkData: {}",
+                    bookId, currentPage, totalPages, bookmarkData);
+
             User user = getCurrentUser(authentication);
             if (user == null) {
+                log.error("User not authenticated for progress save");
                 return "{\"status\":\"error\",\"message\":\"User not authenticated\"}";
             }
+            log.info("User authenticated: {}", user.getUserId());
 
             Book book = bookService.getBookById(bookId)
                     .orElseThrow(() -> new RuntimeException("Book not found"));
+            log.info("Book found: {} ({})", book.getTitle(), book.getBookId());
 
             ReadingProgress progress = readingProgressService.getReadingProgressByUserAndBook(user, book).orElse(null);
+            boolean isNewProgress = (progress == null);
+
             if (progress == null) {
+                log.info("Creating NEW ReadingProgress for user {} and book {}", user.getUserId(), bookId);
                 progress = new ReadingProgress();
-                progress.setProgressId(UUID.randomUUID().toString());
+                // Không set progressId - để service tự generate với format prog_XX
                 progress.setUser(user);
                 progress.setBook(book);
                 progress.setCreatedAt(LocalDateTime.now());
                 progress.setAccessType(determineAccessType(book));
                 progress.setIsCompleted(false);
                 progress.setIsFavorite(false);
+            } else {
+                log.info("Found existing progress: {}", progress.getProgressId());
             }
 
-            // Lưu location data (có thể là page number cho PDF hoặc CFI cho EPUB)
-            if (bookmarkData != null && !bookmarkData.trim().isEmpty()) {
+            // Lưu location data với format chuẩn
+            // - PDF: "page-X" (dễ parse)
+            // - EPUB: JSON string với CFI ({"cfi":"...", "href":"...", "percentage":...})
+            if (bookmarkData != null && !bookmarkData.trim().isEmpty() && !bookmarkData.equals("[]")) {
+                // EPUB gửi JSON object, lưu nguyên
                 progress.setLastReadLocation(bookmarkData);
             } else {
-                progress.setLastReadLocation(String.valueOf(currentPage));
+                // PDF chỉ gửi page number, format thành "page-X"
+                progress.setLastReadLocation("page-" + currentPage);
             }
 
             // Tính phần trăm progress
-            float percentage = ((float) currentPage / totalPages) * 100;
+            float percentage = totalPages > 0 ? ((float) currentPage / totalPages) * 100 : 0;
+            // Đảm bảo không vượt 100% và làm tròn 2 chữ số thập phân
+            percentage = Math.min(Math.round(percentage * 100.0f) / 100.0f, 100.0f);
             progress.setProgressPercentage(percentage);
 
             // Đánh dấu hoàn thành nếu đọc hết
-            if (percentage >= 99.0f) {
+            // >= 95% để tránh lỗi làm tròn hoặc đã đến trang cuối
+            if (percentage >= 95.0f || currentPage >= totalPages) {
                 progress.setIsCompleted(true);
+                progress.setProgressPercentage(100.0f);
+            } else {
+                progress.setIsCompleted(false);
             }
 
             progress.setLastReadAt(LocalDateTime.now());
 
-            readingProgressService.saveReadingProgress(progress);
+            log.info("Saving progress - location: {}, percentage: {}%, isCompleted: {}",
+                    progress.getLastReadLocation(), percentage, progress.getIsCompleted());
+
+            ReadingProgress savedProgress = readingProgressService.saveReadingProgress(progress);
+
+            log.info("=== PROGRESS SAVED SUCCESSFULLY ===");
+            log.info("Progress ID: {}, Location: {}, Percentage: {}%",
+                    savedProgress.getProgressId(), savedProgress.getLastReadLocation(), savedProgress.getProgressPercentage());
 
             return "{\"status\":\"success\",\"message\":\"Progress saved\",\"percentage\":" + percentage + "}";
         } catch (Exception e) {
-            log.error("Error saving reading progress: {}", e.getMessage());
+            log.error("=== ERROR SAVING PROGRESS ===");
+            log.error("Error saving reading progress: {}", e.getMessage(), e);
             return "{\"status\":\"error\",\"message\":\"" + e.getMessage() + "\"}";
         }
     }
@@ -447,6 +401,131 @@ public class ReadingController {
         } catch (Exception e) {
             log.error("Error getting reading progress: {}", e.getMessage());
             return null;
+        }
+    }
+
+    /**
+     * API: Thêm bookmark mới
+     */
+    @PostMapping("/api/bookmarks/{bookId}")
+    @ResponseBody
+    public String addBookmark(@PathVariable String bookId,
+                             @RequestParam String location,
+                             @RequestParam(required = false) Integer pageNumber,
+                             @RequestParam(required = false) Float percentage,
+                             @RequestParam(required = false) String note,
+                             Authentication authentication) {
+        try {
+            log.info("=== ADD BOOKMARK REQUEST ===");
+            log.info("bookId: {}, location: {}, pageNumber: {}, percentage: {}, note: {}",
+                    bookId, location, pageNumber, percentage, note);
+
+            User user = getCurrentUser(authentication);
+            if (user == null) {
+                log.error("User not authenticated");
+                return "{\"status\":\"error\",\"message\":\"User not authenticated\"}";
+            }
+            log.info("User: {}", user.getUserId());
+
+            Book book = bookService.getBookById(bookId)
+                    .orElseThrow(() -> new RuntimeException("Book not found: " + bookId));
+            log.info("Book found: {}", book.getTitle());
+
+            ReadingProgress progress = readingProgressService
+                    .getReadingProgressByUserAndBook(user, book)
+                    .orElse(null);
+
+            // Tự động tạo progress nếu chưa có
+            if (progress == null) {
+                log.info("Creating new ReadingProgress for user {} and book {}", user.getUserId(), bookId);
+                progress = new ReadingProgress();
+                progress.setUser(user);
+                progress.setBook(book);
+                progress.setAccessType(ReadingProgress.AccessType.FREE);
+                progress = readingProgressService.saveReadingProgress(progress);
+                log.info("Created progress with ID: {}", progress.getProgressId());
+            }
+
+            log.info("Progress ID: {}", progress.getProgressId());
+
+            readingProgressService.addBookmark(
+                progress.getProgressId(),
+                location,
+                pageNumber,
+                percentage,
+                note
+            );
+
+            log.info("=== BOOKMARK ADDED SUCCESSFULLY ===");
+            return "{\"status\":\"success\",\"message\":\"Bookmark added\"}";
+        } catch (Exception e) {
+            log.error("Error adding bookmark: {}", e.getMessage(), e);
+            return "{\"status\":\"error\",\"message\":\"" + e.getMessage() + "\"}";
+        }
+    }
+
+    /**
+     * API: Xóa bookmark
+     */
+    @DeleteMapping("/api/bookmarks/{bookId}/{bookmarkId}")
+    @ResponseBody
+    public String removeBookmark(@PathVariable String bookId,
+                                @PathVariable String bookmarkId,
+                                Authentication authentication) {
+        try {
+            User user = getCurrentUser(authentication);
+            if (user == null) {
+                return "{\"status\":\"error\",\"message\":\"User not authenticated\"}";
+            }
+
+            Book book = bookService.getBookById(bookId)
+                    .orElseThrow(() -> new RuntimeException("Book not found"));
+
+            ReadingProgress progress = readingProgressService
+                    .getReadingProgressByUserAndBook(user, book)
+                    .orElse(null);
+
+            if (progress == null) {
+                return "{\"status\":\"error\",\"message\":\"Reading progress not found\"}";
+            }
+
+            readingProgressService.removeBookmark(progress.getProgressId(), bookmarkId);
+
+            return "{\"status\":\"success\",\"message\":\"Bookmark removed\"}";
+        } catch (Exception e) {
+            log.error("Error removing bookmark: {}", e.getMessage());
+            return "{\"status\":\"error\",\"message\":\"" + e.getMessage() + "\"}";
+        }
+    }
+
+    /**
+     * API: Lấy danh sách bookmarks
+     */
+    @GetMapping("/api/bookmarks/{bookId}")
+    @ResponseBody
+    public List<ReadingProgress.BookmarkData> getBookmarks(@PathVariable String bookId,
+                                                          Authentication authentication) {
+        try {
+            User user = getCurrentUser(authentication);
+            if (user == null) {
+                return new java.util.ArrayList<>();
+            }
+
+            Book book = bookService.getBookById(bookId)
+                    .orElseThrow(() -> new RuntimeException("Book not found"));
+
+            ReadingProgress progress = readingProgressService
+                    .getReadingProgressByUserAndBook(user, book)
+                    .orElse(null);
+
+            if (progress == null) {
+                return new java.util.ArrayList<>();
+            }
+
+            return readingProgressService.getBookmarks(progress.getProgressId());
+        } catch (Exception e) {
+            log.error("Error getting bookmarks: {}", e.getMessage());
+            return new java.util.ArrayList<>();
         }
     }
 
@@ -500,7 +579,7 @@ public class ReadingController {
                     .getReadingProgressByUserAndBook(user, book)
                     .orElseGet(() -> {
                         ReadingProgress newProgress = new ReadingProgress();
-                        newProgress.setProgressId(UUID.randomUUID().toString());
+                        // Không set progressId - để service tự generate với format prog_XX
                         newProgress.setUser(user);
                         newProgress.setBook(book);
                         newProgress.setBookAsset(asset);
@@ -519,6 +598,20 @@ public class ReadingController {
             model.addAttribute("asset", asset);
             model.addAttribute("progress", progress);
             model.addAttribute("user", user);
+
+            // Encode lastReadLocation để tránh lỗi HTML attribute với ký tự đặc biệt
+            if (progress != null && progress.getLastReadLocation() != null) {
+                try {
+                    String encodedLocation = java.util.Base64.getEncoder()
+                            .encodeToString(progress.getLastReadLocation().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    model.addAttribute("encodedLocation", encodedLocation);
+                } catch (Exception e) {
+                    log.warn("Could not encode location: {}", e.getMessage());
+                    model.addAttribute("encodedLocation", null);
+                }
+            } else {
+                model.addAttribute("encodedLocation", null);
+            }
 
             return viewName;
 

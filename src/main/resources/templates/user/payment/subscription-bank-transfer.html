@@ -155,25 +155,8 @@
 
     <!-- Scripts -->
     <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
-    <script>
-        function copyText(elementId) {
-            const element = document.getElementById(elementId);
-            const text = element.textContent;
-
-            navigator.clipboard.writeText(text).then(() => {
-                const icon = element.nextElementSibling;
-                icon.className = 'fas fa-check copy-btn';
-                icon.style.color = '#28a745';
-
-                setTimeout(() => {
-                    icon.className = 'fas fa-copy copy-btn';
-                    icon.style.color = '';
-                }, 2000);
-            }).catch(err => {
-                console.error('Không thể sao chép:', err);
-            });
-        }
-    </script>
+    <!-- Page specific script -->
+    <script th:src="@{/user_template/js/user-payment.js}"></script>
 </body>
 </html>
 

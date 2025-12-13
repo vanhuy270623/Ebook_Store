@@ -26,5 +26,10 @@ public interface ReadingProgressService {
     void unmarkAsFavorite(String progressId);
     void markAsCompleted(String progressId);
     void updateProgress(String progressId, Float percentage, String location);
+
+    // Bookmark management methods
+    void addBookmark(String progressId, String location, Integer pageNumber, Float percentage, String note);
+    void removeBookmark(String progressId, String bookmarkId);
+    List<ReadingProgress.BookmarkData> getBookmarks(String progressId);
 }
 

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
     <title th:text="${book.title + ' - EPUB Reader'}">EPUB Reader</title>
 
     <!-- JSZip Library - Required by ePub.js to unzip EPUB files -->
@@ -11,7 +12,6 @@
 
     <!-- ePub.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
-
 </head>
 <body>
     <div class="reader-container">
@@ -40,13 +40,29 @@
                     <button class="btn" id="settingsBtn" onclick="toggleSettings()">
                         <i class="fas fa-cog"></i> Cài đặt
                     </button>
-                    <button class="btn btn-primary" onclick="saveBookmark()">
-                        <i class="fas fa-bookmark"></i> Bookmark
+                    <button class="btn btn-info" onclick="toggleBookmarksSidebar()" title="Xem bookmarks">
+                        <i class="fas fa-bookmark"></i> Bookmarks
+                    </button>
+                    <button class="btn btn-primary" onclick="saveManualBookmark()" title="Thêm bookmark">
+                        <i class="fas fa-plus"></i> Thêm Bookmark
                     </button>
                     <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="btn btn-secondary">
                         <i class="fas fa-times"></i> Thoát
                     </a>
                 </div>
+            </div>
+        </div>
+
+        <!-- Bookmarks Sidebar -->
+        <div class="bookmarks-sidebar-epub" id="bookmarksSidebar">
+            <div class="bookmarks-header">
+                <h5><i class="fas fa-bookmark"></i> Bookmarks</h5>
+                <button class="btn btn-sm btn-link" onclick="toggleBookmarksSidebar()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="bookmarks-content" id="bookmarksList">
+                <p class="text-muted text-center">Đang tải...</p>
             </div>
         </div>
 
@@ -92,15 +108,20 @@
 
         <!-- Settings Panel -->
         <div class="settings-panel" id="settingsPanel">
+            <!-- Zoom Control - Giống PDF Viewer -->
             <div class="setting-group">
-                <label class="setting-label">Cỡ chữ</label>
-                <select class="setting-control" id="fontSizeSelect" onchange="changeFontSize(this.value)">
-                    <option value="14">Nhỏ (14px)</option>
-                    <option value="16" selected>Vừa (16px)</option>
-                    <option value="18">Lớn (18px)</option>
-                    <option value="20">Rất lớn (20px)</option>
-                    <option value="24">Khổng lồ (24px)</option>
-                </select>
+                <label class="setting-label">Zoom</label>
+                <div class="zoom-controls">
+                    <button class="btn btn-secondary" onclick="zoomOut()" style="flex: 1;">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <input type="number" id="zoomInput" class="zoom-input" value="100" min="50" max="300" step="25"
+                           onchange="setZoom(this.value)" style="flex: 2; text-align: center;">
+                    <span class="progress-info" style="margin: 0 5px;">%</span>
+                    <button class="btn btn-secondary" onclick="zoomIn()" style="flex: 1;">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="setting-group">
@@ -136,11 +157,35 @@
     <!-- Font Awesome -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 
-    <script th:inline="javascript">
-        // Variables from Thymeleaf
-        const bookId = /*[[${book.bookId}]]*/ 1;
-        const assetPath = /*[[${asset.fileUrl}]]*/ '';
-        const initialLocation = /*[[${progress?.lastReadLocation}]]*/ null;
+    <!-- Data container for Thymeleaf variables -->
+    <div id="epub-data"
+         th:data-book-id="${book.bookId}"
+         th:data-asset-path="${asset.fileUrl}"
+         th:data-encoded-location="${encodedLocation}"
+         style="display: none;"></div>
+
+    <script>
+        // Variables from data attributes (safer for special characters)
+        const dataContainer = document.getElementById('epub-data');
+        const bookId = dataContainer.dataset.bookId;
+        const assetPath = dataContainer.dataset.assetPath;
+
+        // Decode Base64 encoded location
+        let initialLocation = null;
+        const encodedLocation = dataContainer.dataset.encodedLocation;
+        if (encodedLocation && encodedLocation !== 'null' && encodedLocation.trim() !== '') {
+            try {
+                initialLocation = atob(encodedLocation);
+                console.log('Decoded initial location:', initialLocation);
+            } catch (e) {
+                console.warn('Could not decode location:', e);
+            }
+        }
+
+        console.log('=== DATA FROM ATTRIBUTES ===');
+        console.log('bookId:', bookId);
+        console.log('assetPath:', assetPath);
+        console.log('initialLocation:', initialLocation);
 
         // ePub.js variables
         let book = null;
@@ -272,22 +317,70 @@
                 rendition = book.renderTo("epub-viewer", {
                     width: "100%",
                     height: "100%",
-                    spread: "none"
+                    spread: "none",
+                    minSpreadWidth: 0,
+                    allowScriptedContent: true
                 });
                 console.log('Rendition created:', rendition);
 
+                // Thêm CSS vào rendition để ngăn overflow trên mobile
+                rendition.themes.default({
+                    'body': {
+                        'overflow-x': 'hidden !important',
+                        'max-width': '100% !important',
+                        'box-sizing': 'border-box !important'
+                    },
+                    'img': {
+                        'max-width': '100% !important',
+                        'height': 'auto !important'
+                    },
+                    'svg': {
+                        'max-width': '100% !important',
+                        'height': 'auto !important'
+                    },
+                    'table': {
+                        'max-width': '100% !important',
+                        'overflow-x': 'auto !important'
+                    },
+                    'pre': {
+                        'white-space': 'pre-wrap !important',
+                        'overflow-x': 'auto !important',
+                        'max-width': '100% !important'
+                    },
+                    '*': {
+                        'box-sizing': 'border-box !important'
+                    }
+                });
+
                 // Load saved location or start from beginning
                 let startLocation = null;
+                console.log('=== PARSING INITIAL LOCATION ===');
+                console.log('Raw initialLocation:', initialLocation);
+                console.log('Type:', typeof initialLocation);
+
                 try {
-                    if (initialLocation) {
+                    if (initialLocation && initialLocation !== 'null' && initialLocation.trim() !== '') {
+                        // Thử parse như JSON
                         const locationData = JSON.parse(initialLocation);
+                        console.log('Parsed location data:', locationData);
                         if (locationData.cfi) {
                             startLocation = locationData.cfi;
-                            console.log('Restoring saved location:', startLocation);
+                            console.log('Restoring saved location from CFI:', startLocation);
+                        } else if (typeof locationData === 'string' && locationData.startsWith('epubcfi')) {
+                            // Trường hợp location là CFI string trực tiếp
+                            startLocation = locationData;
+                            console.log('Restoring saved location (direct CFI):', startLocation);
                         }
                     }
                 } catch (e) {
-                    console.log('No valid saved location, starting from beginning');
+                    console.log('JSON parse failed, trying as direct CFI:', e.message);
+                    // Nếu không parse được JSON, có thể là CFI string trực tiếp
+                    if (initialLocation && initialLocation.startsWith('epubcfi')) {
+                        startLocation = initialLocation;
+                        console.log('Using direct CFI string:', startLocation);
+                    } else {
+                        console.log('No valid saved location, starting from beginning');
+                    }
                 }
 
                 // Display the book
@@ -345,6 +438,9 @@
 
                 // Load table of contents
                 await loadTableOfContents();
+
+                // Apply default zoom (100%)
+                applyZoom();
 
                 showLoading(false);
                 isLoading = false;
@@ -505,13 +601,24 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const btn = document.getElementById('toggleSidebarBtn');
+            const isMobile = window.innerWidth <= 768;
 
-            sidebar.classList.toggle('hidden');
-
-            if (sidebar.classList.contains('hidden')) {
-                btn.innerHTML = '<i class="fas fa-bars"></i> Hiện mục lục';
+            if (isMobile) {
+                // Trên mobile: toggle class 'show'
+                sidebar.classList.toggle('show');
+                if (sidebar.classList.contains('show')) {
+                    btn.innerHTML = '<i class="fas fa-times"></i> Ẩn mục lục';
+                } else {
+                    btn.innerHTML = '<i class="fas fa-bars"></i> Mục lục';
+                }
             } else {
-                btn.innerHTML = '<i class="fas fa-times"></i> Ẩn mục lục';
+                // Trên desktop: toggle class 'hidden'
+                sidebar.classList.toggle('hidden');
+                if (sidebar.classList.contains('hidden')) {
+                    btn.innerHTML = '<i class="fas fa-bars"></i> Hiện mục lục';
+                } else {
+                    btn.innerHTML = '<i class="fas fa-times"></i> Ẩn mục lục';
+                }
             }
         }
 
@@ -520,9 +627,34 @@
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
         }
 
-        function changeFontSize(size) {
+        // Zoom functions - Thống nhất với PDF viewer
+        let currentZoom = 100; // Default 100%
+        const baseFontSize = 16; // Base font size in px
+
+        function zoomIn() {
+            currentZoom = Math.min(currentZoom + 25, 300); // Max 300%
+            document.getElementById('zoomInput').value = currentZoom;
+            applyZoom();
+        }
+
+        function zoomOut() {
+            currentZoom = Math.max(currentZoom - 25, 50); // Min 50%
+            document.getElementById('zoomInput').value = currentZoom;
+            applyZoom();
+        }
+
+        function setZoom(zoomPercent) {
+            currentZoom = parseInt(zoomPercent);
+            currentZoom = Math.max(50, Math.min(currentZoom, 300)); // Clamp 50-300%
+            document.getElementById('zoomInput').value = currentZoom;
+            applyZoom();
+        }
+
+        function applyZoom() {
             if (rendition) {
-                rendition.themes.fontSize(size + 'px');
+                const fontSize = Math.round(baseFontSize * (currentZoom / 100));
+                rendition.themes.fontSize(fontSize + 'px');
+                console.log('Zoom:', currentZoom + '%', 'Font size:', fontSize + 'px');
             }
         }
 
@@ -535,13 +667,47 @@
         function changePageWidth(width) {
             if (rendition) {
                 const container = document.getElementById('epub-viewer');
+                const readingContent = document.querySelector('.reading-content');
+                const isMobile = window.innerWidth <= 768;
+
+                // Reset styles trước
+                container.style.cssText = '';
+
                 if (width === '100%') {
-                    container.style.maxWidth = '100%';
-                } else {
-                    container.style.maxWidth = width + 'px';
+                    // Toàn màn hình - lấy chiều rộng thực tế của container cha
+                    const availableWidth = readingContent ? readingContent.clientWidth : window.innerWidth;
+                    // Trừ padding cho navigation buttons
+                    const contentWidth = Math.max(availableWidth - 120, 300);
+
+                    container.style.width = '100%';
+                    container.style.maxWidth = 'none';
                     container.style.margin = '0 auto';
+                    container.style.padding = '20px 60px'; // Padding cho nút điều hướng
+                    container.style.boxSizing = 'border-box';
+                    container.style.overflowX = 'hidden';
+
+                    console.log('Fullscreen mode - contentWidth:', contentWidth);
+
+                    // Resize rendition
+                    setTimeout(() => {
+                        rendition.resize(contentWidth, window.innerHeight - 150);
+                    }, 100);
+                } else {
+                    const targetWidth = isMobile ? '100%' : width + 'px';
+
+                    container.style.width = targetWidth;
+                    container.style.maxWidth = targetWidth;
+                    container.style.margin = '0 auto';
+                    container.style.padding = '20px';
+                    container.style.boxSizing = 'border-box';
+                    container.style.overflowX = 'hidden';
+
+                    console.log('Fixed width mode:', targetWidth);
+
+                    setTimeout(() => {
+                        rendition.resize();
+                    }, 100);
                 }
-                rendition.resize();
             }
         }
 
@@ -553,26 +719,56 @@
             if (isDark) {
                 btn.innerHTML = '<i class="fas fa-sun"></i> Chế độ sáng';
                 if (rendition) {
+                    // Apply dark theme cho toàn bộ EPUB content
                     rendition.themes.default({
                         'body': {
-                            'background': '#1a202c !important',
+                            'background': '#2d3748 !important',
+                            'background-color': '#2d3748 !important',
                             'color': '#e2e8f0 !important'
                         },
-                        'p': {
+                        'html': {
+                            'background': '#2d3748 !important',
+                            'background-color': '#2d3748 !important'
+                        },
+                        'p, div, span, a, li, td, th, h1, h2, h3, h4, h5, h6': {
                             'color': '#e2e8f0 !important'
+                        },
+                        'a': {
+                            'color': '#90cdf4 !important'
+                        },
+                        'a:visited': {
+                            'color': '#b794f4 !important'
+                        },
+                        '*': {
+                            'background-color': 'transparent !important'
                         }
                     });
                 }
             } else {
                 btn.innerHTML = '<i class="fas fa-moon"></i> Chế độ tối';
                 if (rendition) {
+                    // Apply light theme cho toàn bộ EPUB content
                     rendition.themes.default({
                         'body': {
                             'background': '#ffffff !important',
+                            'background-color': '#ffffff !important',
                             'color': '#333333 !important'
                         },
-                        'p': {
+                        'html': {
+                            'background': '#ffffff !important',
+                            'background-color': '#ffffff !important'
+                        },
+                        'p, div, span, a, li, td, th, h1, h2, h3, h4, h5, h6': {
                             'color': '#333333 !important'
+                        },
+                        'a': {
+                            'color': '#2563eb !important'
+                        },
+                        'a:visited': {
+                            'color': '#7c3aed !important'
+                        },
+                        '*': {
+                            'background-color': 'transparent !important'
                         }
                     });
                 }
@@ -592,53 +788,272 @@
             if (isLoading || !currentLocation) return;
 
             try {
+                const percentage = book.locations ?
+                    Math.round(book.locations.percentageFromCfi(currentLocation.start.cfi) * 100) : 0;
+
+                console.log('=== SAVING EPUB PROGRESS ===');
+                console.log('Percentage:', percentage, 'CFI:', currentLocation.start.cfi);
+
                 const formData = new FormData();
-                formData.append('currentPage', Math.round(book.locations.percentageFromCfi(currentLocation.start.cfi) * 100));
+                formData.append('currentPage', percentage);
                 formData.append('totalPages', 100); // EPUB progress in percentage
                 formData.append('bookmarkData', JSON.stringify({
                     cfi: currentLocation.start.cfi,
                     href: currentLocation.start.href,
-                    percentage: book.locations.percentageFromCfi(currentLocation.start.cfi)
+                    percentage: percentage
                 }));
 
                 const response = await fetch(`/reading/api/progress/${bookId}`, {
                     method: 'POST',
+                    credentials: 'same-origin',
                     body: formData
                 });
 
+                const responseText = await response.text();
+                console.log('Server response:', response.status, responseText);
+
                 if (!response.ok) {
-                    console.error('Failed to save progress');
+                    console.error('Failed to save progress:', responseText);
+                } else {
+                    console.log('Progress saved:', percentage + '%');
                 }
             } catch (error) {
                 console.error('Error saving progress:', error);
             }
         }
 
-        function saveBookmark() {
-            if (!currentLocation) return;
+        // ========== BOOKMARKS MANAGEMENT FOR EPUB ==========
 
-            const bookmarks = getBookmarks();
-            const bookmark = {
-                cfi: currentLocation.start.cfi,
-                href: currentLocation.start.href,
-                timestamp: new Date().toISOString(),
-                note: prompt('Ghi chú cho bookmark (tùy chọn):') || '',
-                percentage: Math.round(book.locations.percentageFromCfi(currentLocation.start.cfi) * 100)
-            };
+        // Toggle bookmarks sidebar
+        function toggleBookmarksSidebar() {
+            const sidebar = document.getElementById('bookmarksSidebar');
+            sidebar.classList.toggle('show');
 
-            bookmarks.push(bookmark);
-            localStorage.setItem(`bookmarks_${bookId}`, JSON.stringify(bookmarks));
-
-            alert(`Đã lưu bookmark (${bookmark.percentage}%)`);
+            if (sidebar.classList.contains('show')) {
+                loadBookmarks();
+            }
         }
 
-        function getBookmarks() {
+        // Load bookmarks from server
+        async function loadBookmarks() {
             try {
-                const stored = localStorage.getItem(`bookmarks_${bookId}`);
-                return stored ? JSON.parse(stored) : [];
-            } catch {
-                return [];
+                const response = await fetch(`/reading/api/bookmarks/${bookId}`, {
+                    credentials: 'same-origin'
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to load bookmarks');
+                }
+
+                const bookmarks = await response.json();
+                displayBookmarks(bookmarks);
+            } catch (error) {
+                console.error('Error loading bookmarks:', error);
+                document.getElementById('bookmarksList').innerHTML = `
+                    <p class="text-danger text-center">Lỗi tải bookmarks</p>
+                `;
             }
+        }
+
+        // Display bookmarks list
+        function displayBookmarks(bookmarks) {
+            const container = document.getElementById('bookmarksList');
+
+            if (!bookmarks || bookmarks.length === 0) {
+                container.innerHTML = `
+                    <div class="no-bookmarks">
+                        <i class="fas fa-bookmark"></i>
+                        <p>Chưa có bookmark nào</p>
+                        <small>Nhấn "Thêm Bookmark" để lưu vị trí đọc</small>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by percentage
+            bookmarks.sort((a, b) => (a.percentage || 0) - (b.percentage || 0));
+
+            // Store bookmarks data for click handlers
+            window.bookmarksData = {};
+            bookmarks.forEach(bm => {
+                window.bookmarksData[bm.id] = bm.location;
+            });
+
+            container.innerHTML = bookmarks.map(bm => `
+                <div class="bookmark-item" onclick="jumpToBookmarkById('${bm.id}')">
+                    <div class="bookmark-header">
+                        <strong>📖 ${bm.percentage ? bm.percentage.toFixed(1) + '%' : 'Vị trí'}</strong>
+                        <button class="bookmark-delete-btn"
+                                onclick="deleteBookmark('${bm.id}', event)"
+                                title="Xóa bookmark">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    ${bm.note ? `<div class="bookmark-note">"${escapeHtml(bm.note)}"</div>` : ''}
+                    <div class="bookmark-meta">
+                        <span>${formatBookmarkDate(bm.createdAt)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Jump to bookmark by ID (to avoid HTML escaping issues)
+        function jumpToBookmarkById(bookmarkId) {
+            const locationData = window.bookmarksData[bookmarkId];
+            if (locationData) {
+                jumpToBookmark(locationData);
+            }
+        }
+
+        // Save manual bookmark
+        async function saveManualBookmark() {
+            if (!currentLocation) {
+                alert('❌ Chưa có vị trí đọc hiện tại');
+                return;
+            }
+
+            const note = prompt('Ghi chú cho bookmark (tùy chọn):');
+            if (note === null) return; // User cancelled
+
+            try {
+                const percentage = book.locations ?
+                    Math.round(book.locations.percentageFromCfi(currentLocation.start.cfi) * 100) : 0;
+
+                const formData = new FormData();
+                // Lưu CFI location cho EPUB
+                formData.append('location', JSON.stringify({
+                    cfi: currentLocation.start.cfi,
+                    href: currentLocation.start.href,
+                    percentage: percentage
+                }));
+                formData.append('percentage', percentage);
+                formData.append('note', note || '');
+
+                console.log('=== SAVING EPUB BOOKMARK ===');
+                console.log('CFI:', currentLocation.start.cfi, 'Percentage:', percentage);
+
+                const response = await fetch(`/reading/api/bookmarks/${bookId}`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: formData
+                });
+
+                const responseText = await response.text();
+                console.log('Bookmark save response:', response.status, responseText);
+
+                if (!response.ok) {
+                    throw new Error('Failed to save bookmark: ' + responseText);
+                }
+
+                alert('✅ Bookmark đã lưu!');
+
+                // Reload bookmarks if sidebar is open
+                if (document.getElementById('bookmarksSidebar').classList.contains('show')) {
+                    loadBookmarks();
+                }
+            } catch (error) {
+                console.error('Error saving bookmark:', error);
+                alert('❌ Lỗi khi lưu bookmark: ' + error.message);
+            }
+        }
+
+        // Jump to bookmark
+        async function jumpToBookmark(locationData) {
+            try {
+                console.log('=== JUMPING TO BOOKMARK ===');
+                console.log('Raw locationData:', locationData);
+                console.log('Type:', typeof locationData);
+
+                let cfi;
+
+                // Parse location data - có thể là JSON hoặc CFI string trực tiếp
+                if (typeof locationData === 'string' && locationData.trim().startsWith('{')) {
+                    try {
+                        const data = JSON.parse(locationData);
+                        console.log('Parsed JSON:', data);
+                        cfi = data.cfi;
+                    } catch (parseError) {
+                        console.error('JSON parse failed:', parseError);
+                        // Thử dùng trực tiếp nếu không parse được
+                        if (locationData.includes('epubcfi')) {
+                            cfi = locationData;
+                        }
+                    }
+                } else if (typeof locationData === 'string' && locationData.includes('epubcfi')) {
+                    cfi = locationData;
+                } else {
+                    cfi = locationData;
+                }
+
+                console.log('Final CFI:', cfi);
+
+                if (cfi && rendition) {
+                    await rendition.display(cfi);
+                    console.log('✅ Jumped to bookmark successfully');
+                } else {
+                    console.error('Cannot jump: cfi or rendition is null');
+                }
+            } catch (error) {
+                console.error('Error jumping to bookmark:', error);
+                alert('❌ Không thể chuyển đến vị trí bookmark');
+            }
+        }
+
+        // Delete bookmark
+        async function deleteBookmark(bookmarkId, event) {
+            event.stopPropagation(); // Prevent jump
+
+            if (!confirm('Xóa bookmark này?')) return;
+
+            try {
+                console.log('=== DELETING EPUB BOOKMARK ===', bookmarkId);
+
+                const response = await fetch(
+                    `/reading/api/bookmarks/${bookId}/${bookmarkId}`,
+                    {
+                        method: 'DELETE',
+                        credentials: 'same-origin'
+                    }
+                );
+
+                const responseText = await response.text();
+                console.log('Delete response:', response.status, responseText);
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete bookmark: ' + responseText);
+                }
+
+                loadBookmarks();
+            } catch (error) {
+                console.error('Error deleting bookmark:', error);
+                alert('❌ Lỗi khi xóa bookmark: ' + error.message);
+            }
+        }
+
+        // Helper: Format date
+        function formatBookmarkDate(dateString) {
+            if (!dateString) return '';
+
+            try {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diff = now - date;
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+                if (days === 0) return 'Hôm nay';
+                if (days === 1) return 'Hôm qua';
+                if (days < 7) return `${days} ngày trước`;
+
+                return date.toLocaleDateString('vi-VN');
+            } catch {
+                return '';
+            }
+        }
+
+        // Helper: Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         function showLoading(show) {
@@ -661,8 +1076,45 @@
 
         // Auto-hide sidebar on mobile
         if (window.innerWidth <= 768) {
-            document.getElementById('sidebar').classList.add('hidden');
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.add('hidden');
+            sidebar.classList.remove('show');
         }
+
+        // Resize rendition when window resizes
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                if (rendition) {
+                    const isMobile = window.innerWidth <= 768;
+                    const container = document.getElementById('epub-viewer');
+
+                    // Đảm bảo container không tràn trên mobile
+                    if (isMobile) {
+                        container.style.maxWidth = '100%';
+                        container.style.padding = '10px 5px';
+                    } else {
+                        const selectedWidth = document.getElementById('pageWidthSelect').value;
+                        if (selectedWidth !== '100%') {
+                            container.style.maxWidth = selectedWidth + 'px';
+                        }
+                        container.style.padding = '40px 20px';
+                    }
+
+                    container.style.overflowX = 'hidden';
+                    rendition.resize();
+
+                    // Auto-hide sidebar trên mobile
+                    const sidebar = document.getElementById('sidebar');
+                    if (isMobile && sidebar.classList.contains('show')) {
+                        // Không tự động ẩn nếu đang hiển thị
+                    } else if (isMobile) {
+                        sidebar.classList.remove('show');
+                    }
+                }
+            }, 300); // Debounce 300ms
+        });
     </script>
 </body>
 </html>

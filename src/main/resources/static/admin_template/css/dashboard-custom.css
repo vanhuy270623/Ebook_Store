@@ -147,3 +147,99 @@
     }
 }
 
+/* ========== Timeline Styling ========== */
+.timeline > li > .timeline-item {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    border-radius: 3px;
+    margin-top: 0;
+    background: #fff;
+    color: #444;
+    margin-left: 60px;
+    margin-right: 15px;
+    padding: 10px;
+    position: relative;
+}
+
+.timeline > li > .timeline-item > .timeline-header {
+    margin: 0;
+    color: #555;
+    border-bottom: 1px solid #f4f4f4;
+    padding: 5px 0;
+    font-size: 15px;
+    line-height: 1.1;
+}
+
+.timeline > li > .timeline-item > .timeline-header.bg-red {
+    color: #fff;
+    background: #dd4b39;
+    margin: -10px -10px 10px -10px;
+}
+
+.timeline > li > .timeline-item > .time {
+    color: #999;
+    float: right;
+    font-size: 12px;
+}
+
+.timeline > li > .timeline-item > .timeline-body {
+    margin-top: 10px;
+}
+
+.timeline > li > .fa,
+.timeline > li > .glyphicon,
+.timeline > li > .ion {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    line-height: 40px;
+    position: absolute;
+    color: #666;
+    background: #d2d6de;
+    border-radius: 50%;
+    text-align: center;
+    left: 18px;
+    top: 0;
+}
+
+.timeline > li.time-label > span {
+    font-weight: 600;
+    padding: 5px 10px;
+    display: inline-block;
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.timeline > li.time-label > span.bg-red {
+    background-color: #dd4b39;
+    color: #fff;
+}
+
+.timeline > li.time-label > span.bg-blue {
+    background-color: #0073b7;
+    color: #fff;
+}
+
+.timeline > li.time-label > span.bg-green {
+    background-color: #00a65a;
+    color: #fff;
+}
+
+/* Status badges in timeline */
+.timeline-body .label {
+    margin-right: 5px;
+    font-size: 11px;
+    padding: 4px 8px;
+}
+
+.timeline-body p {
+    margin: 5px 0;
+}
+
+.timeline-body code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #d73925;
+    font-size: 12px;
+}

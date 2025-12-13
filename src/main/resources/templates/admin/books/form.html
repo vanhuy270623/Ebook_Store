@@ -285,28 +285,8 @@
 <!-- Select2 -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-
-<script>
-$(document).ready(function() {
-	// Initialize Select2
-	$('.select2').select2({
-		placeholder: "Chọn tác giả",
-		allowClear: true
-	});
-
-	// Image preview
-	$('#coverImage').change(function() {
-		const file = this.files[0];
-		if (file) {
-			const reader = new FileReader();
-			reader.onload = function(e) {
-				$('#imagePreview').attr('src', e.target.result).show();
-			}
-			reader.readAsDataURL(file);
-		}
-	});
-});
-</script>
+<!-- Page specific script -->
+<script th:src="@{/admin_template/js/admin-books-form.js}"></script>
 </body>
 </html>
 

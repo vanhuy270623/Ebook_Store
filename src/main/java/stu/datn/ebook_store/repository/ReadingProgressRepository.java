@@ -16,10 +16,10 @@ public interface ReadingProgressRepository extends JpaRepository<ReadingProgress
     List<ReadingProgress> findByUser(User user);
 
     @Query("SELECT DISTINCT rp FROM ReadingProgress rp " +
-           "LEFT JOIN FETCH rp.book b " +
+           "INNER JOIN FETCH rp.book b " +
            "LEFT JOIN FETCH b.authors " +
            "LEFT JOIN FETCH b.bookCategory " +
-           "WHERE rp.user = :user")
+           "WHERE rp.user = :user AND b.bookId IS NOT NULL")
     List<ReadingProgress> findByUserWithBookDetails(@Param("user") User user);
 
     List<ReadingProgress> findByUserAndIsFavoriteTrue(User user);

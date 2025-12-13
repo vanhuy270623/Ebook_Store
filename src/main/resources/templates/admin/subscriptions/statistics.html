@@ -124,58 +124,17 @@
 </div>
 
 <th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<!-- Data initialization (must be inline for Thymeleaf processing) -->
 <script th:inline="javascript">
 	/*<![CDATA[*/
-	var orderCountData = /*[[${orderCountPerSubscription}]]*/ {};
-	var revenueData = /*[[${revenuePerSubscription}]]*/ {};
-
-	// Order Count Chart
-	var ctxOrder = document.getElementById('orderCountChart').getContext('2d');
-	new Chart(ctxOrder, {
-		type: 'bar',
-		data: {
-			labels: Object.keys(orderCountData),
-			datasets: [{
-				label: 'Số đơn hàng',
-				data: Object.values(orderCountData),
-				backgroundColor: '#3c8dbc'
-			}]
-		},
-		options: {
-			responsive: true,
-			maintainAspectRatio: true,
-			scales: {
-				y: {
-					beginAtZero: true
-				}
-			}
-		}
-	});
-
-	// Revenue Chart
-	var ctxRevenue = document.getElementById('revenueChart').getContext('2d');
-	new Chart(ctxRevenue, {
-		type: 'bar',
-		data: {
-			labels: Object.keys(revenueData),
-			datasets: [{
-				label: 'Doanh thu (VNĐ)',
-				data: Object.values(revenueData),
-				backgroundColor: '#00a65a'
-			}]
-		},
-		options: {
-			responsive: true,
-			maintainAspectRatio: true,
-			scales: {
-				y: {
-					beginAtZero: true
-				}
-			}
-		}
-	});
+	window.subscriptionStats = {
+		orderCountData: /*[[${orderCountPerSubscription}]]*/ {},
+		revenueData: /*[[${revenuePerSubscription}]]*/ {}
+	};
 	/*]]>*/
 </script>
+<!-- Page specific script -->
+<script th:src="@{/admin_template/js/admin-subscriptions-statistics.js}"></script>
 </body>
 </html>
 

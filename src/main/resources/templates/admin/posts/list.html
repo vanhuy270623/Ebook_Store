@@ -105,17 +105,8 @@
 <th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
 <script src="/admin_template/plugins/datatables/jquery.dataTables.min.js"></script>
 <script src="/admin_template/plugins/datatables/dataTables.bootstrap.min.js"></script>
-<script>
-	$(function () {
-		$('#postsTable').DataTable({
-			"responsive": true,
-			"searching": false,
-			"language": {
-				"url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
-			}
-		});
-	});
-</script>
+<!-- Page specific script -->
+<script th:src="@{/admin_template/js/admin-posts-list.js}"></script>
 </body>
 </html>
 

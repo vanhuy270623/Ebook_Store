@@ -390,6 +390,80 @@ public class UserController {
     }
 
     /**
+     * Thư viện cá nhân - Hiển thị cả sách đang đọc và sách đã mua
+     */
+    @GetMapping("/library")
+    public String library(
+            @RequestParam(defaultValue = "reading") String tab,
+            @RequestParam(defaultValue = "0") int page,
+            Authentication authentication,
+            Model model) {
+
+        User currentUser = getCurrentUser(authentication);
+
+        // Lấy danh sách sách đang đọc (Reading History)
+        // Filter để loại bỏ các record có book null (dữ liệu không nhất quán)
+        List<ReadingProgress> readingProgresses = readingProgressService.getReadingProgressByUserWithBookDetails(currentUser).stream()
+                .filter(progress -> progress.getBook() != null) // Bỏ qua các record có book null
+                .sorted((a, b) -> b.getLastReadAt() != null ? b.getLastReadAt().compareTo(a.getLastReadAt()) : 0)
+                .toList();
+
+        // Lấy danh sách sách đã mua (Purchased Books)
+        List<Order> completedOrders = orderService.getOrdersByUser(currentUser).stream()
+                .filter(order -> order.getPaymentStatus() == Order.PaymentStatus.COMPLETED)
+                .filter(order -> order.getOrderType() == Order.OrderType.BOOK)
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .toList();
+
+        // Lấy tất cả sách đã mua từ các đơn hàng
+        List<Book> purchasedBooks = completedOrders.stream()
+                .flatMap(order -> orderItemService.getOrderItemsByOrderId(order.getOrderId()).stream())
+                .map(OrderItem::getBook)
+                .distinct()
+                .toList();
+
+        // Phân trang cho tab đang active
+        int pageSize = 12;
+        int totalBooks;
+        int totalPages;
+
+        if ("reading".equals(tab)) {
+            totalBooks = readingProgresses.size();
+            totalPages = (int) Math.ceil((double) totalBooks / pageSize);
+            if (page >= totalPages && totalPages > 0) {
+                page = totalPages - 1;
+            }
+            int startIndex = Math.max(0, page * pageSize);
+            int endIndex = Math.min(startIndex + pageSize, totalBooks);
+            List<ReadingProgress> pagedProgress = readingProgresses.subList(startIndex, endIndex);
+            model.addAttribute("readingProgresses", pagedProgress);
+        } else if ("purchased".equals(tab)) {
+            totalBooks = purchasedBooks.size();
+            totalPages = (int) Math.ceil((double) totalBooks / pageSize);
+            if (page >= totalPages && totalPages > 0) {
+                page = totalPages - 1;
+            }
+            int startIndex = Math.max(0, page * pageSize);
+            int endIndex = Math.min(startIndex + pageSize, totalBooks);
+            List<Book> pagedBooks = purchasedBooks.subList(startIndex, endIndex);
+            model.addAttribute("purchasedBooks", pagedBooks);
+        } else {
+            totalBooks = 0;
+            totalPages = 0;
+        }
+
+        // Thêm thống kê
+        model.addAttribute("totalReadingBooks", readingProgresses.size());
+        model.addAttribute("totalPurchasedBooks", purchasedBooks.size());
+        model.addAttribute("activeTab", tab);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("totalBooks", totalBooks);
+
+        return "user/library";
+    }
+
+    /**
      * Lịch sử đọc sách
      */
     @GetMapping("/reading-history")
@@ -420,7 +494,7 @@ public class UserController {
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("totalBooks", totalBooks);
 
-        return "user/reading-history";
+        return "user/reading/reading-history";
     }
 
     /**

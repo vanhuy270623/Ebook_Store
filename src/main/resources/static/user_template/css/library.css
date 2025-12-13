@@ -1,0 +1,304 @@
+/**
+ * Library Page Styles
+ * Trang thư viện người dùng - Styled like Index page
+ */
+
+/* Library Stats Grid */
+.library-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stat-icon.reading {
+    background: linear-gradient(135deg, #fd7e14 0%, #ff9500 100%);
+}
+
+.stat-icon.purchased {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.stat-icon.subscription {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-icon.favorite {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+}
+
+.stat-icon.completed {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* Category Navigation for Library - reuse from index */
+/* Styles are inherited from homepage.css */
+
+/* Book Card */
+.library-page .book-card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: block;
+    height: 100%;
+}
+
+.library-page .book-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.library-page .book-cover {
+    position: relative;
+    padding-top: 140%;
+    background: #f5f5f5;
+    overflow: hidden;
+}
+
+.library-page .book-cover img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Book Badges - Extended from index.html styles */
+.library-page .book-badge.purchased {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.library-page .book-badge.subscription {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.library-page .book-badge.free {
+    background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+}
+
+.library-page .book-badge.reading {
+    background: linear-gradient(135deg, #fd7e14 0%, #ff9500 100%);
+}
+
+.library-page .book-badge.completed {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+}
+
+/* Progress Overlay */
+.progress-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.7);
+    padding: 8px;
+}
+
+.reading-progress {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.reading-progress .progress-bar {
+    background: #28a745;
+    height: 100%;
+    transition: width 0.3s;
+}
+
+.progress-text {
+    color: white;
+    font-size: 0.75rem;
+    margin-top: 4px;
+    text-align: center;
+}
+
+/* Book Info */
+.library-page .book-info {
+    padding: 15px;
+}
+
+.library-page .book-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.library-page .book-author {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.library-page .book-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.library-page .book-rating {
+    color: #ffc107;
+    font-size: 0.85rem;
+}
+
+.library-page .book-rating i {
+    margin-right: 3px;
+}
+
+/* Book Actions */
+.library-page .book-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.library-page .book-card:hover .book-actions {
+    opacity: 1;
+}
+
+.action-btn {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: #667eea;
+    color: white;
+}
+
+.action-btn.favorite.active {
+    background: #dc3545;
+    color: white;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #ddd;
+    margin-bottom: 20px;
+}
+
+.empty-state h4 {
+    margin-bottom: 10px;
+}
+
+/* Subscription Active Banner - extends promo-banner from homepage.css */
+.subscription-active-banner {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .library-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 15px;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .library-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+    }
+
+    .stat-number {
+        font-size: 1.3rem;
+    }
+}
+

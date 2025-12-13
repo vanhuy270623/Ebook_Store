@@ -55,9 +55,9 @@ public class UserController {
 
     @Autowired
     public UserController(UserService userService, OrderService orderService,
-                         OrderItemService orderItemService,
-                         ReadingProgressService readingProgressService, PasswordEncoder passwordEncoder,
-                         BookService bookService) {
+                          OrderItemService orderItemService,
+                          ReadingProgressService readingProgressService, PasswordEncoder passwordEncoder,
+                          BookService bookService) {
         this.userService = userService;
         this.orderService = orderService;
         this.orderItemService = orderItemService;
@@ -186,7 +186,7 @@ public class UserController {
         try {
             // Kiểm tra email trùng (trừ email hiện tại)
             if (!request.getEmail().equals(currentUser.getEmail()) &&
-                userService.checkEmailExists(request.getEmail())) {
+                    userService.checkEmailExists(request.getEmail())) {
                 redirectAttributes.addFlashAttribute("error", "Email đã được sử dụng");
                 return "redirect:/user/profile";
             }
@@ -400,6 +400,7 @@ public class UserController {
             Model model) {
 
         User currentUser = getCurrentUser(authentication);
+        model.addAttribute("user", currentUser);
 
         // Lấy danh sách sách đang đọc (Reading History)
         // Filter để loại bỏ các record có book null (dữ liệu không nhất quán)
@@ -421,6 +422,76 @@ public class UserController {
                 .map(OrderItem::getBook)
                 .distinct()
                 .toList();
+
+        // Lọc sách đã hoàn thành
+        List<ReadingProgress> completedBooks = readingProgresses.stream()
+                .filter(rp -> rp.getProgressPercentage() != null && rp.getProgressPercentage() >= 100)
+                .collect(Collectors.toList());
+
+        long totalCompleted = completedBooks.size();
+
+        // Lấy sách miễn phí
+        List<Book> freeBooks = bookService.getBooksByAccessType(Book.AccessType.FREE);
+
+        // Kiểm tra subscription đang active của user
+        List<Order> subscriptionOrders = orderService.getOrdersByUserIdAndType(currentUser.getUserId(), Order.OrderType.SUBSCRIPTION);
+
+        boolean hasActiveSubscription = false;
+        String subscriptionPackageName = "";
+        LocalDateTime subscriptionEndDate = null;
+        List<Book> subscriptionBooks = new java.util.ArrayList<>();
+
+        // Tìm subscription đang active
+        for (Order order : subscriptionOrders) {
+            if ((order.getPaymentStatus() == Order.PaymentStatus.COMPLETED ||
+                 order.getPaymentStatus() == Order.PaymentStatus.PAID) &&
+                order.getEndDate() != null &&
+                order.getEndDate().isAfter(LocalDateTime.now())) {
+
+                hasActiveSubscription = true;
+                subscriptionPackageName = order.getSubscription() != null && order.getSubscription().getPackageName() != null ?
+                    order.getSubscription().getPackageName().toString() : "VIP";
+                subscriptionEndDate = order.getEndDate();
+
+                // Lấy sách từ gói subscription (SUBSCRIPTION hoặc BOTH)
+                subscriptionBooks = bookService.getBooksByAccessType(Book.AccessType.SUBSCRIPTION);
+                List<Book> bothBooks = bookService.getBooksByAccessType(Book.AccessType.BOTH);
+
+                // Merge 2 lists và loại bỏ trùng lặp
+                subscriptionBooks = new java.util.ArrayList<>(subscriptionBooks);
+                subscriptionBooks.addAll(bothBooks);
+                subscriptionBooks = subscriptionBooks.stream().distinct().collect(Collectors.toList());
+
+                break; // Chỉ lấy subscription active đầu tiên
+            }
+        }
+
+        // Thêm biến readingBooks cho template (tương đương với readingProgresses)
+        model.addAttribute("readingBooks", readingProgresses);
+
+        // Thêm danh sách sách từ subscription
+        model.addAttribute("subscriptionBooks", subscriptionBooks);
+
+        // Thêm danh sách yêu thích (tạm thời empty list - TODO: implement favorites)
+        model.addAttribute("favoriteBooks", new java.util.ArrayList<ReadingProgress>());
+
+        // Thêm danh sách đã hoàn thành
+        model.addAttribute("completedBooks", completedBooks);
+
+        // Thêm danh sách sách miễn phí
+        model.addAttribute("freeBooks", freeBooks);
+
+        // Thêm các biến thống kê
+        model.addAttribute("totalReading", readingProgresses.size());
+        model.addAttribute("totalPurchased", purchasedBooks.size());
+        model.addAttribute("totalSubscription", subscriptionBooks.size());
+        model.addAttribute("totalFavorites", 0); // TODO: Implement favorites logic
+        model.addAttribute("totalCompleted", totalCompleted);
+
+        // Thông tin subscription
+        model.addAttribute("hasActiveSubscription", hasActiveSubscription);
+        model.addAttribute("subscriptionPackageName", subscriptionPackageName);
+        model.addAttribute("subscriptionEndDate", subscriptionEndDate);
 
         // Phân trang cho tab đang active
         int pageSize = 12;
@@ -450,6 +521,8 @@ public class UserController {
         } else {
             totalBooks = 0;
             totalPages = 0;
+            // Đảm bảo purchasedBooks luôn có trong model cho tab "all"
+            model.addAttribute("purchasedBooks", purchasedBooks);
         }
 
         // Thêm thống kê
@@ -516,4 +589,3 @@ public class UserController {
         return "user/favorites";
     }
 }
-

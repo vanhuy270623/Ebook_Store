@@ -13,12 +13,162 @@
         <!-- Header -->
         <div class="reader-header">
             <div class="book-info">
-                <img th:src="${book.coverImageUrl != null ? book.coverImageUrl : '/images/default-cover.jpg'}"
+                <img th:src="@{/uploads/covers/{cover}(cover=${book.coverImage ?: 'default-cover.jpg'})}"
                      alt="Book Cover" class="book-cover"
-                     onerror="this.src='/images/default-cover.jpg'">
-                <div class="book-details">
+                     th:onerror="this.src='@{/images/default-cover.jpg}'">
+                <div class="book-details"><!DOCTYPE html>
+                    <html lang="vi" xmlns:th="http://www.thymeleaf.org">
+                    <p th:text="${book.author?.name ?: 'Unknown Author'}">Tác Giả</p>
+                        <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title th:text="${book.title + ' - Reader'}">Universal Reader</title>
+
+
+                    </head>
+                    <body>
+                    <div class="reader-container">
+                        <!-- Header -->
+                        <div class="reader-header">
+                            <div class="book-info">
+                                <img th:src="${book.coverImageUrl != null ? book.coverImageUrl : '/images/default-cover.jpg'}"
+                                     alt="Book Cover" class="book-cover"
+                                     onerror="this.src='/images/default-cover.jpg'">
+                                <div class="book-details">
+                                    <h3 th:text="${book.title}">Tên Sách</h3>
+                                    <p  th:text="${book.authorNames?: 'Unknown Author'}">Tác Giả</p>
+                                    <div class="book-stats">
+                                        <div class="stat-item">
+                                            <i class="fas fa-eye"></i>
+                                            <span th:text="${book.viewCount ?: 0} + ' lượt xem'">0 lượt xem</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i class="fas fa-star"></i>
+                                            <span th:text="${book.averageRating ?: 0} + '/5'">0/5</span>
+                                        </div>
+                                        <div class="stat-item" th:if="${book.pages}">
+                                            <i class="fas fa-file-alt"></i>
+                                            <span th:text="${book.pages} + ' trang'">0 trang</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="reader-actions">
+                                <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="btn btn-light">
+                                    <i class="fas fa-arrow-left"></i> Quay lại
+                                </a>
+                                <button class="btn btn-light" onclick="showBookmarks()">
+                                    <i class="fas fa-bookmark"></i> Bookmarks
+                                </button>
+                                <button class="btn btn-light" onclick="shareBook()">
+                                    <i class="fas fa-share"></i> Chia sẻ
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="main-content">
+                            <!-- Format Selector -->
+                            <div class="format-selector">
+                                <h2 class="format-title">Chọn định dạng để đọc</h2>
+                                <p class="format-description">
+                                    Sách này có thể đọc ở nhiều định dạng khác nhau. Hãy chọn định dạng phù hợp với thiết bị và sở thích của bạn.
+                                </p>
+
+                                <div class="format-options" id="formatOptions">
+                                    <!-- PDF Option -->
+                                    <div class="format-card" id="pdfCard" onclick="openReader('pdf')">
+                                        <i class="fas fa-file-pdf format-icon"></i>
+                                        <div class="format-name">PDF Reader</div>
+                                        <div class="format-details">
+                                            Định dạng gốc với layout cố định<br>
+                                            Phù hợp với máy tính và tablet
+                                        </div>
+                                    </div>
+
+                                    <!-- EPUB Option -->
+                                    <div class="format-card" id="epubCard" onclick="openReader('epub')">
+                                        <i class="fas fa-book-open format-icon"></i>
+                                        <div class="format-name">EPUB Reader</div>
+                                        <div class="format-details">
+                                            Định dạng linh hoạt, có thể tùy chỉnh<br>
+                                            Phù hợp với điện thoại và e-reader
+                                        </div>
+                                    </div>
+
+                                    <!-- Auto-detect Option -->
+                                    <div class="format-card available" onclick="openReader('auto')">
+                                        <i class="fas fa-magic format-icon"></i>
+                                        <div class="format-name">Auto Reader</div>
+                                        <div class="format-details">
+                                            Tự động chọn định dạng tốt nhất<br>
+                                            Khuyên dùng cho lần đầu đọc
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reading History -->
+                            <div class="reading-history" th:if="${progress}">
+                                <h3 class="history-title">
+                                    <i class="fas fa-history"></i> Lịch sử đọc
+                                </h3>
+                                <div class="progress-card">
+                                    <div class="progress-info">
+                                        <span>Tiến độ đọc</span>
+                                        <span th:text="${progress.progressPercentage != null ? #numbers.formatDecimal(progress.progressPercentage, 1, 1) + '%' : '0%'}">0%</span>
+                                    </div>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" th:style="'width: ' + (${progress.progressPercentage ?: 0}) + '%'"></div>
+                                    </div>
+                                    <div class="progress-info">
+                        <span th:if="${progress != null}">
+                            Vị trí <span th:text="${progress.lastReadLocation ?: 'Chưa đọc'}">page-1</span>
+                            <span th:if="${book.pages}">
+                                / <span th:text="${book.pages}">300</span> trang
+                            </span>
+                        </span>
+                                        <span th:if="${progress.lastReadAt}">
+                            <i class="fas fa-clock"></i>
+                            <span th:text="${#temporals.format(progress.lastReadAt, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</span>
+                        </span>
+                                    </div>
+                                    <div class="last-read" th:if="${progress.createdAt}">
+                                        Bắt đầu đọc từ <span th:text="${#temporals.format(progress.createdAt, 'dd/MM/yyyy')}">01/01/2024</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="reading-history" th:unless="${progress}">
+                                <h3 class="history-title">
+                                    <i class="fas fa-book"></i> Sách mới
+                                </h3>
+                                <div class="progress-card">
+                                    <div class="no-progress">
+                                        <i class="fas fa-star" style="color: #ffd700; margin-right: 8px;"></i>
+                                        Bạn chưa đọc cuốn sách này. Hãy bắt đầu cuộc phiêu lưu!
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+                    <!-- Data initialization -->
+                    <script th:inline="javascript">
+                        window.readerData = {
+                            bookId: /*[[${book.bookId}]]*/ 1,
+                            bookTitle: /*[[${book.title}]]*/ 'Tên sách',
+                            availableAssets: /*[[${@bookAssetService.getBookAssetsByBookId(book.bookId)}]]*/ []
+                        };
+                    </script>
+                    <!-- Page specific script -->
+                    <script th:src="@{/user_template/js/user-reader.js}"></script>
+                    </body>
+                    </html>
                     <h3 th:text="${book.title}">Tên Sách</h3>
-                    <p  th:text="${book.authorNames?: 'Unknown Author'}">Tác Giả</p>
+                    <p th:text="${book.firstAuthorName}">Tác Giả</p>
                     <div class="book-stats">
                         <div class="stat-item">
                             <i class="fas fa-eye"></i>
@@ -104,15 +254,9 @@
                         <div class="progress-bar" th:style="'width: ' + (${progress.progressPercentage ?: 0}) + '%'"></div>
                     </div>
                     <div class="progress-info">
-                        <span th:if="${progress != null}">
-                            Vị trí <span th:text="${progress.lastReadLocation ?: 'Chưa đọc'}">page-1</span>
-                            <span th:if="${book.pages}">
-                                / <span th:text="${book.pages}">300</span> trang
-                            </span>
-                        </span>
                         <span th:if="${progress.lastReadAt}">
                             <i class="fas fa-clock"></i>
-                            <span th:text="${#temporals.format(progress.lastReadAt, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</span>
+                            Lần đọc cuối: <span th:text="${#temporals.format(progress.lastReadAt, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</span>
                         </span>
                     </div>
                     <div class="last-read" th:if="${progress.createdAt}">
@@ -137,16 +281,151 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 
-    <!-- Data initialization -->
     <script th:inline="javascript">
-        window.readerData = {
-            bookId: /*[[${book.bookId}]]*/ 1,
-            bookTitle: /*[[${book.title}]]*/ 'Tên sách',
-            availableAssets: /*[[${@bookAssetService.getBookAssetsByBookId(book.bookId)}]]*/ []
-        };
+        // Variables from Thymeleaf
+        const bookId = /*[[${book.bookId}]]*/ 1;
+        const availableAssets = /*[[${@bookAssetService.getBookAssetsByBookId(book.bookId)}]]*/ [];
+
+        // Check available formats when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAvailableFormats();
+        });
+
+        function checkAvailableFormats() {
+            // This would typically be done server-side, but for demo purposes:
+            const pdfCard = document.getElementById('pdfCard');
+            const epubCard = document.getElementById('epubCard');
+
+            // Assume both formats are available for now
+            // In real implementation, check availableAssets array
+            let hasPDF = false;
+            let hasEPUB = false;
+
+            // Check asset types (this would be populated from Thymeleaf)
+            if (availableAssets && availableAssets.length > 0) {
+                availableAssets.forEach(asset => {
+                    if (asset.assetType === 'PDF') hasPDF = true;
+                    if (asset.assetType === 'EPUB') hasEPUB = true;
+                });
+            } else {
+                // Default for demo - assume PDF is available
+                hasPDF = true;
+            }
+
+            if (hasPDF) {
+                pdfCard.classList.add('available');
+            } else {
+                pdfCard.classList.add('unavailable');
+                pdfCard.onclick = () => alert('File PDF không khả dụng cho sách này');
+            }
+
+            if (hasEPUB) {
+                epubCard.classList.add('available');
+            } else {
+                epubCard.classList.add('unavailable');
+                epubCard.onclick = () => alert('File EPUB không khả dụng cho sách này');
+            }
+        }
+
+        function openReader(format) {
+            // Add loading state
+            document.getElementById('formatOptions').classList.add('loading');
+
+            let url;
+            switch(format) {
+                case 'pdf':
+                    url = `/reading/pdf/${bookId}`;
+                    break;
+                case 'epub':
+                    url = `/reading/epub/${bookId}`;
+                    break;
+                case 'auto':
+                default:
+                    url = `/reading/book/${bookId}`;
+                    break;
+            }
+
+            // Navigate to reader
+            window.location.href = url;
+        }
+
+        function showBookmarks() {
+            const bookmarks = getBookmarks();
+            if (bookmarks.length === 0) {
+                alert('Bạn chưa có bookmark nào cho cuốn sách này.');
+                return;
+            }
+
+            let message = 'Bookmarks của bạn:\n\n';
+            bookmarks.forEach((bookmark, index) => {
+                const date = new Date(bookmark.timestamp).toLocaleDateString('vi-VN');
+                message += `${index + 1}. `;
+                if (bookmark.page) {
+                    message += `Trang ${bookmark.page}`;
+                } else if (bookmark.percentage) {
+                    message += `${bookmark.percentage}%`;
+                }
+                message += ` - ${date}`;
+                if (bookmark.note) {
+                    message += `\n   "${bookmark.note}"`;
+                }
+                message += '\n\n';
+            });
+
+            alert(message);
+        }
+
+        function getBookmarks() {
+            try {
+                const stored = localStorage.getItem(`bookmarks_${bookId}`);
+                return stored ? JSON.parse(stored) : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function shareBook() {
+            if (navigator.share) {
+                navigator.share({
+                    title: /*[[${book.title}]]*/ 'Tên sách',
+                    text: 'Tôi đang đọc cuốn sách này, rất hay!',
+                    url: window.location.href
+                });
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                const url = window.location.href;
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('Đã copy link sách vào clipboard!');
+                }).catch(() => {
+                    prompt('Copy link này để chia sẻ:', url);
+                });
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName.toLowerCase() === 'input') return;
+
+            switch(e.key) {
+                case '1':
+                    openReader('pdf');
+                    break;
+                case '2':
+                    openReader('epub');
+                    break;
+                case '3':
+                case 'Enter':
+                    openReader('auto');
+                    break;
+                case 'b':
+                    showBookmarks();
+                    break;
+                case 'Escape':
+                    window.history.back();
+                    break;
+            }
+        });
     </script>
-    <!-- Page specific script -->
-    <script th:src="@{/user_template/js/user-reader.js}"></script>
 </body>
 </html>
 

@@ -48,9 +48,9 @@ public class ReadingController {
      */
     @GetMapping("/book/{bookId}")
     public String openBook(@PathVariable String bookId,
-                          Authentication authentication,
-                          Model model,
-                          RedirectAttributes redirectAttributes) {
+                           Authentication authentication,
+                           Model model,
+                           RedirectAttributes redirectAttributes) {
         try {
             log.info("Opening book with ID: {}", bookId);
 
@@ -80,7 +80,7 @@ public class ReadingController {
 
             BookAsset readableAsset = assets.stream()
                     .filter(asset -> BookAsset.FileType.PDF.equals(asset.getFileType()) ||
-                                   BookAsset.FileType.EPUB.equals(asset.getFileType()))
+                            BookAsset.FileType.EPUB.equals(asset.getFileType()))
                     .findFirst()
                     .orElse(null);
 
@@ -171,9 +171,9 @@ public class ReadingController {
      */
     @GetMapping("/pdf/{bookId}")
     public String pdfViewer(@PathVariable String bookId,
-                           Authentication authentication,
-                           Model model,
-                           RedirectAttributes redirectAttributes) {
+                            Authentication authentication,
+                            Model model,
+                            RedirectAttributes redirectAttributes) {
         return prepareReaderView(bookId, "PDF", authentication, model, redirectAttributes, "user/reading/pdf-viewer");
     }
 
@@ -182,9 +182,9 @@ public class ReadingController {
      */
     @GetMapping("/epub/{bookId}")
     public String epubReader(@PathVariable String bookId,
-                            Authentication authentication,
-                            Model model,
-                            RedirectAttributes redirectAttributes) {
+                             Authentication authentication,
+                             Model model,
+                             RedirectAttributes redirectAttributes) {
         return prepareReaderView(bookId, "EPUB", authentication, model, redirectAttributes, "user/reading/epub-viewer");
     }
 
@@ -193,9 +193,9 @@ public class ReadingController {
      */
     @GetMapping("/reader/{bookId}")
     public String reader(@PathVariable String bookId,
-                        Authentication authentication,
-                        Model model,
-                        RedirectAttributes redirectAttributes) {
+                         Authentication authentication,
+                         Model model,
+                         RedirectAttributes redirectAttributes) {
         // Redirect đến /choose-format để kiểm tra số lượng file và tự động chọn
         return "redirect:/reading/choose-format/" + bookId;
     }
@@ -207,9 +207,9 @@ public class ReadingController {
      */
     @GetMapping("/choose-format/{bookId}")
     public String chooseFormat(@PathVariable String bookId,
-                              Authentication authentication,
-                              Model model,
-                              RedirectAttributes redirectAttributes) {
+                               Authentication authentication,
+                               Model model,
+                               RedirectAttributes redirectAttributes) {
         try {
             User user = getCurrentUser(authentication);
             if (user == null) {
@@ -230,7 +230,7 @@ public class ReadingController {
             // Lọc các file đọc được
             List<BookAsset> readableAssets = assets.stream()
                     .filter(asset -> BookAsset.FileType.PDF.equals(asset.getFileType()) ||
-                                   BookAsset.FileType.EPUB.equals(asset.getFileType()))
+                            BookAsset.FileType.EPUB.equals(asset.getFileType()))
                     .toList();
 
             if (readableAssets.isEmpty()) {
@@ -301,10 +301,10 @@ public class ReadingController {
     @PostMapping("/api/progress/{bookId}")
     @ResponseBody
     public String saveProgress(@PathVariable String bookId,
-                              @RequestParam int currentPage,
-                              @RequestParam int totalPages,
-                              @RequestParam(required = false) String bookmarkData,
-                              Authentication authentication) {
+                               @RequestParam int currentPage,
+                               @RequestParam int totalPages,
+                               @RequestParam(required = false) String bookmarkData,
+                               Authentication authentication) {
         try {
             log.info("=== SAVE PROGRESS API CALLED ===");
             log.info("bookId: {}, currentPage: {}, totalPages: {}, bookmarkData: {}",
@@ -410,11 +410,11 @@ public class ReadingController {
     @PostMapping("/api/bookmarks/{bookId}")
     @ResponseBody
     public String addBookmark(@PathVariable String bookId,
-                             @RequestParam String location,
-                             @RequestParam(required = false) Integer pageNumber,
-                             @RequestParam(required = false) Float percentage,
-                             @RequestParam(required = false) String note,
-                             Authentication authentication) {
+                              @RequestParam String location,
+                              @RequestParam(required = false) Integer pageNumber,
+                              @RequestParam(required = false) Float percentage,
+                              @RequestParam(required = false) String note,
+                              Authentication authentication) {
         try {
             log.info("=== ADD BOOKMARK REQUEST ===");
             log.info("bookId: {}, location: {}, pageNumber: {}, percentage: {}, note: {}",
@@ -449,11 +449,11 @@ public class ReadingController {
             log.info("Progress ID: {}", progress.getProgressId());
 
             readingProgressService.addBookmark(
-                progress.getProgressId(),
-                location,
-                pageNumber,
-                percentage,
-                note
+                    progress.getProgressId(),
+                    location,
+                    pageNumber,
+                    percentage,
+                    note
             );
 
             log.info("=== BOOKMARK ADDED SUCCESSFULLY ===");
@@ -470,8 +470,8 @@ public class ReadingController {
     @DeleteMapping("/api/bookmarks/{bookId}/{bookmarkId}")
     @ResponseBody
     public String removeBookmark(@PathVariable String bookId,
-                                @PathVariable String bookmarkId,
-                                Authentication authentication) {
+                                 @PathVariable String bookmarkId,
+                                 Authentication authentication) {
         try {
             User user = getCurrentUser(authentication);
             if (user == null) {
@@ -504,7 +504,7 @@ public class ReadingController {
     @GetMapping("/api/bookmarks/{bookId}")
     @ResponseBody
     public List<ReadingProgress.BookmarkData> getBookmarks(@PathVariable String bookId,
-                                                          Authentication authentication) {
+                                                           Authentication authentication) {
         try {
             User user = getCurrentUser(authentication);
             if (user == null) {
@@ -548,7 +548,7 @@ public class ReadingController {
      * Helper method to prepare reader view
      */
     private String prepareReaderView(String bookId, String expectedType, Authentication authentication,
-                                   Model model, RedirectAttributes redirectAttributes, String viewName) {
+                                     Model model, RedirectAttributes redirectAttributes, String viewName) {
         try {
             User user = getCurrentUser(authentication);
             if (user == null) {
@@ -628,7 +628,7 @@ public class ReadingController {
     private boolean canUserAccessBook(User user, Book book) {
         // Admin có thể đọc mọi sách
         if (user.getRole() != null && user.getRole().getRoleName() != null &&
-            user.getRole().getRoleName().name().equals("ADMIN")) {
+                user.getRole().getRoleName().name().equals("ADMIN")) {
             return true;
         }
 

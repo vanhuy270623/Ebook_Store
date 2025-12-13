@@ -1,18 +1,29 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Thư viện sách của bạn - EbookStore">
     <title>Thư viện của tôi - EbookStore</title>
+
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="alternate icon" type="image/png" th:href="@{/shared/images/book.png}">
+
+    <!-- Bootstrap 5 CSS -->
     <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
+
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/homepage.css}">
     <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/library.css}">
 </head>
-<body>
+<body class="library-page">
+
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
         <div class="container">
@@ -30,23 +41,49 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/books">Sách</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/categories">Danh mục</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/subscription/plans">Gói VIP</a>
+                    </li>
+
+                    <!-- User Dropdown -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img th:if="${currentUser != null && currentUser.avatarUrl != null}"
-                                 th:src="@{${currentUser.avatarUrl}}"
+                            <img th:if="${user.avatarUrl != null}"
+                                 th:src="@{${user.avatarUrl}}"
                                  alt="Avatar"
                                  class="rounded-circle me-2"
-                                 style="width: 32px; height: 32px; object-fit: cover;">
-                            <i th:if="${currentUser == null || currentUser.avatarUrl == null}"
-                               class="fas fa-user-circle me-2" style="font-size: 32px;"></i>
-                            <span sec:authentication="principal.fullName">Người dùng</span>
+                                 style="width: 32px; height: 32px; object-fit: cover;"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                            <i th:if="${user.avatarUrl == null}"
+                               class="fas fa-user-circle me-2"
+                               style="font-size: 32px;"></i>
+                            <span th:text="${user.fullName}">Người dùng</span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" th:href="@{/user/dashboard}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-                            <li><a class="dropdown-item" th:href="@{/user/profile}"><i class="fas fa-user-edit me-2"></i>Hồ sơ</a></li>
-                            <li><a class="dropdown-item" th:href="@{/user/orders}"><i class="fas fa-shopping-bag me-2"></i>Đơn hàng</a></li>
-                            <li><a class="dropdown-item active" th:href="@{/user/library}"><i class="fas fa-book-open me-2"></i>Thư viện</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" th:href="@{/user/dashboard}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/user/profile}">
+                                    <i class="fas fa-user-edit me-2"></i>Hồ sơ
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/user/orders}">
+                                    <i class="fas fa-shopping-bag me-2"></i>Đơn hàng
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item active" th:href="@{/user/library}">
+                                    <i class="fas fa-book me-2"></i>Thư viện
+                                </a>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form th:action="@{/auth/logout}" method="post" class="d-inline">
@@ -58,8 +95,9 @@
                             </li>
                         </ul>
                     </li>
+
                     <li class="nav-item">
-                        <a class="nav-link" href="/cart">
+                        <a class="nav-link position-relative" href="/cart" id="cartLink">
                             <i class="fas fa-shopping-cart"></i>
                         </a>
                     </li>
@@ -68,275 +106,587 @@
         </div>
     </nav>
 
-    <!-- Library Content -->
-    <section class="section py-5">
+    <!-- Hero Banner Section -->
+    <section class="hero-banner">
         <div class="container">
-            <!-- Page Header -->
-            <div class="mb-4">
-                <h1 class="h2 mb-2">
-                    <i class="fas fa-book-open text-primary me-2"></i>
-                    Thư viện của tôi
-                </h1>
-                <p class="text-muted">Quản lý sách đang đọc và sách đã mua</p>
-            </div>
+            <div class="row align-items-center">
+                <div class="col-lg-7">
+                    <div class="hero-content">
+                        <h1 class="hero-title animate__animated animate__fadeInUp">
+                            <i class="fas fa-book-open me-2"></i>Thư viện của tôi
+                        </h1>
+                        <p class="hero-subtitle animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                            Quản lý và theo dõi tiến độ đọc sách của bạn
+                        </p>
 
-            <!-- Statistics Cards -->
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="stats-card">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h3 class="mb-0" th:text="${totalReadingBooks}">0</h3>
-                                <p class="mb-0 opacity-75">Sách đang đọc</p>
+                        <!-- Library Stats -->
+                        <div class="library-stats-grid animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                            <div class="stat-card">
+                                <div class="stat-icon reading">
+                                    <i class="fas fa-book-reader"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-number" th:text="${totalReading}">0</div>
+                                    <div class="stat-label">Đang đọc</div>
+                                </div>
                             </div>
-                            <i class="fas fa-book-reader fa-3x opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="stats-card secondary">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h3 class="mb-0" th:text="${totalPurchasedBooks}">0</h3>
-                                <p class="mb-0 opacity-75">Sách đã mua</p>
+                            <div class="stat-card">
+                                <div class="stat-icon purchased">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-number" th:text="${totalPurchased}">0</div>
+                                    <div class="stat-label">Đã mua</div>
+                                </div>
                             </div>
-                            <i class="fas fa-shopping-bag fa-3x opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tabs Navigation -->
-            <ul class="nav nav-tabs mb-4" id="libraryTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link" th:classappend="${activeTab == 'reading'} ? 'active'"
-                       th:href="@{/user/library(tab='reading')}"
-                       id="reading-tab">
-                        <i class="fas fa-book-reader me-2"></i>Sách đang đọc
-                        <span class="badge bg-primary ms-2" th:text="${totalReadingBooks}">0</span>
-                    </a>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link" th:classappend="${activeTab == 'purchased'} ? 'active'"
-                       th:href="@{/user/library(tab='purchased')}"
-                       id="purchased-tab">
-                        <i class="fas fa-shopping-bag me-2"></i>Sách đã mua
-                        <span class="badge bg-success ms-2" th:text="${totalPurchasedBooks}">0</span>
-                    </a>
-                </li>
-            </ul>
-
-            <!-- Tab Content -->
-            <div class="tab-content" id="libraryTabContent">
-                <!-- Reading Books Tab -->
-                <div class="tab-pane fade" th:classappend="${activeTab == 'reading'} ? 'show active'" id="reading" role="tabpanel">
-                    <!-- Empty State -->
-                    <div th:if="${readingProgresses == null || readingProgresses.isEmpty()}" class="card border-0 shadow-sm">
-                        <div class="card-body text-center py-5">
-                            <i class="fas fa-book-open fa-4x text-muted mb-3 opacity-50"></i>
-                            <h5 class="text-muted">Chưa có sách đang đọc</h5>
-                            <p class="text-muted">Hãy bắt đầu đọc sách ngay!</p>
-                            <a href="/books" class="btn btn-primary mt-3">
-                                <i class="fas fa-book me-2"></i>Khám phá sách
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Reading Progress Cards -->
-                    <div th:if="${readingProgresses != null && !readingProgresses.isEmpty()}" class="row g-4">
-                        <div th:each="progress : ${readingProgresses}" class="col-lg-4 col-md-6">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="card-body">
-                                    <div class="d-flex mb-3">
-                                        <img th:if="${progress.book.coverImageUrl != null}"
-                                             th:src="@{${progress.book.coverImageUrl}}"
-                                             alt="Book Cover"
-                                             class="rounded"
-                                             style="width: 80px; height: 120px; object-fit: cover;">
-                                        <div th:if="${progress.book.coverImageUrl == null}"
-                                             class="rounded bg-secondary d-flex align-items-center justify-content-center"
-                                             style="width: 80px; height: 120px;">
-                                            <i class="fas fa-book fa-2x text-white"></i>
-                                        </div>
-                                        <div class="ms-3 flex-grow-1">
-                                            <h6 class="mb-1" th:text="${progress.book.title}">Tên sách</h6>
-                                            <p class="text-muted small mb-2" th:text="${progress.book.firstAuthorName}">Tác giả</p>
-                                            <span class="badge bg-primary" th:text="${progress.book.bookCategory?.categoryName ?: 'Khác'}">Thể loại</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Progress Bar -->
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between mb-1">
-                                            <small class="text-muted">Tiến độ đọc</small>
-                                            <small class="text-primary fw-bold" th:text="${progress.progressPercentage != null ? progress.progressPercentage + '%' : '0%'}">0%</small>
-                                        </div>
-                                        <div class="progress" style="height: 8px;">
-                                            <div class="progress-bar" role="progressbar"
-                                                 th:style="'width: ' + ${progress.progressPercentage != null ? progress.progressPercentage : 0} + '%'"
-                                                 th:attr="aria-valuenow=${progress.progressPercentage != null ? progress.progressPercentage : 0}"
-                                                 aria-valuemin="0"
-                                                 aria-valuemax="100"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Reading Info -->
-                                    <div class="small text-muted mb-3">
-                                        <div class="d-flex justify-content-between mb-1">
-                                            <span><i class="fas fa-bookmark me-1"></i> Vị trí đọc:</span>
-                                            <span th:text="${progress.lastReadLocation != null ? progress.lastReadLocation : 'Chưa đọc'}">page-1</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between">
-                                            <span><i class="fas fa-clock me-1"></i> Lần đọc cuối:</span>
-                                            <span th:text="${progress.lastReadAt != null ? #temporals.format(progress.lastReadAt, 'dd/MM/yyyy') : 'Chưa có'}">--</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Status Badge -->
-                                    <div class="mb-3">
-                                        <!-- Ưu tiên check isCompleted trước -->
-                                        <span th:if="${progress.isCompleted != null && progress.isCompleted}" class="badge bg-success">
-                                            <i class="fas fa-check-circle me-1"></i> Đã hoàn thành
-                                        </span>
-                                        <!-- Đang đọc: có progress > 0 và chưa hoàn thành -->
-                                        <span th:if="${(progress.isCompleted == null || !progress.isCompleted) && progress.progressPercentage != null && progress.progressPercentage > 0}" class="badge bg-warning text-dark">
-                                            <i class="fas fa-book-reader me-1"></i> Đang đọc
-                                        </span>
-                                        <!-- Chưa bắt đầu: progress = 0 hoặc null -->
-                                        <span th:if="${(progress.isCompleted == null || !progress.isCompleted) && (progress.progressPercentage == null || progress.progressPercentage == 0)}" class="badge bg-secondary">
-                                            <i class="fas fa-bookmark me-1"></i> Chưa bắt đầu
-                                        </span>
-                                    </div>
-
-                                    <!-- Actions -->
-                                    <div class="d-grid gap-2">
-                                        <a th:href="@{/reading/book/{id}(id=${progress.book.bookId})}" class="btn btn-primary btn-sm">
-                                            <!-- Icon và text dựa vào trạng thái -->
-                                            <i th:if="${progress.isCompleted != null && progress.isCompleted}" class="fas fa-redo-alt"></i>
-                                            <i th:if="${(progress.isCompleted == null || !progress.isCompleted) && progress.progressPercentage != null && progress.progressPercentage > 0}" class="fas fa-book-reader"></i>
-                                            <i th:if="${(progress.isCompleted == null || !progress.isCompleted) && (progress.progressPercentage == null || progress.progressPercentage == 0)}" class="fas fa-play"></i>
-
-                                            <span th:if="${progress.isCompleted != null && progress.isCompleted}"> Đọc lại</span>
-                                            <span th:if="${(progress.isCompleted == null || !progress.isCompleted) && progress.progressPercentage != null && progress.progressPercentage > 0}"> Đọc tiếp</span>
-                                            <span th:if="${(progress.isCompleted == null || !progress.isCompleted) && (progress.progressPercentage == null || progress.progressPercentage == 0)}"> Bắt đầu đọc</span>
-                                        </a>
-                                    </div>
+                            <div class="stat-card">
+                                <div class="stat-icon subscription">
+                                    <i class="fas fa-crown"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-number" th:text="${totalSubscription}">0</div>
+                                    <div class="stat-label">Gói VIP</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon favorite">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-number" th:text="${totalFavorites}">0</div>
+                                    <div class="stat-label">Yêu thích</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon completed">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-number" th:text="${totalCompleted}">0</div>
+                                    <div class="stat-label">Hoàn thành</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Purchased Books Tab -->
-                <div class="tab-pane fade" th:classappend="${activeTab == 'purchased'} ? 'show active'" id="purchased" role="tabpanel">
-                    <!-- Empty State -->
-                    <div th:if="${purchasedBooks == null || purchasedBooks.isEmpty()}" class="card border-0 shadow-sm">
-                        <div class="card-body text-center py-5">
-                            <i class="fas fa-shopping-bag fa-4x text-muted mb-3 opacity-50"></i>
-                            <h5 class="text-muted">Chưa có sách đã mua</h5>
-                            <p class="text-muted">Khám phá và mua sách ngay!</p>
-                            <a href="/books" class="btn btn-primary mt-3">
-                                <i class="fas fa-book me-2"></i>Mua sách
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Purchased Books Cards -->
-                    <div th:if="${purchasedBooks != null && !purchasedBooks.isEmpty()}" class="row g-4">
-                        <div th:each="book : ${purchasedBooks}" class="col-lg-3 col-md-4 col-sm-6">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="position-relative">
-                                    <img th:if="${book.coverImageUrl != null}"
-                                         th:src="@{${book.coverImageUrl}}"
-                                         alt="Book Cover"
-                                         class="card-img-top"
-                                         style="height: 280px; object-fit: cover;">
-                                    <div th:if="${book.coverImageUrl == null}"
-                                         class="card-img-top bg-secondary d-flex align-items-center justify-content-center"
-                                         style="height: 280px;">
-                                        <i class="fas fa-book fa-4x text-white"></i>
-                                    </div>
-                                    <span class="badge bg-success position-absolute top-0 end-0 m-2">
-                                        <i class="fas fa-check-circle me-1"></i>Đã sở hữu
-                                    </span>
-                                </div>
-                                <div class="card-body">
-                                    <h6 class="card-title mb-2" th:text="${book.title}">Tên sách</h6>
-                                    <p class="card-text text-muted small mb-2" th:text="${book.firstAuthorName}">Tác giả</p>
-                                    <div class="mb-2">
-                                        <span class="badge bg-light text-dark" th:text="${book.bookCategory?.categoryName ?: 'Khác'}">Thể loại</span>
-                                    </div>
-                                    <div class="d-grid gap-2">
-                                        <a th:href="@{/reading/book/{id}(id=${book.bookId})}" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-book-reader me-1"></i>Đọc ngay
-                                        </a>
-                                        <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="btn btn-outline-secondary btn-sm">
-                                            <i class="fas fa-info-circle me-1"></i>Chi tiết
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="col-lg-5 d-none d-lg-block">
+                    <img th:src="@{/shared/images/book.png}" alt="Books" class="img-fluid animate__animated animate__fadeInRight">
                 </div>
             </div>
-
-            <!-- Pagination -->
-            <nav th:if="${totalPages > 1}" aria-label="Library pagination" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
-                        <a class="page-link" th:href="@{/user/library(tab=${activeTab}, page=${currentPage - 1})}" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                    <li th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
-                        class="page-item"
-                        th:classappend="${i == currentPage} ? 'active'">
-                        <a class="page-link" th:href="@{/user/library(tab=${activeTab}, page=${i})}" th:text="${i + 1}">1</a>
-                    </li>
-                    <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
-                        <a class="page-link" th:href="@{/user/library(tab=${activeTab}, page=${currentPage + 1})}" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-white py-5 mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-4 mb-4 mb-lg-0">
-                    <h5 class="mb-3"><i class="fas fa-book-reader me-2"></i>EbookStore</h5>
-                    <p class="text-white-50">Thư viện sách điện tử hàng đầu Việt Nam với hơn 10,000+ đầu sách đa thể loại.</p>
-                </div>
-                <div class="col-lg-4 mb-4 mb-lg-0">
-                    <h5 class="mb-3">Liên kết</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="/books" class="text-white-50 text-decoration-none">Sách</a></li>
-                        <li><a href="/user/library" class="text-white-50 text-decoration-none">Thư viện</a></li>
-                        <li><a href="/user/orders" class="text-white-50 text-decoration-none">Đơn hàng</a></li>
-                    </ul>
-                </div>
-                <div class="col-lg-4">
-                    <h5 class="mb-3">Liên hệ</h5>
-                    <ul class="list-unstyled text-white-50">
-                        <li><i class="fas fa-envelope me-2"></i>support@ebookstore.vn</li>
-                        <li><i class="fas fa-phone me-2"></i>0123 456 789</li>
-                    </ul>
+    <!-- Main Content -->
+    <div class="container pb-5">
+        <!-- Subscription Banner (nếu có gói đăng ký active) -->
+        <section th:if="${hasActiveSubscription}" class="section">
+            <div class="promo-banner subscription-active-banner">
+                <div class="promo-content">
+                    <h2 class="promo-title">
+                        <i class="fas fa-crown me-2"></i>
+                        Gói <span th:text="${subscriptionPackageName}">VIP</span> đang hoạt động
+                    </h2>
+                    <p class="promo-subtitle">
+                        Hết hạn: <span th:text="${#temporals.format(subscriptionEndDate, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                    </p>
+                    <a th:href="@{/subscription/my-subscriptions}" class="btn promo-btn">
+                        <i class="fas fa-cog me-2"></i>Quản lý gói
+                    </a>
                 </div>
             </div>
-            <hr class="my-4 bg-white opacity-25">
-            <div class="text-center text-white-50">
-                <p class="mb-0">&copy; 2025 EbookStore. All rights reserved.</p>
+        </section>
+
+        <!-- Continue Reading Section -->
+        <section th:if="${!readingBooks.isEmpty()}" class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-bookmark"></i>
+                    Tiếp tục đọc
+                </h2>
+                <a th:href="@{/user/library(tab='reading')}" class="section-link">
+                    Xem tất cả <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="row g-4">
+                <div th:each="progress, iterStat : ${readingBooks}" th:if="${iterStat.index < 8}" class="col-lg-3 col-md-4 col-sm-6">
+                    <a th:href="@{/reading/reader/{id}(id=${progress.book.bookId})}" class="book-card">
+                        <div class="book-cover">
+                            <img th:if="${progress.book.coverImageUrl != null}"
+                                 th:src="@{${progress.book.coverImageUrl}}"
+                                 th:alt="${progress.book.title}"
+                                 onerror="this.src='/shared/images/book.png'">
+                            <div th:if="${progress.book.coverImageUrl == null}"
+                                 class="bg-secondary d-flex align-items-center justify-content-center h-100 w-100 position-absolute top-0">
+                                <i class="fas fa-book fa-3x text-white"></i>
+                            </div>
+                            <span class="book-badge reading">Đang đọc</span>
+                            <div class="progress-overlay">
+                                <div class="reading-progress">
+                                    <div class="progress-bar" th:style="'width: ' + ${progress.progressPercentage != null ? progress.progressPercentage : 0} + '%'"></div>
+                                </div>
+                                <div class="progress-text" th:text="${progress.progressPercentage != null ? #numbers.formatDecimal(progress.progressPercentage, 1, 0) + '%' : '0%'}">0%</div>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title" th:text="${progress.book.title}">Tên sách</h3>
+                            <p class="book-author" th:text="${progress.book.firstAuthorName}">Tác giả</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Category Navigation -->
+        <section class="category-nav">
+            <ul class="category-list" id="libraryTabs" role="tablist">
+                <li class="category-item">
+                    <a href="#" th:classappend="${activeTab == 'all' || activeTab == null} ? 'active'"
+                       id="all-tab" data-bs-toggle="tab" data-bs-target="#all" role="tab">
+                        <i class="fas fa-th-large"></i>
+                        <span>Tất cả</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="#" th:classappend="${activeTab == 'purchased'} ? 'active'"
+                       id="purchased-tab" data-bs-toggle="tab" data-bs-target="#purchased" role="tab">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Đã mua (<span th:text="${totalPurchased}">0</span>)</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="#" th:classappend="${activeTab == 'subscription'} ? 'active'"
+                       id="subscription-tab" data-bs-toggle="tab" data-bs-target="#subscription" role="tab">
+                        <i class="fas fa-crown"></i>
+                        <span>Gói VIP (<span th:text="${totalSubscription}">0</span>)</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="#" th:classappend="${activeTab == 'reading'} ? 'active'"
+                       id="reading-tab" data-bs-toggle="tab" data-bs-target="#reading" role="tab">
+                        <i class="fas fa-book-reader"></i>
+                        <span>Đang đọc (<span th:text="${totalReading}">0</span>)</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="#" th:classappend="${activeTab == 'favorites'} ? 'active'"
+                       id="favorites-tab" data-bs-toggle="tab" data-bs-target="#favorites" role="tab">
+                        <i class="fas fa-heart"></i>
+                        <span>Yêu thích (<span th:text="${totalFavorites}">0</span>)</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="#" th:classappend="${activeTab == 'completed'} ? 'active'"
+                       id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" role="tab">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Hoàn thành (<span th:text="${totalCompleted}">0</span>)</span>
+                    </a>
+                </li>
+                <li class="category-item">
+                    <a href="#" th:classappend="${activeTab == 'free'} ? 'active'"
+                       id="free-tab" data-bs-toggle="tab" data-bs-target="#free" role="tab">
+                        <i class="fas fa-gift"></i>
+                        <span>Miễn phí</span>
+                    </a>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="libraryTabContent">
+            <!-- Tab: Tất cả -->
+            <div class="tab-pane fade" th:classappend="${activeTab == 'all' || activeTab == null} ? 'show active'" id="all" role="tabpanel">
+                <section class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-th-large"></i>
+                            Tất cả sách trong thư viện
+                        </h2>
+                    </div>
+                    <div class="row g-4">
+                    <!-- Sách đã mua -->
+                    <div th:each="book : ${purchasedBooks}" class="col-lg-3 col-md-4 col-sm-6">
+                        <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="book-card">
+                            <div class="book-cover">
+                                <img th:if="${book.coverImageUrl != null}"
+                                     th:src="@{${book.coverImageUrl}}"
+                                     th:alt="${book.title}"
+                                     onerror="this.src='/shared/images/book.png'">
+                                <div th:if="${book.coverImageUrl == null}"
+                                     class="bg-secondary d-flex align-items-center justify-content-center h-100 w-100 position-absolute top-0">
+                                    <i class="fas fa-book fa-3x text-white"></i>
+                                </div>
+                                <span class="book-badge badge-purchased">Đã mua</span>
+                            </div>
+                            <div class="book-info">
+                                <h3 class="book-title" th:text="${book.title}">Tên sách</h3>
+                                <p class="book-author" th:text="${book.firstAuthorName}">Tác giả</p>
+                                <div class="book-meta">
+                                    <div class="book-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span th:text="${book.averageRating != null ? #numbers.formatDecimal(book.averageRating, 1, 1) : '0.0'}">0.0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <!-- Sách từ gói đăng ký (nếu có) -->
+                    <div th:each="book : ${subscriptionBooks}" th:if="${hasActiveSubscription}" class="col-lg-3 col-md-4 col-sm-6">
+                        <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="book-card">
+                            <div class="book-cover">
+                                <img th:if="${book.coverImageUrl != null}"
+                                     th:src="@{${book.coverImageUrl}}"
+                                     th:alt="${book.title}"
+                                     onerror="this.src='/shared/images/book.png'">
+                                <div th:if="${book.coverImageUrl == null}"
+                                     class="bg-secondary d-flex align-items-center justify-content-center h-100 w-100 position-absolute top-0">
+                                    <i class="fas fa-book fa-3x text-white"></i>
+                                </div>
+                                <span class="book-badge subscription">VIP</span>
+                            </div>
+                            <div class="book-info">
+                                <h3 class="book-title" th:text="${book.title}">Tên sách</h3>
+                                <p class="book-author" th:text="${book.firstAuthorName}">Tác giả</p>
+                                <div class="book-meta">
+                                    <div class="book-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span th:text="${book.averageRating != null ? #numbers.formatDecimal(book.averageRating, 1, 1) : '0.0'}">0.0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    </div>
+                    <div th:if="${purchasedBooks.isEmpty() && subscriptionBooks.isEmpty()}" class="empty-state">
+                        <i class="fas fa-books"></i>
+                        <h4>Thư viện trống</h4>
+                        <p>Bạn chưa có sách nào. Hãy mua sách hoặc đăng ký gói để bắt đầu đọc!</p>
+                        <a th:href="@{/books}" class="btn btn-primary mt-3">
+                            <i class="fas fa-search me-2"></i>Khám phá sách
+                        </a>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Tab: Đã mua -->
+            <div class="tab-pane fade" th:classappend="${activeTab == 'purchased'} ? 'show active'" id="purchased" role="tabpanel">
+                <section class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-shopping-cart"></i>
+                            Sách đã mua
+                        </h2>
+                    </div>
+                    <div class="row g-4">
+                    <div th:each="book : ${purchasedBooks}" class="col-lg-3 col-md-4 col-sm-6">
+                        <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="book-card">
+                            <div class="book-cover">
+                                <img th:if="${book.coverImageUrl != null}"
+                                     th:src="@{${book.coverImageUrl}}"
+                                     th:alt="${book.title}"
+                                     onerror="this.src='/shared/images/book.png'">
+                                <div th:if="${book.coverImageUrl == null}"
+                                     class="bg-secondary d-flex align-items-center justify-content-center h-100 w-100 position-absolute top-0">
+                                    <i class="fas fa-book fa-3x text-white"></i>
+                                </div>
+                                <span class="book-badge purchased">Đã mua</span>
+                            </div>
+                            <div class="book-info">
+                                <h3 class="book-title" th:text="${book.title}">Tên sách</h3>
+                                <p class="book-author" th:text="${book.firstAuthorName}">Tác giả</p>
+                                <div class="book-meta">
+                                    <div class="book-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span th:text="${book.averageRating != null ? #numbers.formatDecimal(book.averageRating, 1, 1) : '0.0'}">0.0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    </div>
+                    <div th:if="${purchasedBooks.isEmpty()}" class="empty-state">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h4>Chưa có sách đã mua</h4>
+                        <p>Bạn chưa mua sách nào. Hãy khám phá kho sách phong phú của chúng tôi!</p>
+                        <a th:href="@{/books}" class="btn btn-primary mt-3">
+                            <i class="fas fa-search me-2"></i>Mua sách ngay
+                        </a>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Tab: Gói đăng ký -->
+            <div class="tab-pane fade" th:classappend="${activeTab == 'subscription'} ? 'show active'" id="subscription" role="tabpanel">
+                <section th:if="${hasActiveSubscription}" class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-crown"></i>
+                            Sách từ gói VIP
+                        </h2>
+                    </div>
+                    <div class="row g-4">
+                        <div th:each="book : ${subscriptionBooks}" class="col-lg-3 col-md-4 col-sm-6">
+                            <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="book-card">
+                                <div class="book-cover">
+                                    <img th:if="${book.coverImageUrl != null}"
+                                         th:src="@{${book.coverImageUrl}}"
+                                         th:alt="${book.title}"
+                                         onerror="this.src='/shared/images/book.png'">
+                                    <div th:if="${book.coverImageUrl == null}"
+                                         class="bg-secondary d-flex align-items-center justify-content-center h-100 w-100 position-absolute top-0">
+                                        <i class="fas fa-book fa-3x text-white"></i>
+                                    </div>
+                                    <span class="book-badge subscription">VIP</span>
+                                </div>
+                                <div class="book-info">
+                                    <h3 class="book-title" th:text="${book.title}">Tên sách</h3>
+                                    <p class="book-author" th:text="${book.firstAuthorName}">Tác giả</p>
+                                    <div class="book-meta">
+                                        <div class="book-rating">
+                                            <i class="fas fa-star"></i>
+                                            <span th:text="${book.averageRating != null ? #numbers.formatDecimal(book.averageRating, 1, 1) : '0.0'}">0.0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    <div th:if="${subscriptionBooks.isEmpty()}" class="empty-state">
+                        <i class="fas fa-book-open"></i>
+                        <h4>Không có sách trong gói</h4>
+                        <p>Hiện tại chưa có sách nào trong gói đăng ký của bạn.</p>
+                    </div>
+                </section>
+                <section th:if="${!hasActiveSubscription}" class="section">
+                    <div class="empty-state">
+                        <i class="fas fa-crown"></i>
+                        <h4>Chưa có gói đăng ký</h4>
+                        <p>Đăng ký gói VIP để truy cập hàng ngàn đầu sách chất lượng!</p>
+                        <a th:href="@{/subscription/plans}" class="btn btn-primary mt-3">
+                            <i class="fas fa-crown me-2"></i>Xem các gói
+                        </a>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Tab: Đang đọc -->
+            <div class="tab-pane fade" th:classappend="${activeTab == 'reading'} ? 'show active'" id="reading" role="tabpanel">
+                <section class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-book-reader"></i>
+                            Sách đang đọc
+                        </h2>
+                    </div>
+                    <div class="row g-4">
+                    <div th:each="progress : ${readingBooks}" class="col-lg-3 col-md-4 col-sm-6">
+                        <a th:href="@{/reading/reader/{id}(id=${progress.book.bookId})}" class="book-card">
+                            <div class="book-cover">
+                                <img th:if="${progress.book.coverImageUrl != null}"
+                                     th:src="@{${progress.book.coverImageUrl}}"
+                                     th:alt="${progress.book.title}"
+                                     onerror="this.src='/shared/images/book.png'">
+                                <div th:if="${progress.book.coverImageUrl == null}"
+                                     class="bg-secondary d-flex align-items-center justify-content-center h-100 w-100 position-absolute top-0">
+                                    <i class="fas fa-book fa-3x text-white"></i>
+                                </div>
+                                <span class="book-badge badge-reading">Đang đọc</span>
+                                <div class="progress-overlay">
+                                    <div class="reading-progress">
+                                        <div class="progress-bar" th:style="'width: ' + ${progress.progressPercentage != null ? progress.progressPercentage : 0} + '%'"></div>
+                                    </div>
+                                    <div class="progress-text" th:text="${progress.progressPercentage != null ? #numbers.formatDecimal(progress.progressPercentage, 1, 0) + '%' : '0%'}">0%</div>
+                                </div>
+                            </div>
+                            <div class="book-info">
+                                <h3 class="book-title" th:text="${progress.book.title}">Tên sách</h3>
+                                <p class="book-author" th:text="${progress.book.firstAuthorName}">Tác giả</p>
+                                <div class="book-meta">
+                                    <small class="text-muted" th:if="${progress.lastReadAt != null}">
+                                        <i class="fas fa-clock me-1"></i>
+                                        <span th:text="${#temporals.format(progress.lastReadAt, 'dd/MM/yyyy')}">01/01/2025</span>
+                                    </small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    </div>
+                    <div th:if="${readingBooks.isEmpty()}" class="empty-state">
+                        <i class="fas fa-book-reader"></i>
+                        <h4>Chưa có sách đang đọc</h4>
+                        <p>Bắt đầu đọc một cuốn sách để theo dõi tiến độ tại đây!</p>
+                        <a th:href="@{/books}" class="btn btn-primary mt-3">
+                            <i class="fas fa-search me-2"></i>Tìm sách để đọc
+                        </a>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Tab: Yêu thích -->
+            <div class="tab-pane fade" th:classappend="${activeTab == 'favorites'} ? 'show active'" id="favorites" role="tabpanel">
+                <section class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-heart"></i>
+                            Sách yêu thích
+                        </h2>
+                    </div>
+                    <div class="row g-4">
+                    <div th:each="progress : ${favoriteBooks}" class="col-lg-3 col-md-4 col-sm-6">
+                        <a th:href="@{/books/view/{id}(id=${progress.book.bookId})}" class="book-card">
+                            <div class="book-cover">
+                                <img th:if="${progress.book.coverImageUrl != null}"
+                                     th:src="@{${progress.book.coverImageUrl}}"
+                                     th:alt="${progress.book.title}"
+                                     onerror="this.src='/shared/images/book.png'">
+                                <div th:if="${progress.book.coverImageUrl == null}"
+                                     class="bg-secondary d-flex align-items-center justify-content-center h-100 w-100 position-absolute top-0">
+                                    <i class="fas fa-book fa-3x text-white"></i>
+                                </div>
+                                <div class="book-actions" style="opacity: 1;">
+                                    <button class="action-btn favorite active" title="Bỏ yêu thích">
+                                        <i class="fas fa-heart"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="book-info">
+                                <h3 class="book-title" th:text="${progress.book.title}">Tên sách</h3>
+                                <p class="book-author" th:text="${progress.book.firstAuthorName}">Tác giả</p>
+                                <div class="book-meta">
+                                    <div class="book-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span th:text="${progress.book.averageRating != null ? #numbers.formatDecimal(progress.book.averageRating, 1, 1) : '0.0'}">0.0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    </div>
+                    <div th:if="${favoriteBooks.isEmpty()}" class="empty-state">
+                        <i class="fas fa-heart"></i>
+                        <h4>Chưa có sách yêu thích</h4>
+                        <p>Đánh dấu sách yêu thích để dễ dàng tìm lại sau!</p>
+                        <a th:href="@{/books}" class="btn btn-primary mt-3">
+                            <i class="fas fa-search me-2"></i>Khám phá sách
+                        </a>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Tab: Đã đọc xong -->
+            <div class="tab-pane fade" th:classappend="${activeTab == 'completed'} ? 'show active'" id="completed" role="tabpanel">
+                <section class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-check-circle"></i>
+                            Sách đã hoàn thành
+                        </h2>
+                    </div>
+                    <div class="row g-4">
+                    <div th:each="progress : ${completedBooks}" class="col-lg-3 col-md-4 col-sm-6">
+                        <a th:href="@{/books/view/{id}(id=${progress.book.bookId})}" class="book-card">
+                            <div class="book-cover">
+                                <img th:if="${progress.book.coverImageUrl != null}"
+                                     th:src="@{${progress.book.coverImageUrl}}"
+                                     th:alt="${progress.book.title}"
+                                     onerror="this.src='/shared/images/book.png'">
+                                <div th:if="${progress.book.coverImageUrl == null}"
+                                     class="bg-secondary d-flex align-items-center justify-content-center h-100 w-100 position-absolute top-0">
+                                    <i class="fas fa-book fa-3x text-white"></i>
+                                </div>
+                                <span class="book-badge badge-completed">
+                                    <i class="fas fa-check me-1"></i>Hoàn thành
+                                </span>
+                            </div>
+                            <div class="book-info">
+                                <h3 class="book-title" th:text="${progress.book.title}">Tên sách</h3>
+                                <p class="book-author" th:text="${progress.book.firstAuthorName}">Tác giả</p>
+                                <div class="book-meta">
+                                    <div class="book-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span th:text="${progress.book.averageRating != null ? #numbers.formatDecimal(progress.book.averageRating, 1, 1) : '0.0'}">0.0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    </div>
+                    <div th:if="${completedBooks.isEmpty()}" class="empty-state">
+                        <i class="fas fa-check-circle"></i>
+                        <h4>Chưa có sách đọc xong</h4>
+                        <p>Hoàn thành một cuốn sách để hiển thị tại đây!</p>
+                        <a th:href="@{/user/library(tab='reading')}" class="btn btn-primary mt-3">
+                            <i class="fas fa-book-reader me-2"></i>Tiếp tục đọc
+                        </a>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Tab: Miễn phí -->
+            <div class="tab-pane fade" th:classappend="${activeTab == 'free'} ? 'show active'" id="free" role="tabpanel">
+                <section class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-gift"></i>
+                            Sách miễn phí
+                        </h2>
+                    </div>
+                    <div class="row g-4">
+                    <div th:each="book : ${freeBooks}" class="col-lg-3 col-md-4 col-sm-6">
+                        <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="book-card">
+                            <div class="book-cover">
+                                <img th:if="${book.coverImageUrl != null}"
+                                     th:src="@{${book.coverImageUrl}}"
+                                     th:alt="${book.title}"
+                                     onerror="this.src='/shared/images/book.png'">
+                                <div th:if="${book.coverImageUrl == null}"
+                                     class="bg-secondary d-flex align-items-center justify-content-center h-100 w-100 position-absolute top-0">
+                                    <i class="fas fa-book fa-3x text-white"></i>
+                                </div>
+                                <span class="book-badge free">Miễn phí</span>
+                            </div>
+                            <div class="book-info">
+                                <h3 class="book-title" th:text="${book.title}">Tên sách</h3>
+                                <p class="book-author" th:text="${book.firstAuthorName}">Tác giả</p>
+                                <div class="book-meta">
+                                    <div class="book-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span th:text="${book.averageRating != null ? #numbers.formatDecimal(book.averageRating, 1, 1) : '0.0'}">0.0</span>
+                                    </div>
+                                    <span class="text-success fw-bold">Miễn phí</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    </div>
+                    <div th:if="${freeBooks.isEmpty()}" class="empty-state">
+                        <i class="fas fa-gift"></i>
+                        <h4>Không có sách miễn phí</h4>
+                        <p>Hiện tại chưa có sách miễn phí nào.</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-book-reader me-2"></i>EbookStore</h5>
+                    <p class="mb-0">Thư viện sách điện tử hàng đầu Việt Nam</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">&copy; 2025 EbookStore. All rights reserved.</p>
+                </div>
             </div>
         </div>
     </footer>
 
-    <!-- Scripts -->
+    <!-- Bootstrap 5 JS Bundle -->
     <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+    <!-- Library Page JS -->
+    <script th:src="@{/user_template/js/library.js}"></script>
 </body>
 </html>
 

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Thống kê subscription <small>Tổng quan</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/subscriptions}">Quản lý subscription</a></li>
+				<li class="active">Thống kê</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row">
+				<div class="col-md-4 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fa fa-gift"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng gói</span>
+							<span class="info-box-number" th:text="${totalSubscriptions}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-4 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Đang hoạt động</span>
+							<span class="info-box-number" th:text="${activeSubscriptions}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-4 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-red"><i class="fa fa-times"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Ngừng hoạt động</span>
+							<span class="info-box-number" th:text="${inactiveSubscriptions}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-6">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Số đơn hàng theo gói</h3>
+						</div>
+						<div class="box-body">
+							<canvas id="orderCountChart" height="200"></canvas>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-6">
+					<div class="box box-success">
+						<div class="box-header with-border">
+							<h3 class="box-title">Doanh thu theo gói</h3>
+						</div>
+						<div class="box-body">
+							<canvas id="revenueChart" height="200"></canvas>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box">
+						<div class="box-header">
+							<h3 class="box-title">Chi tiết từng gói</h3>
+						</div>
+						<div class="box-body table-responsive">
+							<table class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>Tên gói</th>
+										<th>Giá</th>
+										<th>Thời hạn</th>
+										<th>Số đơn hàng</th>
+										<th>Doanh thu</th>
+										<th>Trạng thái</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="subscription : ${subscriptions}">
+										<td><strong th:text="${subscription.packageName}">BASIC</strong></td>
+										<td th:text="${#numbers.formatDecimal(subscription.price, 0, 'COMMA', 0, 'POINT') + ' đ'}">99,000 đ</td>
+										<td th:text="${subscription.durationDays + ' ngày'}">30 ngày</td>
+										<td>
+											<span class="badge bg-blue" th:text="${orderCountPerSubscription.get(subscription.packageName.name()) ?: 0}">0</span>
+										</td>
+										<td>
+											<strong th:text="${#numbers.formatDecimal(revenuePerSubscription.get(subscription.packageName.name()) ?: 0, 0, 'COMMA', 0, 'POINT') + ' đ'}">0 đ</strong>
+										</td>
+										<td>
+											<span class="label label-success" th:if="${subscription.isActive}">Hoạt động</span>
+											<span class="label label-danger" th:unless="${subscription.isActive}">Ngừng</span>
+										</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(subscriptions)}">
+										<td colspan="6" class="text-center text-muted">Không có dữ liệu</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script th:inline="javascript">
+	/*<![CDATA[*/
+	var orderCountData = /*[[${orderCountPerSubscription}]]*/ {};
+	var revenueData = /*[[${revenuePerSubscription}]]*/ {};
+
+	// Order Count Chart
+	var ctxOrder = document.getElementById('orderCountChart').getContext('2d');
+	new Chart(ctxOrder, {
+		type: 'bar',
+		data: {
+			labels: Object.keys(orderCountData),
+			datasets: [{
+				label: 'Số đơn hàng',
+				data: Object.values(orderCountData),
+				backgroundColor: '#3c8dbc'
+			}]
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: true,
+			scales: {
+				y: {
+					beginAtZero: true
+				}
+			}
+		}
+	});
+
+	// Revenue Chart
+	var ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+	new Chart(ctxRevenue, {
+		type: 'bar',
+		data: {
+			labels: Object.keys(revenueData),
+			datasets: [{
+				label: 'Doanh thu (VNĐ)',
+				data: Object.values(revenueData),
+				backgroundColor: '#00a65a'
+			}]
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: true,
+			scales: {
+				y: {
+					beginAtZero: true
+				}
+			}
+		}
+	});
+	/*]]>*/
+</script>
+</body>
+</html>
+

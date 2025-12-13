@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<style>
+		.required-field::after { content: " *"; color: red; }
+	</style>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>
+				<span th:if="${isEdit}">Chỉnh sửa danh mục</span>
+				<span th:unless="${isEdit}">Thêm danh mục mới</span>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/categories}">Quản lý danh mục</a></li>
+				<li class="active" th:text="${isEdit} ? 'Chỉnh sửa' : 'Thêm mới'"></li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row" th:if="${success} or ${error}">
+				<div class="col-md-12">
+					<div class="alert alert-success alert-dismissible" th:if="${success}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<span th:text="${success}"></span>
+					</div>
+					<div class="alert alert-danger alert-dismissible" th:if="${error}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<span th:text="${error}"></span>
+					</div>
+				</div>
+			</div>
+
+			<form th:action="@{${isEdit ? '/admin/categories/update' : '/admin/categories/create'}}" th:object="${categoryRequest}" method="post">
+				<input type="hidden" th:if="${isEdit}" th:field="*{categoryId}"/>
+				<div class="box box-primary">
+					<div class="box-body">
+						<div class="form-group" th:classappend="${#fields.hasErrors('categoryName')} ? 'has-error'">
+							<label for="categoryName" class="required-field">Tên danh mục</label>
+							<input type="text" class="form-control" id="categoryName" th:field="*{categoryName}" placeholder="Nhập tên danh mục" maxlength="255" required>
+							<span class="help-block" th:if="${#fields.hasErrors('categoryName')}" th:errors="*{categoryName}"></span>
+						</div>
+
+						<div class="form-group" th:classappend="${#fields.hasErrors('description')} ? 'has-error'">
+							<label for="description">Mô tả</label>
+							<textarea class="form-control" id="description" th:field="*{description}" rows="5" placeholder="Nhập mô tả danh mục" maxlength="5000"></textarea>
+							<span class="help-block" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></span>
+						</div>
+
+						<div class="form-group" th:classappend="${#fields.hasErrors('iconUrl')} ? 'has-error'">
+							<label for="iconUrl">URL icon</label>
+							<input type="text" class="form-control" id="iconUrl" th:field="*{iconUrl}" placeholder="Nhập URL icon" maxlength="500">
+							<span class="help-block" th:if="${#fields.hasErrors('iconUrl')}" th:errors="*{iconUrl}"></span>
+						</div>
+
+						<div class="form-group">
+							<label for="displayOrder">Thứ tự hiển thị</label>
+							<input type="number" class="form-control" id="displayOrder" th:field="*{displayOrder}" value="0" min="0">
+						</div>
+
+						<div class="form-group">
+							<label for="isActive">Trạng thái</label>
+							<select class="form-control" id="isActive" th:field="*{isActive}">
+								<option value="true">Hoạt động</option>
+								<option value="false">Không hoạt động</option>
+							</select>
+						</div>
+					</div>
+				</div>
+
+				<div class="box-footer">
+					<button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Lưu</button>
+					<a th:href="@{/admin/categories}" class="btn btn-secondary"><i class="fa fa-times"></i> Hủy</a>
+				</div>
+			</form>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>
+

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.min.css">
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Quản lý bài viết <small>Danh sách tất cả bài viết</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li class="active">Quản lý bài viết</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row" th:if="${success} or ${error}">
+				<div class="col-md-12">
+					<div class="alert alert-success alert-dismissible" th:if="${success}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-check"></i> Thành công!</h4>
+						<span th:text="${success}"></span>
+					</div>
+					<div class="alert alert-danger alert-dismissible" th:if="${error}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-ban"></i> Lỗi!</h4>
+						<span th:text="${error}"></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box box-solid">
+						<div class="box-body">
+							<form method="get" action="/admin/posts" class="form-inline">
+								<div class="form-group">
+									<input type="text" name="search" class="form-control"
+										   placeholder="Tìm kiếm..."
+										   th:value="${search}" style="width: 300px;">
+								</div>
+								<button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+								<a th:href="@{/admin/posts}" class="btn btn-default"><i class="fa fa-refresh"></i></a>
+								<a th:href="@{/admin/posts/add}" class="btn btn-success pull-right"><i class="fa fa-plus"></i>Thêm bài viết mới</a>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box">
+						<div class="box-header">
+							<h3 class="box-title">Danh sách bài viết (<span th:text="${totalPosts ?: 0}">0</span>)</h3>
+						</div>
+						<div class="box-body">
+							<table id="postsTable" class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>Tiêu đề</th>
+										<th>Slug</th>
+										<th>Trạng thái</th>
+										<th>Ngày tạo</th>
+										<th>Thao tác</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="post : ${posts}">
+										<td th:text="${post.title}">Tiêu đề</td>
+										<td th:text="${post.slug}">Slug</td>
+										<td>
+											<span class="label label-success" th:if="${post.isPublished}">Xuất bản</span>
+											<span class="label label-warning" th:unless="${post.isPublished}">Nháp</span>
+										</td>
+										<td th:text="${#temporals.format(post.createdAt, 'dd/MM/yyyy')}">01/01/2024</td>
+										<td>
+											<a th:href="@{/admin/posts/view/{id}(id=${post.postId})}" class="btn btn-sm btn-info"><i class="fa fa-search"></i></a>
+											<a th:href="@{/admin/posts/edit/{id}(id=${post.postId})}" class="btn btn-sm btn-warning"><i class="fa fa-pencil"></i></a>
+											<form th:action="@{/admin/posts/delete/{id}(id=${post.postId})}" method="post" style="display:inline;" onsubmit="return confirm('Xóa?');">
+												<button type="submit" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
+											</form>
+										</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(posts)}">
+										<td colspan="5" class="text-center text-muted">Không có dữ liệu</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script src="/admin_template/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/admin_template/plugins/datatables/dataTables.bootstrap.min.js"></script>
+<script>
+	$(function () {
+		$('#postsTable').DataTable({
+			"responsive": true,
+			"searching": false,
+			"language": {
+				"url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
+			}
+		});
+	});
+</script>
+</body>
+</html>
+

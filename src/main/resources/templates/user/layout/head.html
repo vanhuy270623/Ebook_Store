@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:fragment="head">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title th:text="${pageTitle != null ? pageTitle + ' - EbookStore' : 'EbookStore - Thư viện sách điện tử hàng đầu'}">EbookStore</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="EbookStore - Thư viện sách điện tử và audiobook hàng đầu Việt Nam. Đọc sách mọi lúc, mọi nơi.">
+    <meta name="keywords" content="sách điện tử, ebook, audiobook, đọc sách online, thư viện sách, EbookStore">
+    <meta name="author" content="EbookStore">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" th:content="${pageTitle != null ? pageTitle + ' - EbookStore' : 'EbookStore - Thư viện sách điện tử'}">
+    <meta property="og:description" content="Thư viện sách điện tử và audiobook hàng đầu Việt Nam">
+    <meta property="og:type" content="website">
+    <meta property="og:image" th:content="@{/images/og-image.jpg}">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <!-- CSRF Token for AJAX requests -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
+
+    <!-- Tiny Slider CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/tiny-slider.css}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+          integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- User Template Base Style CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
+
+    <!-- ✅ CUSTOM USER STYLES - Separated CSS File -->
+    <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+
+    <!-- ✅ CUSTOM USER STYLES - Separated CSS File -->
+    <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+
+    <!-- Page-specific styles can be added here -->
+    <th:block th:if="${pageStyles != null}" th:utext="${pageStyles}"></th:block>
+</head>
+</html>
+

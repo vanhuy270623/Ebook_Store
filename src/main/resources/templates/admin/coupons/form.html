@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<link rel="stylesheet" href="/admin_template/plugins/datepicker/datepicker3.css">
+	<link rel="stylesheet" href="/admin_template/plugins/daterangepicker/daterangepicker.css">
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>
+				<span th:if="${isEdit}">Chỉnh sửa coupon</span>
+				<span th:unless="${isEdit}">Thêm coupon mới</span>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/coupons}">Quản lý coupon</a></li>
+				<li class="active" th:text="${isEdit} ? 'Chỉnh sửa' : 'Thêm mới'"></li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row" th:if="${error}">
+				<div class="col-md-12">
+					<div class="alert alert-danger alert-dismissible">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<span th:text="${error}"></span>
+					</div>
+				</div>
+			</div>
+
+			<form th:action="@{${isEdit ? '/admin/coupons/update/' + couponRequest.couponId : '/admin/coupons'}}"
+				  th:object="${couponRequest}"
+				  method="post">
+
+				<input type="hidden" th:if="${isEdit}" th:field="*{couponId}"/>
+
+				<div class="row">
+					<div class="col-md-8">
+						<div class="box box-primary">
+							<div class="box-header">
+								<h3 class="box-title">Thông tin coupon</h3>
+							</div>
+							<div class="box-body">
+								<!-- Mã coupon -->
+								<div class="form-group">
+									<label for="code">Mã coupon <span style="color:red;">*</span></label>
+									<input type="text" class="form-control" id="code"
+										   th:field="*{code}"
+										   placeholder="VD: SUMMER2024"
+										   maxlength="50"
+										   style="text-transform: uppercase;"
+										   required>
+									<small class="text-muted">Mã sẽ được chuyển thành chữ IN HOA</small>
+								</div>
+
+								<!-- Loại giảm giá -->
+								<div class="form-group">
+									<label for="discountType">Loại giảm giá <span style="color:red;">*</span></label>
+									<select class="form-control" id="discountType" th:field="*{discountType}" required>
+										<option th:each="type : ${discountTypes}"
+												th:value="${type}"
+												th:text="${type == T(stu.datn.ebook_store.entity.Coupon.DiscountType).PERCENT ? 'Phần trăm (%)' : 'Cố định (VNĐ)'}">
+										</option>
+									</select>
+								</div>
+
+								<!-- Giá trị giảm -->
+								<div class="form-group">
+									<label for="discountValue">Giá trị giảm <span style="color:red;">*</span></label>
+									<div class="input-group">
+										<input type="number" class="form-control" id="discountValue"
+											   th:field="*{discountValue}"
+											   step="0.01"
+											   min="0"
+											   required>
+										<span class="input-group-addon" id="discountUnit">%</span>
+									</div>
+									<small class="text-muted">Nếu chọn Phần trăm: nhập 10 = 10%. Nếu chọn Cố định: nhập số tiền VNĐ</small>
+								</div>
+
+								<!-- Đơn hàng tối thiểu -->
+								<div class="form-group">
+									<label for="minOrderValue">Giá trị đơn hàng tối thiểu</label>
+									<div class="input-group">
+										<input type="number" class="form-control" id="minOrderValue"
+											   th:field="*{minOrderValue}"
+											   step="1000"
+											   min="0"
+											   placeholder="0">
+										<span class="input-group-addon">VNĐ</span>
+									</div>
+									<small class="text-muted">Để trống hoặc 0 nếu không có yêu cầu</small>
+								</div>
+
+								<!-- Số lượt sử dụng -->
+								<div class="form-group">
+									<label for="usageLimit">Số lượt sử dụng</label>
+									<input type="number" class="form-control" id="usageLimit"
+										   th:field="*{usageLimit}"
+										   min="0"
+										   placeholder="100">
+									<small class="text-muted">Số lần coupon có thể được sử dụng</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-md-4">
+						<div class="box box-info">
+							<div class="box-header">
+								<h3 class="box-title">Thời gian hiệu lực</h3>
+							</div>
+							<div class="box-body">
+								<!-- Ngày bắt đầu -->
+								<div class="form-group">
+									<label for="validFrom">Ngày bắt đầu <span style="color:red;">*</span></label>
+									<div class="input-group date">
+										<div class="input-group-addon">
+											<i class="fa fa-calendar"></i>
+										</div>
+										<input type="datetime-local" class="form-control" id="validFrom"
+											   th:field="*{validFrom}"
+											   required>
+									</div>
+								</div>
+
+								<!-- Ngày kết thúc -->
+								<div class="form-group">
+									<label for="validTo">Ngày kết thúc <span style="color:red;">*</span></label>
+									<div class="input-group date">
+										<div class="input-group-addon">
+											<i class="fa fa-calendar"></i>
+										</div>
+										<input type="datetime-local" class="form-control" id="validTo"
+											   th:field="*{validTo}"
+											   required>
+									</div>
+								</div>
+
+								<!-- Trạng thái (chỉ hiện khi edit) -->
+								<div class="form-group" th:if="${isEdit}">
+									<label>
+										<input type="checkbox" th:field="*{isActive}" />
+										Kích hoạt coupon
+									</label>
+								</div>
+							</div>
+
+							<div class="box-footer">
+								<div class="callout callout-warning">
+									<h4><i class="icon fa fa-info"></i> Lưu ý!</h4>
+									<p>Coupon sẽ tự động hết hạn sau ngày kết thúc hoặc khi hết số lượt sử dụng.</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box-footer">
+							<button type="submit" class="btn btn-primary btn-lg">
+								<i class="fa fa-save"></i> Lưu coupon
+							</button>
+							<a th:href="@{/admin/coupons}" class="btn btn-default btn-lg">
+								<i class="fa fa-times"></i> Hủy
+							</a>
+						</div>
+					</div>
+				</div>
+			</form>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script src="/admin_template/plugins/datepicker/bootstrap-datepicker.js"></script>
+<script src="/admin_template/plugins/daterangepicker/moment.min.js"></script>
+<script src="/admin_template/plugins/daterangepicker/daterangepicker.js"></script>
+<script>
+	$(document).ready(function() {
+		// Update discount unit based on type
+		$('#discountType').on('change', function() {
+			var type = $(this).val();
+			if (type === 'PERCENT') {
+				$('#discountUnit').text('%');
+				$('#discountValue').attr('max', '100');
+			} else {
+				$('#discountUnit').text('VNĐ');
+				$('#discountValue').removeAttr('max');
+			}
+		});
+
+		// Trigger on load
+		$('#discountType').trigger('change');
+
+		// Validate dates
+		$('#validTo').on('change', function() {
+			var validFrom = new Date($('#validFrom').val());
+			var validTo = new Date($(this).val());
+
+			if (validTo <= validFrom) {
+				alert('Ngày kết thúc phải sau ngày bắt đầu!');
+				$(this).val('');
+			}
+		});
+	});
+</script>
+</body>
+</html>
+

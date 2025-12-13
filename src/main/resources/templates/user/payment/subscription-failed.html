@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh Toán Thất Bại - EbookStore</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/payment.css}">
+
+    
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" th:href="@{/user/index}">
+                <i class="fas fa-book-reader me-2"></i>EbookStore
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/user/index}">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/books">Sách</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/subscription/plans">Gói VIP</a>
+                    </li>
+
+                    <!-- User Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img th:if="${user != null && user.avatarUrl != null}"
+                                 th:src="@{${user.avatarUrl}}"
+                                 alt="Avatar"
+                                 class="rounded-circle me-2"
+                                 style="width: 32px; height: 32px; object-fit: cover;">
+                            <i th:if="${user == null || user.avatarUrl == null}"
+                               class="fas fa-user-circle me-2"
+                               style="font-size: 32px;"></i>
+                            <span th:text="${user != null ? user.fullName : 'Người dùng'}">Người dùng</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" th:href="@{/user/dashboard}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/user/profile}">
+                                    <i class="fas fa-user-edit me-2"></i>Hồ sơ
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/user/orders}">
+                                    <i class="fas fa-shopping-bag me-2"></i>Đơn hàng
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/user/library}">
+                                    <i class="fas fa-book me-2"></i>Thư viện
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form th:action="@{/auth/logout}" method="post" class="d-inline">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="/cart" id="cartLink">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span id="cartCountBadge"
+                                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                  style="display: none; font-size: 10px;">0</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="failed-container">
+        <div class="failed-card">
+            <div class="failed-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+
+            <h1 class="failed-title">Thanh Toán Thất Bại!</h1>
+
+            <p class="lead text-muted">Rất tiếc, giao dịch của bạn không thành công</p>
+
+            <div class="error-info">
+                <h6><strong><i class="fas fa-exclamation-triangle"></i> Lý do:</strong></h6>
+                <p class="mb-0" th:text="${errorMessage} ?: 'Có lỗi xảy ra trong quá trình thanh toán'">
+                    Có lỗi xảy ra trong quá trình thanh toán
+                </p>
+            </div>
+
+            <div th:if="${order}" class="alert alert-info">
+                <p class="mb-1"><strong>Mã đơn hàng:</strong> <span th:text="${order.orderId}">SUB_XXXXX</span></p>
+                <p class="mb-0"><strong>Gói:</strong> <span th:text="${order.subscription.packageName}">VIP</span></p>
+            </div>
+
+            <div class="alert alert-warning">
+                <i class="fas fa-info-circle"></i>
+                <strong>Lưu ý:</strong> Bạn có thể thử lại thanh toán hoặc chọn phương thức khác.
+            </div>
+
+            <div class="mt-4">
+                <a th:href="@{/subscription/plans}" class="btn btn-primary btn-action">
+                    <i class="fas fa-redo"></i> Thử Lại
+                </a>
+                <a th:href="@{/user/index}" class="btn btn-outline-secondary btn-action">
+                    <i class="fas fa-home"></i> Về Trang Chủ
+                </a>
+            </div>
+
+            <div class="mt-4">
+                <h6>Cần hỗ trợ?</h6>
+                <p class="text-muted small">
+                    Liên hệ: <a href="mailto:support@ebookstore.vn">support@ebookstore.vn</a> |
+                    Hotline: 1900 xxxx
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>
+

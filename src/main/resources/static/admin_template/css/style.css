@@ -1,0 +1,228 @@
+.box-tools .breadcrumb{
+	margin-bottom: 0;
+	padding: 5px;
+	background: none;
+}
+.box-tools .breadcrumb li{
+	margin-right: 15px;
+	float: left
+}
+.box-tools .breadcrumb li a{
+	color: #333
+}
+.content-header > .breadcrumb{
+	padding: 0 7px
+}
+.content .panel-body{
+	padding: 5px
+}
+.table-form .form-inline .input-group>.form-control{
+	width: 300px;
+}
+.panel-pagination .panel-body{
+	padding-top: 0;
+	padding-bottom: 0;
+}
+.post-category{
+	padding-left: 0
+}
+.post-category ul{
+	padding-left: 15px
+}
+.btn-social{
+	padding-left: 32px
+}
+.btn-social > :first-child {
+    width: 32px;
+    line-height: 32px;
+    font-size: 16px;
+}
+.table-action a.label{
+	margin-left: 5px
+}
+/* ======== GLOBAL STYLES ======== */
+body {
+	font-family: Arial, sans-serif;
+	margin: 0;
+	background-color: #f4f4f4;
+	color: #333;
+}
+
+.container {
+	width: 90%;
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+a {
+	text-decoration: none;
+	color: inherit;
+}
+
+/* ======== HEADER ======== */
+.main-header {
+	background-color: #ffffff;
+	border-bottom: 1px solid #ddd;
+	padding: 10px 0;
+	position: sticky;
+	top: 0;
+	z-index: 1000;
+}
+
+.main-header .container {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.logo {
+	font-size: 24px;
+	font-weight: bold;
+	color: #007bff; /* Màu thương hiệu */
+}
+
+.search-bar {
+	flex-grow: 1;
+	margin: 0 20px;
+	display: flex;
+}
+
+.search-bar input {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid #ccc;
+	border-radius: 20px 0 0 20px;
+}
+
+.search-bar button {
+	padding: 8px 15px;
+	border: none;
+	background-color: #007bff;
+	color: white;
+	cursor: pointer;
+	border-radius: 0 20px 20px 0;
+}
+
+.main-nav a {
+	margin-left: 15px;
+	font-size: 16px;
+}
+
+.main-nav a.cart-link {
+	font-weight: bold;
+}
+
+/* ======== HERO BANNER ======== */
+.hero-banner {
+	width: 100%;
+	margin-top: 10px;
+	text-align: center;
+}
+
+.banner-img {
+	width: 100%;
+	max-width: 1200px; /* Giới hạn chiều rộng banner */
+	border-radius: 8px;
+	object-fit: cover;
+	background-color: #eee; /* Màu nền cho placeholder */
+}
+
+/* ======== BOOK SECTION (GIỐNG WAKA) ======== */
+.book-section {
+	margin-top: 30px;
+}
+
+.section-title {
+	font-size: 22px;
+	margin-bottom: 15px;
+}
+
+/* Đây là phần quan trọng để tạo cuộn ngang */
+.book-carousel {
+	display: flex;
+	overflow-x: auto; /* Cho phép cuộn ngang */
+	overflow-y: hidden;
+	padding-bottom: 20px; /* Tạo khoảng trống cho thanh cuộn */
+	gap: 20px; /* Khoảng cách giữa các sách */
+
+	/* Ẩn thanh cuộn (cho đẹp) */
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE 10+ */
+}
+
+.book-carousel::-webkit-scrollbar { /* WebKit */
+	display: none;
+}
+
+/* ======== BOOK CARD (Thẻ Sách) ======== */
+.book-card {
+	/* Đặt kích thước cố định cho thẻ sách */
+	width: 160px;
+	flex-shrink: 0; /* Ngăn thẻ bị co lại */
+	position: relative;
+}
+
+.book-card .book-cover {
+	width: 100%;
+	height: 240px; /* Chiều cao cố định cho bìa sách */
+	object-fit: cover;
+	border-radius: 8px;
+	box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+	transition: transform 0.2s ease-in-out;
+	background-color: #eee; /* Màu nền cho placeholder */
+}
+
+.book-card:hover .book-cover {
+	transform: translateY(-5px);
+	box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.book-card .book-title {
+	font-size: 16px;
+	margin: 10px 0 5px 0;
+	/* Giới hạn 2 dòng cho tên sách */
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	height: 2.4em; /* (1.2em * 2 dòng) */
+}
+
+.book-card .book-author {
+	font-size: 14px;
+	color: #666;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap; /* Giới hạn 1 dòng */
+}
+
+/* Thẻ tag (Vip/Free) */
+.book-tag {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	padding: 4px 8px;
+	font-size: 12px;
+	font-weight: bold;
+	color: white;
+	border-radius: 4px;
+}
+
+.tag-vip {
+	background-color: #e63946; /* Màu đỏ */
+}
+
+.tag-free {
+	background-color: #2a9d8f; /* Màu xanh */
+}
+
+
+/* ======== FOOTER ======== */
+.main-footer {
+	text-align: center;
+	padding: 30px 0;
+	margin-top: 40px;
+	background-color: #333;
+	color: #f4f4f4;
+}

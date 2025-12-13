@@ -1,0 +1,247 @@
+package stu.datn.ebook_store.controller.admin;
+
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.dto.request.BookCreateRequest;
+import stu.datn.ebook_store.dto.request.BookUpdateRequest;
+import stu.datn.ebook_store.entity.Author;
+import stu.datn.ebook_store.entity.Book;
+import stu.datn.ebook_store.repository.BookCategoryRepository;
+import stu.datn.ebook_store.service.BookService;
+import stu.datn.ebook_store.service.AuthorService;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Controller
+@RequestMapping("/admin/books")
+public class AdminBookController extends BaseAdminController {
+
+    private final BookService bookService;
+    private final BookCategoryRepository bookCategoryRepository;
+    private final AuthorService authorService;
+
+    @Autowired
+    public AdminBookController(BookService bookService,
+                              BookCategoryRepository bookCategoryRepository,
+                              AuthorService authorService) {
+        this.bookService = bookService;
+        this.bookCategoryRepository = bookCategoryRepository;
+        this.authorService = authorService;
+    }
+
+    @GetMapping
+    public String booksList(Model model) {
+        List<Book> books = bookService.getAllBooks();
+        model.addAttribute("books", books);
+        model.addAttribute("totalBooks", books.size());
+        return "admin/books/list";
+    }
+
+    @GetMapping("/add")
+    public String addBookForm(Model model) {
+        model.addAttribute("bookRequest", new BookCreateRequest());
+        model.addAttribute("categories", bookCategoryRepository.findAll());
+        model.addAttribute("authors", authorService.getAllAuthors());
+        model.addAttribute("accessTypes", Book.AccessType.values());
+        model.addAttribute("isEdit", false);
+        return "admin/books/form";
+    }
+
+    @PostMapping("/create")
+    public String addBook(@Valid @ModelAttribute("bookRequest") BookCreateRequest request,
+                          BindingResult bindingResult,
+                          @RequestParam(value = "coverImage", required = false) MultipartFile coverImage,
+                          Model model,
+                          RedirectAttributes redirectAttributes) {
+        // Kiểm tra validation errors
+        if (bindingResult.hasErrors()) {
+            String errors = bindingResult.getAllErrors().stream()
+                    .map(org.springframework.validation.ObjectError::getDefaultMessage)
+                    .collect(Collectors.joining("; "));
+            model.addAttribute("error", errors);
+            model.addAttribute("categories", bookCategoryRepository.findAll());
+            model.addAttribute("authors", authorService.getAllAuthors());
+            model.addAttribute("accessTypes", Book.AccessType.values());
+            model.addAttribute("isEdit", false);
+            return "admin/books/form";
+        }
+
+        try {
+            // Upload cover image if provided
+            if (coverImage != null && !coverImage.isEmpty()) {
+                String imageUrl = bookService.uploadCoverImage(coverImage);
+                request.setCoverImageUrl(imageUrl);
+            }
+
+            bookService.createBook(request);
+            redirectAttributes.addFlashAttribute("success", "Thêm sách mới thành công!");
+            return "redirect:/admin/books";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+            return "redirect:/admin/books/add";
+        }
+    }
+
+    @GetMapping("/edit/{id}")
+    public String editBookForm(@PathVariable String id, Model model, RedirectAttributes redirectAttributes) {
+        Book book = bookService.getBookById(id).orElse(null);
+        if (book == null) {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy sách với ID: " + id);
+            return "redirect:/admin/books";
+        }
+
+        // Map Book entity to BookUpdateRequest DTO
+        BookUpdateRequest bookUpdateRequest = mapToUpdateRequest(book);
+
+        model.addAttribute("bookRequest", bookUpdateRequest);
+        model.addAttribute("bookEntity", book);
+        model.addAttribute("categories", bookCategoryRepository.findAll());
+        model.addAttribute("authors", authorService.getAllAuthors());
+        model.addAttribute("accessTypes", Book.AccessType.values());
+        model.addAttribute("isEdit", true);
+
+        // Get current author IDs
+        Set<String> currentAuthorIds = book.getAuthors().stream()
+            .map(Author::getAuthorId)
+            .collect(Collectors.toSet());
+        model.addAttribute("currentAuthorIds", currentAuthorIds);
+
+        return "admin/books/form";
+    }
+
+    /**
+     * Map Book entity to BookUpdateRequest DTO
+     */
+    private BookUpdateRequest mapToUpdateRequest(Book book) {
+        BookUpdateRequest dto = new BookUpdateRequest();
+        dto.setBookId(book.getBookId());
+        dto.setTitle(book.getTitle());
+        dto.setDescription(book.getDescription());
+        dto.setPrice(book.getPrice());
+        dto.setCoverImageUrl(book.getCoverImageUrl());
+        dto.setPublisher(book.getPublisher());
+        dto.setPublicationYear(book.getPublicationYear());
+        dto.setLanguage(book.getLanguage());
+        dto.setPages(book.getPages());
+        dto.setIsbn(book.getIsbn());
+        dto.setAccessType(book.getAccessType());
+        dto.setIsDownloadable(book.getIsDownloadable());
+
+        if (book.getBookCategory() != null) {
+            dto.setBookCategoryId(book.getBookCategory().getBookCategoryId());
+        }
+
+        if (book.getAuthors() != null && !book.getAuthors().isEmpty()) {
+            Set<String> authorIds = book.getAuthors().stream()
+                .map(Author::getAuthorId)
+                .collect(Collectors.toSet());
+            dto.setAuthorIds(authorIds);
+        }
+
+        return dto;
+    }
+
+    @PostMapping("/update")
+    public String editBook(@Valid @ModelAttribute("bookRequest") BookUpdateRequest request,
+                           BindingResult bindingResult,
+                           @RequestParam(value = "coverImage", required = false) MultipartFile coverImage,
+                           Model model,
+                           RedirectAttributes redirectAttributes) {
+        // Kiểm tra validation errors
+        if (bindingResult.hasErrors()) {
+            String errors = bindingResult.getAllErrors().stream()
+                    .map(org.springframework.validation.ObjectError::getDefaultMessage)
+                    .collect(Collectors.joining("; "));
+            model.addAttribute("error", errors);
+
+            Book book = bookService.getBookById(request.getBookId()).orElse(null);
+            model.addAttribute("bookEntity", book);
+            model.addAttribute("categories", bookCategoryRepository.findAll());
+            model.addAttribute("authors", authorService.getAllAuthors());
+            model.addAttribute("accessTypes", Book.AccessType.values());
+            model.addAttribute("isEdit", true);
+
+            return "admin/books/form";
+        }
+
+        try {
+            // Upload cover image if provided
+            if (coverImage != null && !coverImage.isEmpty()) {
+                String imageUrl = bookService.uploadCoverImage(coverImage);
+                request.setCoverImageUrl(imageUrl);
+            }
+
+            bookService.updateBook(request);
+            redirectAttributes.addFlashAttribute("success", "Cập nhật sách thành công!");
+            return "redirect:/admin/books";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+            return "redirect:/admin/books/edit/" + request.getBookId();
+        }
+    }
+
+    @GetMapping("/view/{id}")
+    public String viewBook(@PathVariable String id, Model model) {
+        return bookService.getBookById(id)
+                .map(book -> {
+                    model.addAttribute("book", book);
+                    return "admin/books/view";
+                })
+                .orElse("redirect:/admin/books?error=notfound");
+    }
+
+    @PostMapping("/delete/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteBook(@PathVariable String id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            bookService.deleteBook(id);
+            response.put("success", true);
+            response.put("message", "Xóa sách thành công!");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "Có lỗi xảy ra khi xóa sách";
+            response.put("message", errorMessage);
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PostMapping("/upload-cover")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> uploadCoverImage(@RequestParam("file") MultipartFile file) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String imageUrl = bookService.uploadCoverImage(file);
+            response.put("success", true);
+            response.put("url", imageUrl);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @GetMapping("/statistics")
+    public String booksStatistics(Model model) {
+        model.addAttribute("totalBooks", bookService.getTotalBooksCount());
+        model.addAttribute("freeBooks", bookService.getFreeBooks());
+        model.addAttribute("paidBooks", bookService.getPaidBooks());
+        model.addAttribute("subscriptionBooks", bookService.getSubscriptionBooks());
+        model.addAttribute("recentBooks", bookService.getRecentBooks(10));
+        model.addAttribute("topRatedBooks", bookService.getTopRatedBooks(10));
+        return "admin/books/statistics";
+    }
+}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Thống kê danh mục <small>Tổng quan</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/categories}">Quản lý danh mục</a></li>
+				<li class="active">Thống kê</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row">
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fa fa-folder"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng danh mục</span>
+							<span class="info-box-number" th:text="${totalCategories ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Đang hoạt động</span>
+							<span class="info-box-number" th:text="${categories != null ? #lists.size(#lists.where(categories, 'isActive')) : 0}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-red"><i class="fa fa-times"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Không hoạt động</span>
+							<span class="info-box-number" th:text="${categories != null ? #lists.size(#lists.where(categories, '!isActive')) : 0}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-12">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Danh sách danh mục</h3>
+						</div>
+						<div class="box-body">
+							<table class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>ID</th>
+										<th>Tên danh mục</th>
+										<th>Thứ tự</th>
+										<th>Trạng thái</th>
+										<th>Ngày tạo</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="category : ${categories}">
+										<td th:text="${category.categoryId}">ID</td>
+										<td th:text="${category.categoryName}">Tên</td>
+										<td th:text="${category.displayOrder}">0</td>
+										<td>
+											<span th:if="${category.isActive}" class="label label-success">Hoạt động</span>
+											<span th:unless="${category.isActive}" class="label label-default">Không hoạt động</span>
+										</td>
+										<td th:text="${#temporals.format(category.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(categories)}">
+										<td colspan="5" class="text-center text-muted">Không có dữ liệu</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<div class="box-footer">
+							<a th:href="@{/admin/categories}" class="btn btn-default"><i class="fa fa-arrow-left"></i> Quay lại</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>
+

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Thống kê bài viết <small>Tổng quan</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/posts}">Quản lý bài viết</a></li>
+				<li class="active">Thống kê</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row">
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fa fa-file"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng bài viết</span>
+							<span class="info-box-number" th:text="${totalPosts ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Đã xuất bản</span>
+							<span class="info-box-number" th:text="${publishedPosts ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-yellow"><i class="fa fa-file-o"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Nháp</span>
+							<span class="info-box-number" th:text="${draftPosts ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-12">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Bài viết gần đây</h3>
+						</div>
+						<div class="box-body">
+							<table class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>Tiêu đề</th>
+										<th>Trạng thái</th>
+										<th>Ngày tạo</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="post : ${recentPosts}">
+										<td th:text="${post.title}">Tiêu đề</td>
+										<td>
+											<span class="label label-success" th:if="${post.isPublished}">Xuất bản</span>
+											<span class="label label-warning" th:unless="${post.isPublished}">Nháp</span>
+										</td>
+										<td th:text="${#temporals.format(post.createdAt, 'dd/MM/yyyy')}">01/01/2024</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(recentPosts)}">
+										<td colspan="3" class="text-center text-muted">Không có dữ liệu</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>
+

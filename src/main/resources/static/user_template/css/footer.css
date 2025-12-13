@@ -1,0 +1,128 @@
+/* Footer styles cho giao diện user */
+.footer-title {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.footer-text {
+    font-size: 14px;
+    line-height: 1.8;
+    margin-bottom: 15px;
+    color: #A0AEC0;
+}
+
+.social-links {
+    display: flex;
+    gap: 10px;
+}
+
+.social-links a {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border-radius: 50%;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.social-links a:hover {
+    background: var(--primary-color);
+    transform: translateY(-3px);
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    margin-bottom: 10px;
+}
+
+.footer-links a {
+    color: #A0AEC0;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.3s, padding-left 0.3s;
+}
+
+.footer-links a:hover {
+    color: var(--primary-color);
+    padding-left: 5px;
+}
+
+.app-download {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.app-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.app-btn:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: var(--primary-color);
+}
+
+.app-btn i {
+    font-size: 24px;
+}
+
+.app-btn small {
+    font-size: 12px;
+    color: #cbd5f5;
+}
+
+.app-btn strong {
+    font-size: 14px;
+}
+
+.app-store-badges {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.payment-methods img {
+    height: 32px;
+    margin-right: 10px;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+}
+
+.payment-methods img:hover {
+    opacity: 1;
+}
+
+.footer-bottom {
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 20px 0;
+    margin-top: 30px;
+}
+
+.footer-bottom p,
+.footer-bottom a {
+    color: #A0AEC0;
+}
+

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Thống kê đơn hàng <small>& doanh thu</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/orders}">Quản lý đơn hàng</a></li>
+				<li class="active">Thống kê</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row">
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fa fa-shopping-cart"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng đơn hàng</span>
+							<span class="info-box-number" th:text="${totalOrders}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-yellow"><i class="fa fa-clock-o"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Chờ xử lý</span>
+							<span class="info-box-number" th:text="${pendingOrders}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Hoàn thành</span>
+							<span class="info-box-number" th:text="${completedOrders}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-red"><i class="fa fa-times"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Thất bại/Hủy</span>
+							<span class="info-box-number" th:text="${failedOrders + cancelledOrders}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-6">
+					<div class="box box-success">
+						<div class="box-header with-border">
+							<h3 class="box-title">Doanh thu</h3>
+						</div>
+						<div class="box-body">
+							<div class="row">
+								<div class="col-sm-6">
+									<div class="description-block border-right">
+										<h5 class="description-header" th:text="${#numbers.formatDecimal(totalRevenue ?: 0, 0, 'COMMA', 0, 'POINT') + ' đ'}">0 đ</h5>
+										<span class="description-text">Tổng doanh thu (kỳ)</span>
+									</div>
+								</div>
+								<div class="col-sm-6">
+									<div class="description-block">
+										<h5 class="description-header" th:text="${#numbers.formatDecimal(completedRevenue ?: 0, 0, 'COMMA', 0, 'POINT') + ' đ'}">0 đ</h5>
+										<span class="description-text">Doanh thu đã hoàn thành</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-6">
+					<div class="box box-info">
+						<div class="box-header with-border">
+							<h3 class="box-title">Phân loại đơn hàng</h3>
+						</div>
+						<div class="box-body">
+							<canvas id="orderTypeChart" height="150"></canvas>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-6">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Trạng thái đơn hàng</h3>
+						</div>
+						<div class="box-body">
+							<canvas id="orderStatusChart" height="150"></canvas>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-6">
+					<div class="box box-warning">
+						<div class="box-header with-border">
+							<h3 class="box-title">Phương thức thanh toán</h3>
+						</div>
+						<div class="box-body">
+							<table class="table table-striped">
+								<thead>
+									<tr>
+										<th>Phương thức</th>
+										<th>Số đơn</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="entry : ${paymentMethodStats}">
+										<td th:text="${entry.key}">VNPAY</td>
+										<td th:text="${entry.value}">0</td>
+									</tr>
+									<tr th:if="${#maps.isEmpty(paymentMethodStats)}">
+										<td colspan="2" class="text-center text-muted">Chưa có dữ liệu</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script th:inline="javascript">
+	/*<![CDATA[*/
+	var bookOrders = /*[[${bookOrders}]]*/ 0;
+	var subscriptionOrders = /*[[${subscriptionOrders}]]*/ 0;
+	var pendingOrders = /*[[${pendingOrders}]]*/ 0;
+	var completedOrders = /*[[${completedOrders}]]*/ 0;
+	var failedOrders = /*[[${failedOrders}]]*/ 0;
+	var cancelledOrders = /*[[${cancelledOrders}]]*/ 0;
+
+	// Order Type Chart
+	var ctxType = document.getElementById('orderTypeChart').getContext('2d');
+	new Chart(ctxType, {
+		type: 'doughnut',
+		data: {
+			labels: ['Mua sách', 'Gói subscription'],
+			datasets: [{
+				data: [bookOrders, subscriptionOrders],
+				backgroundColor: ['#3c8dbc', '#00c0ef']
+			}]
+		}
+	});
+
+	// Order Status Chart
+	var ctxStatus = document.getElementById('orderStatusChart').getContext('2d');
+	new Chart(ctxStatus, {
+		type: 'pie',
+		data: {
+			labels: ['Chờ xử lý', 'Hoàn thành', 'Thất bại', 'Đã hủy'],
+			datasets: [{
+				data: [pendingOrders, completedOrders, failedOrders, cancelledOrders],
+				backgroundColor: ['#f39c12', '#00a65a', '#dd4b39', '#d2d6de']
+			}]
+		}
+	});
+	/*]]>*/
+</script>
+</body>
+</html>
+

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<title>Quản lý tác giả - Ebook Store</title>
+	<style>
+		.image-preview {
+			max-width: 200px;
+			max-height: 200px;
+			margin-top: 10px;
+			display: none;
+			border-radius: 50%;
+		}
+		.required-field::after {
+			content: " *";
+			color: red;
+		}
+	</style>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<!-- Header -->
+	<div th:replace="~{admin/layout/header :: header}"></div>
+
+	<!-- Sidebar -->
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<!-- Content Wrapper -->
+	<div class="content-wrapper">
+		<!-- Content Header -->
+		<section class="content-header">
+			<h1>
+				<span th:if="${isEdit}">Chỉnh sửa tác giả</span>
+				<span th:unless="${isEdit}">Thêm tác giả mới</span>
+				<small th:if="${isEdit && author != null}" th:text="${author.authorName}">Tên tác giả</small>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/authors}">Quản lý tác giả</a></li>
+				<li class="active" th:text="${isEdit} ? 'Chỉnh sửa' : 'Thêm mới'">Form</li>
+			</ol>
+		</section>
+
+		<!-- Main content -->
+		<section class="content">
+			<!-- Flash Messages -->
+			<div class="row" th:if="${success} or ${error}">
+				<div class="col-md-12">
+					<div class="alert alert-success alert-dismissible" th:if="${success}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-check"></i> Thành công!</h4>
+						<span th:text="${success}"></span>
+					</div>
+					<div class="alert alert-danger alert-dismissible" th:if="${error}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-ban"></i> Lỗi!</h4>
+						<span th:text="${error}"></span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Form -->
+			<form th:action="@{${isEdit ? '/admin/authors/update' : '/admin/authors/create'}}"
+				  th:object="${authorRequest}"
+				  method="post"
+				  enctype="multipart/form-data">
+
+				<div class="row">
+					<!-- Left Column -->
+					<div class="col-md-8">
+						<div class="box box-primary">
+							<div class="box-header with-border">
+								<h3 class="box-title">Thông tin tác giả</h3>
+							</div>
+							<div class="box-body">
+								<!-- Author ID (hidden for edit) -->
+								<input type="hidden" th:if="${isEdit}" th:field="*{authorId}"/>
+
+								<!-- Author Name -->
+								<div class="form-group" th:classappend="${#fields.hasErrors('name')} ? 'has-error'">
+									<label for="name" class="required-field">Tên tác giả</label>
+									<input type="text" class="form-control" id="name" th:field="*{name}"
+										   placeholder="Nhập tên tác giả" maxlength="255" required>
+									<span class="help-block" th:if="${#fields.hasErrors('name')}"
+										  th:errors="*{name}"></span>
+								</div>
+
+								<!-- Biography -->
+								<div class="form-group" th:classappend="${#fields.hasErrors('biography')} ? 'has-error'">
+									<label for="biography">Tiểu sử</label>
+									<textarea class="form-control" id="biography" th:field="*{biography}"
+											  rows="8" placeholder="Nhập tiểu sử về tác giả" maxlength="5000"></textarea>
+									<span class="help-block" th:if="${#fields.hasErrors('biography')}"
+										  th:errors="*{biography}"></span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Right Column -->
+					<div class="col-md-4">
+						<div class="box box-info">
+							<div class="box-header with-border">
+								<h3 class="box-title">Avatar</h3>
+							</div>
+							<div class="box-body">
+								<!-- Avatar URL Display -->
+								<div th:if="${isEdit && author != null && author.avatarUrl}">
+									<img th:src="${author.avatarUrl}" alt="Avatar hiện tại"
+										 class="img-responsive" style="border-radius: 50%; max-height: 200px;">
+									<p class="text-muted text-center margin-top">Avatar hiện tại</p>
+								</div>
+
+								<!-- Avatar Upload -->
+								<div class="form-group">
+									<label for="avatarFile">Tải lên avatar mới</label>
+									<input type="file" id="avatarFile" class="form-control"
+										   accept="image/*" onchange="previewImage(this)">
+									<small class="text-muted">Định dạng: JPG, PNG (tối đa 2MB)</small>
+									<img id="imagePreview" class="image-preview" alt="Preview">
+								</div>
+
+								<!-- Avatar URL -->
+								<div class="form-group">
+									<label for="avatarUrl">Hoặc nhập URL avatar</label>
+									<input type="text" class="form-control" id="avatarUrl" th:field="*{avatarUrl}"
+										   placeholder="https://..." maxlength="500">
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Action Buttons -->
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box-footer">
+							<button type="submit" class="btn btn-primary">
+								<i class="fa fa-save"></i>
+								<span th:text="${isEdit} ? 'Cập nhật' : 'Thêm mới'"></span>
+							</button>
+							<a th:href="@{/admin/authors}" class="btn btn-secondary">
+								<i class="fa fa-times"></i> Hủy
+							</a>
+						</div>
+					</div>
+				</div>
+			</form>
+		</section>
+	</div>
+
+	<!-- Footer -->
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script>
+	function previewImage(input) {
+		if (input.files && input.files[0]) {
+			var reader = new FileReader();
+			reader.onload = function(e) {
+				document.getElementById('imagePreview').src = e.target.result;
+				document.getElementById('imagePreview').style.display = 'block';
+			};
+			reader.readAsDataURL(input.files[0]);
+		}
+	}
+</script>
+</body>
+</html>
+

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Chi tiết danh mục <small th:text="${category.categoryName}">Tên</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/categories}">Quản lý danh mục</a></li>
+				<li class="active">Chi tiết</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row">
+				<div class="col-md-8">
+					<div class="box box-primary">
+						<div class="box-body">
+							<div class="form-group">
+								<label>ID</label>
+								<p class="form-control-static" th:text="${category.categoryId}">ID</p>
+							</div>
+							<div class="form-group">
+								<label>Tên danh mục</label>
+								<p class="form-control-static" th:text="${category.categoryName}">Tên</p>
+							</div>
+							<div class="form-group">
+								<label>Mô tả</label>
+								<p class="form-control-static" th:text="${category.description ?: 'Chưa có'}">Mô tả</p>
+							</div>
+							<div class="form-group">
+								<label>URL icon</label>
+								<p class="form-control-static">
+									<span th:if="${category.iconUrl}" th:text="${category.iconUrl}">URL</span>
+									<span th:unless="${category.iconUrl}">Chưa có</span>
+								</p>
+								<img th:if="${category.iconUrl}" th:src="${category.iconUrl}" alt="Icon" style="max-width: 100px; margin-top: 10px;">
+							</div>
+							<div class="form-group">
+								<label>Thứ tự hiển thị</label>
+								<p class="form-control-static" th:text="${category.displayOrder}">0</p>
+							</div>
+							<div class="form-group">
+								<label>Trạng thái</label>
+								<p class="form-control-static">
+									<span th:if="${category.isActive}" class="label label-success">Hoạt động</span>
+									<span th:unless="${category.isActive}" class="label label-default">Không hoạt động</span>
+								</p>
+							</div>
+							<div class="form-group">
+								<label>Ngày tạo</label>
+								<p class="form-control-static" th:text="${#temporals.format(category.createdAt, 'dd/MM/yyyy HH:mm:ss')}">01/01/2024</p>
+							</div>
+						</div>
+						<div class="box-footer">
+							<a th:href="@{/admin/categories/edit/{id}(id=${category.categoryId})}" class="btn btn-warning"><i class="fa fa-pencil"></i> Sửa</a>
+							<form th:action="@{/admin/categories/delete/{id}(id=${category.categoryId})}" method="post" style="display:inline;" onsubmit="return confirm('Xóa?');">
+								<button type="submit" class="btn btn-danger"><i class="fa fa-trash"></i> Xóa</button>
+							</form>
+							<a th:href="@{/admin/categories}" class="btn btn-secondary"><i class="fa fa-arrow-left"></i> Quay lại</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>
+

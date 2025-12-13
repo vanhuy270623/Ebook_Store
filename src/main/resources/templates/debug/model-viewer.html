@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Model Viewer - Debug Tool</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4ec9b0;
+            border-bottom: 2px solid #4ec9b0;
+            padding-bottom: 10px;
+        }
+        .section {
+            background: #252526;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007acc;
+        }
+        .section h2 {
+            color: #569cd6;
+            margin-top: 0;
+        }
+        .attribute {
+            margin: 15px 0;
+            padding: 15px;
+            background: #2d2d30;
+            border-radius: 3px;
+        }
+        .attribute-name {
+            color: #9cdcfe;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .attribute-type {
+            color: #4ec9b0;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .attribute-value {
+            color: #ce9178;
+            margin-top: 10px;
+            padding: 10px;
+            background: #1e1e1e;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        .null {
+            color: #808080;
+            font-style: italic;
+        }
+        .back-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007acc;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+            margin-top: 20px;
+        }
+        .back-link:hover {
+            background: #005a9e;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table th, table td {
+            padding: 10px;
+            border: 1px solid #3e3e42;
+            text-align: left;
+        }
+        table th {
+            background: #007acc;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Model Viewer - Debug Tool</h1>
+        <p>Hiển thị tất cả attributes trong Model và Request</p>
+
+        <!-- Request Info -->
+        <div class="section">
+            <h2>📡 Request Information</h2>
+            <table>
+                <tr>
+                    <th>Property</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>URL</td>
+                    <td th:text="${requestUrl}"></td>
+                </tr>
+                <tr>
+                    <td>Query String</td>
+                    <td th:text="${queryString ?: 'None'}"></td>
+                </tr>
+                <tr>
+                    <td>Test Parameter</td>
+                    <td th:text="${testParam ?: 'Not provided'}"></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Test Data -->
+        <div class="section">
+            <h2>📊 Test Data (Added by Controller)</h2>
+
+            <div class="attribute">
+                <span class="attribute-name">testString</span>
+                <span class="attribute-type">[String]</span>
+                <div class="attribute-value" th:text="${testString}"></div>
+            </div>
+
+            <div class="attribute">
+                <span class="attribute-name">testNumber</span>
+                <span class="attribute-type">[Integer]</span>
+                <div class="attribute-value" th:text="${testNumber}"></div>
+            </div>
+
+            <div class="attribute">
+                <span class="attribute-name">testBoolean</span>
+                <span class="attribute-type">[Boolean]</span>
+                <div class="attribute-value" th:text="${testBoolean}"></div>
+            </div>
+
+            <div class="attribute">
+                <span class="attribute-name">testList</span>
+                <span class="attribute-type">[List]</span>
+                <div class="attribute-value">
+                    <ul>
+                        <li th:each="item : ${testList}" th:text="${item}"></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="attribute">
+                <span class="attribute-name">testMap</span>
+                <span class="attribute-type">[Map]</span>
+                <div class="attribute-value">
+                    <table>
+                        <tr th:each="entry : ${testMap}">
+                            <td th:text="${entry.key}"></td>
+                            <td th:text="${entry.value}"></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- All Model Attributes -->
+        <div class="section">
+            <h2>📦 All Model Attributes</h2>
+            <p style="color: #808080;">Danh sách tất cả attributes trong Model</p>
+
+            <div th:each="entry : ${allAttributes}" class="attribute">
+                <span class="attribute-name" th:text="${entry.key}"></span>
+                <span class="attribute-type" th:text="'[' + ${entry.value.getClass().getSimpleName()} + ']'"></span>
+                <div class="attribute-value">
+                    <span th:if="${entry.value == null}" class="null">null</span>
+                    <span th:unless="${entry.value == null}" th:text="${entry.value}"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Guide -->
+        <div class="section">
+            <h2>📖 Cách Sử Dụng</h2>
+            <p>Tool này giúp bạn debug Model attributes trong Thymeleaf:</p>
+            <ol>
+                <li>Xem tất cả attributes được add vào Model từ Controller</li>
+                <li>Kiểm tra data types của từng attribute</li>
+                <li>Phát hiện attributes null hoặc missing</li>
+                <li>Debug các vấn đề liên quan đến data binding</li>
+            </ol>
+
+            <h3>Test với Parameters:</h3>
+            <p>Thử các URL sau:</p>
+            <ul>
+                <li><code>/debug/model-viewer?testParam=hello</code></li>
+                <li><code>/debug/model-viewer?testParam=12345</code></li>
+                <li><code>/debug/model-viewer</code> (không có param)</li>
+            </ul>
+        </div>
+
+        <a href="/debug" class="back-link">← Back to Debug Dashboard</a>
+    </div>
+</body>
+</html>
+

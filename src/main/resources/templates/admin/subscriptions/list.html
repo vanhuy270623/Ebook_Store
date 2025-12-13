@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.min.css">
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Quản lý gói subscription <small>Danh sách gói</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li class="active">Quản lý subscription</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row" th:if="${success} or ${error}">
+				<div class="col-md-12">
+					<div class="alert alert-success alert-dismissible" th:if="${success}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-check"></i> Thành công!</h4>
+						<span th:text="${success}"></span>
+					</div>
+					<div class="alert alert-danger alert-dismissible" th:if="${error}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-ban"></i> Lỗi!</h4>
+						<span th:text="${error}"></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box box-solid">
+						<div class="box-body">
+							<a th:href="@{/admin/subscriptions/add}" class="btn btn-success"><i class="fa fa-plus"></i> Thêm gói mới</a>
+							<a th:href="@{/admin/subscriptions/statistics}" class="btn btn-info pull-right"><i class="fa fa-bar-chart"></i> Thống kê</a>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-4 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fa fa-gift"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng gói</span>
+							<span class="info-box-number" th:text="${totalSubscriptions ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-4 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Đang hoạt động</span>
+							<span class="info-box-number" th:text="${activeSubscriptions ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-4 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-red"><i class="fa fa-times"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Ngừng hoạt động</span>
+							<span class="info-box-number" th:text="${inactiveSubscriptions ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box">
+						<div class="box-header">
+							<h3 class="box-title">Danh sách gói subscription (<span th:text="${totalSubscriptions ?: 0}">0</span>)</h3>
+						</div>
+						<div class="box-body">
+							<table id="subscriptionsTable" class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>Tên gói</th>
+										<th>Giá</th>
+										<th>Thời hạn</th>
+										<th>Số thiết bị</th>
+										<th>Trạng thái</th>
+										<th>Ngày tạo</th>
+										<th>Thao tác</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="subscription : ${subscriptions}">
+										<td>
+											<strong th:text="${subscription.packageName}">BASIC</strong>
+											<br><small class="text-muted" th:text="${subscription.description}">Mô tả</small>
+										</td>
+										<td><strong th:text="${#numbers.formatDecimal(subscription.price, 0, 'COMMA', 0, 'POINT') + ' đ'}">99,000 đ</strong></td>
+										<td th:text="${subscription.durationDays + ' ngày'}">30 ngày</td>
+										<td th:text="${subscription.maxDevices}">1</td>
+										<td>
+											<span class="label label-success" th:if="${subscription.isActive}">Hoạt động</span>
+											<span class="label label-danger" th:unless="${subscription.isActive}">Ngừng</span>
+										</td>
+										<td th:text="${#temporals.format(subscription.createdAt, 'dd/MM/yyyy')}">01/12/2024</td>
+										<td>
+											<a th:href="@{/admin/subscriptions/view/{id}(id=${subscription.subscriptionId})}" class="btn btn-sm btn-info" title="Xem"><i class="fa fa-search"></i></a>
+											<a th:href="@{/admin/subscriptions/edit/{id}(id=${subscription.subscriptionId})}" class="btn btn-sm btn-warning" title="Sửa"><i class="fa fa-pencil"></i></a>
+											<form th:action="@{/admin/subscriptions/toggle/{id}(id=${subscription.subscriptionId})}" method="post" style="display:inline;">
+												<button type="submit" class="btn btn-sm btn-default" title="Bật/Tắt">
+													<i class="fa" th:classappend="${subscription.isActive ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+												</button>
+											</form>
+											<form th:action="@{/admin/subscriptions/delete/{id}(id=${subscription.subscriptionId})}" method="post" style="display:inline;" onsubmit="return confirm('Xóa gói này?');">
+												<button type="submit" class="btn btn-sm btn-danger" title="Xóa"><i class="fa fa-trash"></i></button>
+											</form>
+										</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(subscriptions)}">
+										<td colspan="7" class="text-center text-muted">Không có dữ liệu</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script src="/admin_template/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/admin_template/plugins/datatables/dataTables.bootstrap.min.js"></script>
+<script>
+	$(function () {
+		$('#subscriptionsTable').DataTable({
+			'paging': true,
+			'lengthChange': false,
+			'searching': true,
+			'ordering': true,
+			'info': true,
+			'autoWidth': false,
+			'language': {
+				'url': '//cdn.datatables.net/plug-ins/1.10.24/i18n/Vietnamese.json'
+			}
+		});
+	});
+</script>
+</body>
+</html>
+

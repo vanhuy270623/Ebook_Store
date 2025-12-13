@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<link rel="stylesheet" th:href="@{/admin_template/css/dashboard-custom.css}">
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<!-- Header -->
+	<div th:replace="~{admin/layout/header :: header}"></div>
+
+	<!-- Sidebar -->
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<!-- Content Wrapper -->
+	<div class="content-wrapper">
+		<!-- Content Header -->
+		<section class="content-header">
+			<h1>
+				Dashboard
+				<small>Tổng quan hệ thống</small>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Home</a></li>
+				<li class="active">Dashboard</li>
+			</ol>
+		</section>
+
+		<!-- Main content -->
+		<section class="content">
+			<!-- Statistics Overview -->
+			<div class="row">
+				<!-- Total Books -->
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fa fa-book"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng sách</span>
+							<span class="info-box-number" th:text="${totalBooks ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Total Users -->
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fa fa-users"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Người dùng</span>
+							<span class="info-box-number" th:text="${totalUsers ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Active Users -->
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-yellow"><i class="fa fa-user-plus"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Hoạt động</span>
+							<span class="info-box-number" th:text="${activeUsers ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Verified Users -->
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-red"><i class="fa fa-certificate"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Đã xác thực</span>
+							<span class="info-box-number" th:text="${verifiedUsers ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Revenue & Orders Statistics -->
+			<div class="row">
+				<!-- Today Revenue -->
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="small-box bg-green">
+						<div class="inner">
+							<h3 th:text="${#numbers.formatDecimal(todayRevenue ?: 0, 0, 'COMMA', 0, 'POINT')}">0</h3>
+							<p>Doanh thu hôm nay (đ)</p>
+						</div>
+						<div class="icon">
+							<i class="fa fa-calendar-check-o"></i>
+						</div>
+						<a href="#" class="small-box-footer">
+							<span th:text="${todayOrders ?: 0}">0</span> đơn hàng
+						</a>
+					</div>
+				</div>
+
+				<!-- This Month Revenue -->
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="small-box bg-blue">
+						<div class="inner">
+							<h3 th:text="${#numbers.formatDecimal(thisMonthRevenue ?: 0, 0, 'COMMA', 0, 'POINT')}">0</h3>
+							<p>Doanh thu tháng này (đ)</p>
+						</div>
+						<div class="icon">
+							<i class="fa fa-calendar"></i>
+						</div>
+						<a th:href="@{/admin/orders}" class="small-box-footer">
+							Chi tiết <i class="fa fa-arrow-circle-right"></i>
+						</a>
+					</div>
+				</div>
+
+				<!-- Total Revenue -->
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="small-box bg-yellow">
+						<div class="inner">
+							<h3 th:text="${#numbers.formatDecimal(totalRevenue ?: 0, 0, 'COMMA', 0, 'POINT')}">0</h3>
+							<p>Tổng doanh thu (đ)</p>
+						</div>
+						<div class="icon">
+							<i class="fa fa-money"></i>
+						</div>
+						<a th:href="@{/admin/orders}" class="small-box-footer">
+							<span th:text="${totalOrders ?: 0}">0</span> đơn hàng
+						</a>
+					</div>
+				</div>
+
+				<!-- Completed Orders -->
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="small-box bg-aqua">
+						<div class="inner">
+							<h3 th:text="${completedOrders ?: 0}">0</h3>
+							<p>Đơn hàng hoàn thành</p>
+						</div>
+						<div class="icon">
+							<i class="fa fa-check-circle"></i>
+						</div>
+						<a th:href="@{/admin/orders(status='COMPLETED')}" class="small-box-footer">
+							Chi tiết <i class="fa fa-arrow-circle-right"></i>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Revenue by Type & Recent Orders -->
+			<div class="row">
+				<div class="col-md-6">
+					<div class="box box-success">
+						<div class="box-header with-border">
+							<h3 class="box-title"><i class="fa fa-pie-chart"></i> Doanh thu theo loại đơn hàng</h3>
+						</div>
+						<div class="box-body">
+							<div class="row">
+								<div class="col-md-6">
+									<div class="info-box bg-aqua">
+										<span class="info-box-icon"><i class="fa fa-book"></i></span>
+										<div class="info-box-content">
+											<span class="info-box-text">Mua sách lẻ</span>
+											<span class="info-box-number" th:text="${#numbers.formatDecimal(bookRevenue ?: 0, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
+										</div>
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="info-box bg-purple">
+										<span class="info-box-icon"><i class="fa fa-star"></i></span>
+										<div class="info-box-content">
+											<span class="info-box-text">Gói đăng ký</span>
+											<span class="info-box-number" th:text="${#numbers.formatDecimal(subscriptionRevenue ?: 0, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Recent Orders Preview -->
+				<div class="col-md-6">
+					<div class="box box-warning">
+						<div class="box-header with-border">
+							<h3 class="box-title"><i class="fa fa-list"></i> Đơn hàng gần đây</h3>
+							<div class="box-tools pull-right">
+								<a th:href="@{/admin/orders}" class="btn btn-warning btn-sm">Xem tất cả</a>
+							</div>
+						</div>
+						<div class="box-body" style="max-height: 300px; overflow-y: auto;">
+							<ul class="list-group list-group-unbordered">
+								<li class="list-group-item" th:each="order : ${#lists.size(recentOrders) > 5 ? recentOrders.subList(0, 5) : recentOrders}" th:if="${recentOrders != null}">
+									<div>
+										<strong th:text="${order.orderId}">Order ID</strong>
+										<span class="pull-right">
+											<span class="label"
+											      th:classappend="${order.paymentStatus.name() == 'COMPLETED' ? 'label-success' :
+											                       (order.paymentStatus.name() == 'PENDING' ? 'label-warning' :
+											                       (order.paymentStatus.name() == 'FAILED' ? 'label-danger' : 'label-default'))}"
+											      th:text="${order.paymentStatus}">
+												Status
+											</span>
+										</span>
+									</div>
+									<small class="text-muted">
+										<i class="fa fa-user"></i> <span th:text="${order.user?.fullName ?: order.user?.username}">User</span> |
+										<i class="fa fa-money"></i> <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span> |
+										<i class="fa fa-clock-o"></i> <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">Date</span>
+									</small>
+								</li>
+								<li class="list-group-item text-center" th:if="${recentOrders == null or #lists.isEmpty(recentOrders)}">
+									<em class="text-muted">Chưa có đơn hàng nào</em>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Book Statistics -->
+			<div class="row">
+				<div class="col-md-6">
+					<div class="box box-info">
+						<div class="box-header with-border">
+							<h3 class="box-title"><i class="fa fa-bar-chart"></i> Thống kê sách theo loại</h3>
+						</div>
+						<div class="box-body">
+							<div class="row">
+								<div class="col-md-6">
+									<div class="info-box bg-green">
+										<span class="info-box-icon"><i class="fa fa-heart"></i></span>
+										<div class="info-box-content">
+											<span class="info-box-text">Sách miễn phí</span>
+											<span class="info-box-number" th:text="${freeBooks ?: 0}">0</span>
+										</div>
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="info-box bg-yellow">
+										<span class="info-box-icon"><i class="fa fa-credit-card"></i></span>
+										<div class="info-box-content">
+											<span class="info-box-text">Sách trả phí</span>
+											<span class="info-box-number" th:text="${paidBooks ?: 0}">0</span>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-md-12">
+									<div class="info-box bg-blue">
+										<span class="info-box-icon"><i class="fa fa-diamond"></i></span>
+										<div class="info-box-content">
+											<span class="info-box-text">Sách theo gói</span>
+											<span class="info-box-number" th:text="${subscriptionBooks ?: 0}">0</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Recent Books -->
+				<div class="col-md-6">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title"><i class="fa fa-clock-o"></i> Sách mới nhất</h3>
+							<div class="box-tools pull-right">
+								<a th:href="@{/admin/books}" class="btn btn-primary btn-sm">Xem tất cả</a>
+							</div>
+						</div>
+						<div class="box-body">
+							<ul class="list-group list-group-unbordered">
+								<li class="list-group-item" th:each="book : ${recentBooks}" th:if="${recentBooks != null}">
+									<img th:src="${book.coverImageUrl}" th:alt="${book.title}" class="img-thumbnail" style="width: 40px; height: 40px; float: left; margin-right: 10px;">
+									<strong th:text="${book.title}">Tên sách</strong><br>
+									<small class="text-muted">
+										<i class="fa fa-tag"></i> <span th:text="${book.bookCategory?.categoryName ?: 'Chưa phân loại'}">Thể loại</span> |
+										<i class="fa fa-money"></i> <span th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
+									</small>
+								</li>
+								<li class="list-group-item text-center" th:if="${recentBooks == null or #lists.isEmpty(recentBooks)}">
+									<em class="text-muted">Chưa có sách nào</em>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Users and Top Rated Books -->
+			<div class="row">
+				<!-- Recent Users -->
+				<div class="col-md-6">
+					<div class="box box-success">
+						<div class="box-header with-border">
+							<h3 class="box-title"><i class="fa fa-user-plus"></i> Người dùng mới</h3>
+							<div class="box-tools pull-right">
+								<a th:href="@{/admin/users}" class="btn btn-success btn-sm">Xem tất cả</a>
+							</div>
+						</div>
+						<div class="box-body">
+							<ul class="list-group list-group-unbordered">
+								<li class="list-group-item" th:each="user : ${recentUsers}" th:if="${recentUsers != null}">
+									<img th:src="${user.avatarUrl ?: '/shared/images/avatar.png'}" th:alt="${user.fullName ?: user.username}" class="img-circle" style="width: 30px; height: 30px; float: left; margin-right: 10px;">
+									<strong th:text="${user.fullName ?: user.username}">Tên người dùng</strong>
+									<span th:if="${user.role?.roleName?.name() == 'ADMIN'}" class="label label-danger" style="margin-left: 5px;">
+										<i class="fa fa-shield"></i> Admin
+									</span>
+									<br>
+									<small class="text-muted">
+										<i class="fa fa-envelope"></i> <span th:text="${user.email}">email@example.com</span>
+										<span th:if="${user.isVerified}" class="text-success" style="margin-left: 10px;">
+											<i class="fa fa-check-circle"></i> Đã xác thực
+										</span>
+									</small>
+									<div class="pull-right">
+										<span class="label label-success" th:if="${user.isActive}">
+											<i class="fa fa-circle"></i> Online
+										</span>
+										<span class="label label-default" th:if="${!user.isActive}">
+											<i class="fa fa-circle-o"></i> Offline
+										</span>
+									</div>
+								</li>
+								<li class="list-group-item text-center" th:if="${recentUsers == null or #lists.isEmpty(recentUsers)}">
+									<em class="text-muted">Chưa có người dùng mới</em>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+
+				<!-- Top Rated Books -->
+				<div class="col-md-6">
+					<div class="box box-warning">
+						<div class="box-header with-border">
+							<h3 class="box-title"><i class="fa fa-star"></i> Sách đánh giá cao</h3>
+							<div class="box-tools pull-right">
+								<a th:href="@{/admin/books/statistics}" class="btn btn-warning btn-sm">Thống kê</a>
+							</div>
+						</div>
+						<div class="box-body">
+							<ul class="list-group list-group-unbordered">
+								<li class="list-group-item" th:each="book : ${topRatedBooks}" th:if="${topRatedBooks != null}">
+									<img th:src="${book.coverImageUrl}" th:alt="${book.title}" class="img-thumbnail" style="width: 40px; height: 40px; float: left; margin-right: 10px;">
+									<strong th:text="${book.title}">Tên sách</strong><br>
+									<small class="text-muted">
+										<i class="fa fa-star text-yellow"></i>
+										<span th:text="${#numbers.formatDecimal(book.averageRating, 1, 2)}">0.0</span>
+										(<span th:text="${book.totalReviews}">0</span> đánh giá)
+									</small>
+								</li>
+								<li class="list-group-item text-center" th:if="${topRatedBooks == null or #lists.isEmpty(topRatedBooks)}">
+									<em class="text-muted">Chưa có đánh giá nào</em>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</section>
+	</div>
+
+	<!-- Footer -->
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<!-- Scripts -->
+<div th:replace="~{admin/layout/scripts :: scripts}"></div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+<!-- Page specific script -->
+<script th:src="@{/admin_template/js/admin-dashboard.js}"></script>
+
+</body>
+</html>
+

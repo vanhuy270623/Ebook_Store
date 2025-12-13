@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Thống kê coupon <small>Tổng quan</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/coupons}">Quản lý coupon</a></li>
+				<li class="active">Thống kê</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row">
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fa fa-ticket"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng coupon</span>
+							<span class="info-box-number" th:text="${totalCoupons ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Đang hoạt động</span>
+							<span class="info-box-number" th:text="${activeCoupons ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-red"><i class="fa fa-clock-o"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Hết hạn</span>
+							<span class="info-box-number" th:text="${expiredCoupons ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-yellow"><i class="fa fa-ban"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Hết lượt</span>
+							<span class="info-box-number" th:text="${usedUpCoupons ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-6">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Phân loại coupon theo loại</h3>
+						</div>
+						<div class="box-body">
+							<canvas id="couponTypeChart" height="200"></canvas>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-6">
+					<div class="box box-success">
+						<div class="box-header with-border">
+							<h3 class="box-title">Trạng thái coupon</h3>
+						</div>
+						<div class="box-body">
+							<canvas id="couponStatusChart" height="200"></canvas>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box">
+						<div class="box-header">
+							<h3 class="box-title">Danh sách coupon</h3>
+						</div>
+						<div class="box-body table-responsive no-padding">
+							<table class="table table-hover">
+								<thead>
+									<tr>
+										<th>Mã</th>
+										<th>Loại</th>
+										<th>Giá trị</th>
+										<th>Số lượt</th>
+										<th>Hạn sử dụng</th>
+										<th>Trạng thái</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="coupon : ${coupons}">
+										<td><strong th:text="${coupon.code}">CODE</strong></td>
+										<td>
+											<span th:if="${coupon.discountType.name() == 'PERCENT'}">Phần trăm</span>
+											<span th:if="${coupon.discountType.name() == 'FIXED'}">Cố định</span>
+										</td>
+										<td>
+											<span th:if="${coupon.discountType.name() == 'PERCENT'}" th:text="${coupon.discountValue + '%'}">10%</span>
+											<span th:if="${coupon.discountType.name() == 'FIXED'}" th:text="${#numbers.formatDecimal(coupon.discountValue, 0, 'COMMA', 0, 'POINT') + ' đ'}">50,000</span>
+										</td>
+										<td th:text="${coupon.usageLimit}">100</td>
+										<td th:text="${#temporals.format(coupon.endDate, 'dd/MM/yyyy')}">31/12/2024</td>
+										<td>
+											<span class="label label-success" th:if="${coupon.endDate.isAfter(T(java.time.LocalDateTime).now()) && coupon.usageLimit > 0}">Hoạt động</span>
+											<span class="label label-danger" th:if="${coupon.endDate.isBefore(T(java.time.LocalDateTime).now())}">Hết hạn</span>
+											<span class="label label-warning" th:if="${coupon.usageLimit <= 0}">Hết lượt</span>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script th:inline="javascript">
+	/*<![CDATA[*/
+	var totalCoupons = /*[[${totalCoupons ?: 0}]]*/ 0;
+	var activeCoupons = /*[[${activeCoupons ?: 0}]]*/ 0;
+	var expiredCoupons = /*[[${expiredCoupons ?: 0}]]*/ 0;
+	var usedUpCoupons = /*[[${usedUpCoupons ?: 0}]]*/ 0;
+
+	// Coupon Type Chart
+	var ctxType = document.getElementById('couponTypeChart').getContext('2d');
+	new Chart(ctxType, {
+		type: 'doughnut',
+		data: {
+			labels: ['Phần trăm (%)', 'Cố định (VNĐ)'],
+			datasets: [{
+				data: [activeCoupons, expiredCoupons],
+				backgroundColor: ['#3c8dbc', '#f39c12']
+			}]
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: true
+		}
+	});
+
+	// Coupon Status Chart
+	var ctxStatus = document.getElementById('couponStatusChart').getContext('2d');
+	new Chart(ctxStatus, {
+		type: 'pie',
+		data: {
+			labels: ['Đang hoạt động', 'Hết hạn', 'Hết lượt'],
+			datasets: [{
+				data: [activeCoupons, expiredCoupons, usedUpCoupons],
+				backgroundColor: ['#00a65a', '#dd4b39', '#f39c12']
+			}]
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: true
+		}
+	});
+	/*]]>*/
+</script>
+</body>
+</html>
+

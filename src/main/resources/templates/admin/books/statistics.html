@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<!-- Chart.js -->
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<!-- Header -->
+	<div th:replace="~{admin/layout/header :: header}"></div>
+
+	<!-- Sidebar -->
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<!-- Content Wrapper -->
+	<div class="content-wrapper">
+		<!-- Content Header -->
+		<section class="content-header">
+			<h1>
+				Thống kê sách
+				<small>Báo cáo và phân tích dữ liệu sách</small>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/books}">Quản lý sách</a></li>
+				<li class="active">Thống kê</li>
+			</ol>
+		</section>
+
+		<!-- Main content -->
+		<section class="content">
+			<!-- Statistics Overview -->
+			<div class="row">
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box bg-aqua">
+						<span class="info-box-icon"><i class="fa fa-book"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng số sách</span>
+							<span class="info-box-number" th:text="${totalBooks ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box bg-green">
+						<span class="info-box-icon"><i class="fa fa-gift"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Sách miễn phí</span>
+							<span class="info-box-number" th:text="${freeBooks ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box bg-yellow">
+						<span class="info-box-icon"><i class="fa fa-money"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Sách trả phí</span>
+							<span class="info-box-number" th:text="${paidBooks ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box bg-red">
+						<span class="info-box-icon"><i class="fa fa-calendar"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Sách theo gói</span>
+							<span class="info-box-number" th:text="${subscriptionBooks ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Charts Row -->
+			<div class="row">
+				<!-- Access Type Distribution -->
+				<div class="col-md-6">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Phân bố theo loại truy cập</h3>
+						</div>
+						<div class="box-body">
+							<canvas id="accessTypeChart" width="400" height="200"></canvas>
+						</div>
+					</div>
+				</div>
+
+				<!-- Top Categories -->
+				<div class="col-md-6">
+					<div class="box box-success">
+						<div class="box-header with-border">
+							<h3 class="box-title">Thống kê theo thể loại</h3>
+						</div>
+						<div class="box-body">
+							<canvas id="categoryChart" width="400" height="200"></canvas>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Recent Books and Top Rated -->
+			<div class="row">
+				<!-- Recent Books -->
+				<div class="col-md-6">
+					<div class="box box-info">
+						<div class="box-header with-border">
+							<h3 class="box-title">Sách mới nhất</h3>
+						</div>
+						<div class="box-body">
+							<table class="table table-striped">
+								<thead>
+									<tr>
+										<th>Tên sách</th>
+										<th>Thể loại</th>
+										<th>Giá</th>
+										<th>Ngày tạo</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="book : ${recentBooks}" th:if="${recentBooks != null}">
+										<td>
+											<strong th:text="${book.title}">Tên sách</strong>
+										</td>
+										<td>
+											<span class="label label-info" th:text="${book.bookCategory?.categoryName ?: 'N/A'}">Thể loại</span>
+										</td>
+										<td>
+											<span th:if="${book.price == 0}" class="label label-success">Miễn phí</span>
+											<span th:if="${book.price > 0}" th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
+										</td>
+										<td th:text="${#temporals.format(book.createdAt, 'dd/MM/yyyy')}">01/01/2024</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+				<!-- Top Rated Books -->
+				<div class="col-md-6">
+					<div class="box box-warning">
+						<div class="box-header with-border">
+							<h3 class="box-title">Sách đánh giá cao nhất</h3>
+						</div>
+						<div class="box-body">
+							<table class="table table-striped">
+								<thead>
+									<tr>
+										<th>Tên sách</th>
+										<th>Đánh giá</th>
+										<th>Số lượt</th>
+										<th>Lượt xem</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="book : ${topRatedBooks}" th:if="${topRatedBooks != null}">
+										<td>
+											<strong th:text="${book.title}">Tên sách</strong>
+										</td>
+										<td>
+											<i class="fa fa-star text-yellow"></i>
+											<span th:text="${#numbers.formatDecimal(book.averageRating, 1, 2)}">0.0</span>
+										</td>
+										<td th:text="${book.totalReviews}">0</td>
+										<td th:text="${#numbers.formatInteger(book.viewCount, 0, 'COMMA')}">0</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<!-- Footer -->
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<!-- Scripts -->
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+
+<script th:inline="javascript">
+$(document).ready(function() {
+	// Access Type Chart
+	var accessTypeCtx = document.getElementById('accessTypeChart').getContext('2d');
+	var accessTypeChart = new Chart(accessTypeCtx, {
+		type: 'doughnut',
+		data: {
+			labels: ['Miễn phí', 'Trả phí', 'Theo gói'],
+			datasets: [{
+				data: [
+					/*[[${freeBooks ?: 0}]]*/ 0,
+					/*[[${paidBooks ?: 0}]]*/ 0,
+					/*[[${subscriptionBooks ?: 0}]]*/ 0
+				],
+				backgroundColor: [
+					'#00a65a',
+					'#f39c12',
+					'#dd4b39'
+				]
+			}]
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: false,
+			legend: {
+				position: 'bottom'
+			}
+		}
+	});
+
+	// Sample Category Chart (would need actual category data)
+	var categoryCtx = document.getElementById('categoryChart').getContext('2d');
+	var categoryChart = new Chart(categoryCtx, {
+		type: 'bar',
+		data: {
+			labels: ['Tiểu thuyết', 'Kỹ năng sống', 'Truyện tranh', 'Kinh tế', 'Thiếu nhi'],
+			datasets: [{
+				label: 'Số lượng sách',
+				data: [12, 8, 15, 6, 10], // Sample data - should be dynamic
+				backgroundColor: '#3c8dbc'
+			}]
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: false,
+			scales: {
+				y: {
+					beginAtZero: true
+				}
+			}
+		}
+	});
+});
+</script>
+</body>
+</html>

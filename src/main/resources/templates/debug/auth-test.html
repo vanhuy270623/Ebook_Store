@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Authentication Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        table td:first-child {
+            font-weight: bold;
+            color: #495057;
+            width: 200px;
+        }
+        .code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+        }
+        .back-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .back-link:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Authentication Test</h1>
+        <p>Kiểm tra trạng thái authentication và thông tin user</p>
+
+        <!-- Authentication Status -->
+        <div class="info-box">
+            <h3>Authentication Status</h3>
+            <p>
+                <span th:if="${authInfo.authenticated}" class="status status-success">✓ AUTHENTICATED</span>
+                <span th:unless="${authInfo.authenticated}" class="status status-danger">✗ NOT AUTHENTICATED</span>
+            </p>
+        </div>
+
+        <!-- User Info (if authenticated) -->
+        <div th:if="${authInfo.authenticated}" class="info-box">
+            <h3>👤 User Information</h3>
+            <table>
+                <tr>
+                    <td>Name</td>
+                    <td th:text="${authInfo.name}"></td>
+                </tr>
+                <tr th:if="${authInfo.userId != null}">
+                    <td>User ID</td>
+                    <td th:text="${authInfo.userId}"></td>
+                </tr>
+                <tr th:if="${authInfo.email != null}">
+                    <td>Email</td>
+                    <td th:text="${authInfo.email}"></td>
+                </tr>
+                <tr th:if="${authInfo.role != null}">
+                    <td>Role</td>
+                    <td th:text="${authInfo.role}"></td>
+                </tr>
+                <tr>
+                    <td>Authorities</td>
+                    <td>
+                        <ul>
+                            <li th:each="auth : ${authInfo.authorities}" th:text="${auth}"></li>
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Not Authenticated Message -->
+        <div th:unless="${authInfo.authenticated}" class="info-box">
+            <h3>⚠️ Not Authenticated</h3>
+            <p th:text="${authInfo.message}"></p>
+            <p>Bạn cần đăng nhập để test authentication.</p>
+            <a href="/auth/login" style="color: #007bff;">→ Go to Login Page</a>
+        </div>
+
+        <!-- Raw Authentication Object -->
+        <div class="info-box">
+            <h3>🔍 Raw Authentication Object</h3>
+            <div class="code">
+                <pre th:text="${authInfo}"></pre>
+            </div>
+        </div>
+
+        <!-- Test Guide -->
+        <div class="info-box">
+            <h3>📖 Testing Guide</h3>
+            <h4>Test Scenarios:</h4>
+            <ol>
+                <li><strong>Anonymous User:</strong> Truy cập trang này khi chưa login</li>
+                <li><strong>Normal User:</strong> Login với tài khoản USER và kiểm tra</li>
+                <li><strong>Admin User:</strong> Login với tài khoản ADMIN và kiểm tra</li>
+            </ol>
+
+            <h4>Common Issues:</h4>
+            <ul>
+                <li><strong>authInfo null:</strong> Spring Security chưa cấu hình đúng</li>
+                <li><strong>principal is String:</strong> User chưa login (anonymous)</li>
+                <li><strong>authorities empty:</strong> User không có roles</li>
+            </ul>
+
+            <h4>Template Access:</h4>
+            <div class="code">
+&lt;!-- Check if authenticated --&gt;
+&lt;div th:if="${#authentication != null and #authentication.authenticated}"&gt;
+    &lt;span th:text="${#authentication.principal.email}"&gt;Email&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;!-- Check role --&gt;
+&lt;div sec:authorize="hasRole('ADMIN')"&gt;
+    Admin only content
+&lt;/div&gt;
+            </div>
+        </div>
+
+        <a href="/debug" class="back-link">← Back to Debug Dashboard</a>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,30 @@
+/* Styles dành riêng cho trang hồ sơ người dùng */
+.user-profile-avatar-sm {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+}
+
+.user-profile-avatar-lg {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+}
+
+.user-profile-avatar-upload {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+}
+
+.user-profile-icon-sm {
+    font-size: 32px;
+}
+
+.user-profile-icon-lg {
+    font-size: 120px;
+}
+
+.user-profile-icon-upload {
+    font-size: 100px;
+}

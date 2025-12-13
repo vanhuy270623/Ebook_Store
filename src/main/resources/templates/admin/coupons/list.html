@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+	<link rel="stylesheet" href="/admin_template/plugins/datatables/dataTables.bootstrap.min.css">
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Quản lý mã giảm giá <small>Danh sách coupon</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li class="active">Quản lý coupon</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row" th:if="${success} or ${error}">
+				<div class="col-md-12">
+					<div class="alert alert-success alert-dismissible" th:if="${success}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-check"></i> Thành công!</h4>
+						<span th:text="${success}"></span>
+					</div>
+					<div class="alert alert-danger alert-dismissible" th:if="${error}">
+						<button type="button" class="close" data-dismiss="alert">×</button>
+						<h4><i class="icon fa fa-ban"></i> Lỗi!</h4>
+						<span th:text="${error}"></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box box-solid">
+						<div class="box-body">
+							<form method="get" action="/admin/coupons" class="form-inline">
+								<div class="form-group">
+									<input type="text" name="search" class="form-control"
+										   placeholder="Tìm kiếm mã coupon..."
+										   th:value="${search}" style="width: 300px;">
+								</div>
+								<button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+								<a th:href="@{/admin/coupons}" class="btn btn-default"><i class="fa fa-refresh"></i></a>
+								<a th:href="@{/admin/coupons/add}" class="btn btn-success pull-right"><i class="fa fa-plus"></i> Thêm coupon mới</a>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fa fa-ticket"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng coupon</span>
+							<span class="info-box-number" th:text="${totalCoupons ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Đang hoạt động</span>
+							<span class="info-box-number" th:text="${activeCoupons ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-red"><i class="fa fa-clock-o"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Hết hạn</span>
+							<span class="info-box-number" th:text="${expiredCoupons ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-yellow"><i class="fa fa-bar-chart"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Thống kê</span>
+							<span class="info-box-number"><a th:href="@{/admin/coupons/statistics}">Xem</a></span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="box">
+						<div class="box-header">
+							<h3 class="box-title">Danh sách coupon (<span th:text="${totalCoupons ?: 0}">0</span>)</h3>
+						</div>
+						<div class="box-body">
+							<table id="couponsTable" class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>Mã</th>
+										<th>Loại</th>
+										<th>Giá trị</th>
+										<th>Đơn tối thiểu</th>
+										<th>Số lượt</th>
+										<th>Hạn sử dụng</th>
+										<th>Trạng thái</th>
+										<th>Thao tác</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="coupon : ${coupons}">
+										<td><strong th:text="${coupon.code}">SUMMER2024</strong></td>
+										<td>
+											<span class="label label-info" th:if="${coupon.discountType.name() == 'PERCENT'}">Phần trăm</span>
+											<span class="label label-primary" th:if="${coupon.discountType.name() == 'FIXED'}">Cố định</span>
+										</td>
+										<td>
+											<span th:if="${coupon.discountType.name() == 'PERCENT'}" th:text="${coupon.discountValue + '%'}">10%</span>
+											<span th:if="${coupon.discountType.name() == 'FIXED'}" th:text="${#numbers.formatDecimal(coupon.discountValue, 0, 'COMMA', 0, 'POINT') + ' đ'}">50,000 đ</span>
+										</td>
+										<td th:text="${coupon.minOrderValue != null ? #numbers.formatDecimal(coupon.minOrderValue, 0, 'COMMA', 0, 'POINT') + ' đ' : 'Không'}">100,000 đ</td>
+										<td th:text="${coupon.usageLimit ?: 'Không giới hạn'}">100</td>
+										<td th:text="${#temporals.format(coupon.endDate, 'dd/MM/yyyy HH:mm')}">31/12/2024</td>
+										<td>
+											<span class="label label-success" th:if="${coupon.endDate.isAfter(T(java.time.LocalDateTime).now()) && coupon.usageLimit > 0}">Hoạt động</span>
+											<span class="label label-danger" th:if="${coupon.endDate.isBefore(T(java.time.LocalDateTime).now())}">Hết hạn</span>
+											<span class="label label-warning" th:if="${coupon.usageLimit <= 0}">Hết lượt</span>
+										</td>
+										<td>
+											<a th:href="@{/admin/coupons/view/{id}(id=${coupon.couponId})}" class="btn btn-sm btn-info" title="Xem"><i class="fa fa-search"></i></a>
+											<a th:href="@{/admin/coupons/edit/{id}(id=${coupon.couponId})}" class="btn btn-sm btn-warning" title="Sửa"><i class="fa fa-pencil"></i></a>
+											<form th:action="@{/admin/coupons/delete/{id}(id=${coupon.couponId})}" method="post" style="display:inline;" onsubmit="return confirm('Xóa coupon này?');">
+												<button type="submit" class="btn btn-sm btn-danger" title="Xóa"><i class="fa fa-trash"></i></button>
+											</form>
+										</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(coupons)}">
+										<td colspan="8" class="text-center text-muted">Không có dữ liệu</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+<script src="/admin_template/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/admin_template/plugins/datatables/dataTables.bootstrap.min.js"></script>
+<script>
+	$(function () {
+		$('#couponsTable').DataTable({
+			'paging': true,
+			'lengthChange': true,
+			'searching': true,
+			'ordering': true,
+			'info': true,
+			'autoWidth': false,
+			'pageLength': 25,
+			'language': {
+				'url': '//cdn.datatables.net/plug-ins/1.10.24/i18n/Vietnamese.json'
+			}
+		});
+	});
+</script>
+</body>
+</html>
+

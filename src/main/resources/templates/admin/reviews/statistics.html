@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="~{admin/layout/head :: head}"></th:block>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+	<div th:replace="~{admin/layout/header :: header}"></div>
+	<div th:replace="~{admin/layout/sidebar :: sidebar}"></div>
+
+	<div class="content-wrapper">
+		<section class="content-header">
+			<h1>Thống kê đánh giá <small>Tổng quan</small></h1>
+			<ol class="breadcrumb">
+				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+				<li><a th:href="@{/admin/reviews}">Quản lý đánh giá</a></li>
+				<li class="active">Thống kê</li>
+			</ol>
+		</section>
+
+		<section class="content">
+			<div class="row">
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fa fa-star"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Tổng đánh giá</span>
+							<span class="info-box-number" th:text="${totalReviews ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-yellow"><i class="fa fa-hourglass"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Chờ duyệt</span>
+							<span class="info-box-number" th:text="${pendingReviews ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Đã duyệt</span>
+							<span class="info-box-number" th:text="${approvedReviews ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-red"><i class="fa fa-times"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">Từ chối</span>
+							<span class="info-box-number" th:text="${rejectedReviews ?: 0}">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-6">
+					<div class="box box-primary">
+						<div class="box-header with-border">
+							<h3 class="box-title">Đánh giá gần đây chờ duyệt</h3>
+						</div>
+						<div class="box-body">
+							<table class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>Sách</th>
+										<th>Người dùng</th>
+										<th>Đánh giá</th>
+										<th>Thao tác</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="review : ${pendingReviewsList}">
+										<td th:text="${#strings.abbreviate(review.book?.title ?: 'N/A', 20)}">Sách</td>
+										<td th:text="${review.user?.fullName ?: 'Ẩn danh'}">User</td>
+										<td>
+											<span class="fa fa-star" th:repeat="i : ${#numbers.sequence(1, review.rating ?? 0)}" style="color: #FFB81C;"></span>
+										</td>
+										<td>
+											<a th:href="@{/admin/reviews/view/{id}(id=${review.reviewId})}" class="btn btn-sm btn-info"><i class="fa fa-search"></i></a>
+										</td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(pendingReviewsList)}">
+										<td colspan="4" class="text-center text-muted">Không có dữ liệu</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-6">
+					<div class="box box-info">
+						<div class="box-header with-border">
+							<h3 class="box-title">Thống kê sao</h3>
+						</div>
+						<div class="box-body">
+							<div class="form-group">
+								<label>5 sao</label>
+								<div class="progress">
+									<div class="progress-bar progress-bar-success" role="progressbar" th:style="'width: ' + ${rating5Percent ?: 0} + '%'" th:attr="aria-valuenow=${rating5Percent ?: 0}"></div>
+								</div>
+								<small th:text="${rating5Count ?: 0} + ' đánh giá'"></small>
+							</div>
+							<div class="form-group">
+								<label>4 sao</label>
+								<div class="progress">
+									<div class="progress-bar progress-bar-success" role="progressbar" th:style="'width: ' + ${rating4Percent ?: 0} + '%'" th:attr="aria-valuenow=${rating4Percent ?: 0}"></div>
+								</div>
+								<small th:text="${rating4Count ?: 0} + ' đánh giá'"></small>
+							</div>
+							<div class="form-group">
+								<label>3 sao</label>
+								<div class="progress">
+									<div class="progress-bar progress-bar-warning" role="progressbar" th:style="'width: ' + ${rating3Percent ?: 0} + '%'" th:attr="aria-valuenow=${rating3Percent ?: 0}"></div>
+								</div>
+								<small th:text="${rating3Count ?: 0} + ' đánh giá'"></small>
+							</div>
+							<div class="form-group">
+								<label>2 sao</label>
+								<div class="progress">
+									<div class="progress-bar progress-bar-danger" role="progressbar" th:style="'width: ' + ${rating2Percent ?: 0} + '%'" th:attr="aria-valuenow=${rating2Percent ?: 0}"></div>
+								</div>
+								<small th:text="${rating2Count ?: 0} + ' đánh giá'"></small>
+							</div>
+							<div class="form-group">
+								<label>1 sao</label>
+								<div class="progress">
+									<div class="progress-bar progress-bar-danger" role="progressbar" th:style="'width: ' + ${rating1Percent ?: 0} + '%'" th:attr="aria-valuenow=${rating1Percent ?: 0}"></div>
+								</div>
+								<small th:text="${rating1Count ?: 0} + ' đánh giá'"></small>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<div th:replace="~{admin/layout/footer :: footer}"></div>
+</div>
+
+<th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
+</body>
+</html>
+

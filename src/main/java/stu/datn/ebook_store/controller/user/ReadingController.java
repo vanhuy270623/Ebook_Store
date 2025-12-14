@@ -9,10 +9,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.entity.BookAsset;
+import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.ReadingProgress;
 import stu.datn.ebook_store.entity.User;
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.BookAssetService;
+import stu.datn.ebook_store.service.OrderItemService;
+import stu.datn.ebook_store.service.OrderService;
 import stu.datn.ebook_store.service.ReadingProgressService;
 
 import java.time.LocalDateTime;
@@ -32,6 +35,8 @@ public class ReadingController {
     private final BookService bookService;
     private final BookAssetService bookAssetService;
     private final ReadingProgressService readingProgressService;
+    private final OrderService orderService;
+    private final OrderItemService orderItemService;
 
     /**
      * Helper method: Lấy User hiện tại từ Authentication
@@ -125,7 +130,7 @@ public class ReadingController {
                                 newProgress.setProgressPercentage(0.0f);
                                 newProgress.setIsCompleted(false);
                                 newProgress.setIsFavorite(false);
-                                newProgress.setAccessType(determineAccessType(book));
+                                newProgress.setAccessType(determineAccessType(book, user));
                                 newProgress.setCreatedAt(LocalDateTime.now());
                                 newProgress.setLastReadAt(LocalDateTime.now());
                                 ReadingProgress saved = readingProgressService.saveReadingProgress(newProgress);
@@ -270,7 +275,7 @@ public class ReadingController {
                         newProgress.setProgressPercentage(0.0f);
                         newProgress.setIsCompleted(false);
                         newProgress.setIsFavorite(false);
-                        newProgress.setAccessType(determineAccessType(book));
+                        newProgress.setAccessType(determineAccessType(book, user));
                         newProgress.setCreatedAt(LocalDateTime.now());
                         newProgress.setLastReadAt(LocalDateTime.now());
                         return readingProgressService.saveReadingProgress(newProgress);
@@ -331,7 +336,7 @@ public class ReadingController {
                 progress.setUser(user);
                 progress.setBook(book);
                 progress.setCreatedAt(LocalDateTime.now());
-                progress.setAccessType(determineAccessType(book));
+                progress.setAccessType(determineAccessType(book, user));
                 progress.setIsCompleted(false);
                 progress.setIsFavorite(false);
             } else {
@@ -586,7 +591,7 @@ public class ReadingController {
                         newProgress.setProgressPercentage(0.0f);
                         newProgress.setIsCompleted(false);
                         newProgress.setIsFavorite(false);
-                        newProgress.setAccessType(determineAccessType(book));
+                        newProgress.setAccessType(determineAccessType(book, user));
                         newProgress.setCreatedAt(LocalDateTime.now());
                         newProgress.setLastReadAt(LocalDateTime.now());
                         return readingProgressService.saveReadingProgress(newProgress);
@@ -637,22 +642,74 @@ public class ReadingController {
             return true;
         }
 
-        // TODO: Kiểm tra user đã mua sách chưa (qua Orders)
-        // TODO: Kiểm tra subscription active
+        Book.AccessType accessType = book.getAccessType();
 
-        // Tạm thời cho phép đọc tất cả để test
-        return true;
+        // Kiểm tra sách PURCHASE hoặc BOTH - user đã mua sách chưa
+        if (accessType == Book.AccessType.PURCHASE || accessType == Book.AccessType.BOTH) {
+            boolean hasPurchased = orderItemService.hasUserPurchasedBook(user.getUserId(), book.getBookId());
+            if (hasPurchased) {
+                log.debug("User {} has purchased book {}", user.getUserId(), book.getBookId());
+                return true;
+            }
+        }
+
+        // Kiểm tra sách SUBSCRIPTION hoặc BOTH - user có subscription active không
+        if (accessType == Book.AccessType.SUBSCRIPTION || accessType == Book.AccessType.BOTH) {
+            boolean hasActiveSubscription = hasActiveSubscription(user.getUserId());
+            if (hasActiveSubscription) {
+                log.debug("User {} has active subscription for book {}", user.getUserId(), book.getBookId());
+                return true;
+            }
+        }
+
+        // Không có quyền truy cập
+        log.warn("User {} does not have access to book {} (accessType: {})",
+                 user.getUserId(), book.getBookId(), accessType);
+        return false;
     }
 
     /**
-     * Xác định loại access type dựa trên book
+     * Kiểm tra user có subscription active không
      */
-    private ReadingProgress.AccessType determineAccessType(Book book) {
+    private boolean hasActiveSubscription(String userId) {
+        try {
+            List<Order> subscriptionOrders = orderService.getOrdersByUserIdAndType(userId, Order.OrderType.SUBSCRIPTION);
+
+            LocalDateTime now = LocalDateTime.now();
+            return subscriptionOrders.stream()
+                    .anyMatch(order ->
+                        (order.getPaymentStatus() == Order.PaymentStatus.COMPLETED ||
+                         order.getPaymentStatus() == Order.PaymentStatus.PAID) &&
+                        order.getEndDate() != null &&
+                        order.getEndDate().isAfter(now)
+                    );
+        } catch (Exception e) {
+            log.error("Error checking subscription status for user {}: {}", userId, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Xác định loại access type dựa trên book và user
+     */
+    private ReadingProgress.AccessType determineAccessType(Book book, User user) {
         if (Book.AccessType.FREE.equals(book.getAccessType())) {
             return ReadingProgress.AccessType.FREE;
         }
-        // TODO: Check nếu user mua sách thì return PURCHASED
-        // TODO: Check nếu user có subscription thì return SUBSCRIPTION
-        return ReadingProgress.AccessType.FREE; // Default
+
+        // Kiểm tra user đã mua sách chưa
+        boolean hasPurchased = orderItemService.hasUserPurchasedBook(user.getUserId(), book.getBookId());
+        if (hasPurchased) {
+            return ReadingProgress.AccessType.PURCHASED;
+        }
+
+        // Kiểm tra user có subscription active không
+        boolean hasActiveSubscription = hasActiveSubscription(user.getUserId());
+        if (hasActiveSubscription) {
+            return ReadingProgress.AccessType.SUBSCRIPTION;
+        }
+
+        // Mặc định là FREE (không nên đến đây nếu logic canUserAccessBook đúng)
+        return ReadingProgress.AccessType.FREE;
     }
 }

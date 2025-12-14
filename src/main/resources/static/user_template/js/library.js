@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Image fallback
     initImageFallback();
+
+    // Initialize favorite buttons
+    initFavoriteButtons();
 });
 
 /**
@@ -126,46 +129,81 @@ function initImageFallback() {
 }
 
 /**
+ * Initialize favorite buttons
+ */
+function initFavoriteButtons() {
+    const favoriteButtons = document.querySelectorAll('.action-btn.favorite');
+
+    favoriteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Lấy bookId từ card cha
+            const bookCard = this.closest('a.book-card');
+            if (bookCard) {
+                const bookId = extractBookIdFromUrl(bookCard.href);
+                if (bookId) {
+                    toggleFavorite(bookId, this);
+                }
+            }
+        });
+    });
+}
+
+/**
+ * Extract bookId từ URL
+ */
+function extractBookIdFromUrl(url) {
+    // URL format: /books/view/{bookId} hoặc /reading/reader/{bookId}
+    const match = url.match(/\/(books\/view|reading\/reader)\/([^/?]+)/);
+    return match ? match[2] : null;
+}
+
+/**
  * Toggle favorite status
- * @param {string} progressId - Reading progress ID
+ * @param {string} bookId - Book ID
  * @param {HTMLElement} button - Button element
  */
-function toggleFavorite(progressId, button) {
-    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
-    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
-
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-
-    if (csrfToken && csrfHeader) {
-        headers[csrfHeader] = csrfToken;
-    }
-
-    fetch(`/api/reading-progress/${progressId}/toggle-favorite`, {
+function toggleFavorite(bookId, button) {
+    fetch('/api/favorites/toggle', {
         method: 'POST',
-        headers: headers
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ bookId: bookId })
     })
-    .then(response => {
-        if (response.ok) {
-            button.classList.toggle('active');
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
             const icon = button.querySelector('i');
-            if (button.classList.contains('active')) {
+            if (data.isFavorite) {
+                button.classList.add('active');
                 icon.classList.remove('far');
                 icon.classList.add('fas');
-                showToast('Đã thêm vào yêu thích', 'success');
+                icon.style.color = '#dc3545';
             } else {
+                button.classList.remove('active');
                 icon.classList.remove('fas');
                 icon.classList.add('far');
-                showToast('Đã xóa khỏi yêu thích', 'info');
+                icon.style.color = '';
+
+                // Nếu đang ở tab favorites, reload lại trang để cập nhật
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('tab') === 'favorites') {
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500);
+                }
             }
+            showToast(data.message, 'success');
         } else {
-            showToast('Có lỗi xảy ra', 'error');
+            showToast(data.message || 'Có lỗi xảy ra', 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('Có lỗi xảy ra', 'error');
+        showToast('Không thể kết nối đến server', 'error');
     });
 }
 

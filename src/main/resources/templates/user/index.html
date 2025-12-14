@@ -26,8 +26,38 @@
     <link rel="stylesheet" th:href="@{/user_template/css/homepage-animations.css}">
     <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
     <link rel="stylesheet" th:href="@{/user_template/css/books-shared.css}">
+
+    <!-- Toast Animation CSS -->
+    <style>
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
 <body>
+
+    <!-- Flash Messages (Hidden, used by JavaScript) -->
+    <div th:if="${success}" th:attr="data-flash-success=${success}" style="display:none;"></div>
+    <div th:if="${error}" th:attr="data-flash-error=${error}" style="display:none;"></div>
+    <div th:if="${info}" th:attr="data-flash-info=${info}" style="display:none;"></div>
 
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">

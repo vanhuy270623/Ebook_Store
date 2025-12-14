@@ -486,8 +486,9 @@ public class UserController {
         // Thêm danh sách sách từ subscription
         model.addAttribute("subscriptionBooks", subscriptionBooks);
 
-        // Thêm danh sách yêu thích (tạm thời empty list - TODO: implement favorites)
-        model.addAttribute("favoriteBooks", new java.util.ArrayList<ReadingProgress>());
+        // Lấy danh sách sách yêu thích từ reading progress
+        List<ReadingProgress> favoriteBooks = readingProgressService.getFavoriteBooksByUser(currentUser);
+        model.addAttribute("favoriteBooks", favoriteBooks);
 
         // Thêm danh sách đã hoàn thành
         model.addAttribute("completedBooks", completedBooks);
@@ -499,7 +500,7 @@ public class UserController {
         model.addAttribute("totalReading", readingProgresses.size());
         model.addAttribute("totalPurchased", purchasedBooks.size());
         model.addAttribute("totalSubscription", subscriptionBooks.size());
-        model.addAttribute("totalFavorites", 0); // TODO: Implement favorites logic
+        model.addAttribute("totalFavorites", favoriteBooks.size());
         model.addAttribute("totalCompleted", totalCompleted);
 
         // Thông tin subscription

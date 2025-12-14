@@ -7,6 +7,7 @@ import stu.datn.ebook_store.entity.ReadingProgress;
 import stu.datn.ebook_store.entity.User;
 import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.repository.ReadingProgressRepository;
+import stu.datn.ebook_store.repository.BookRepository;
 import stu.datn.ebook_store.service.ReadingProgressService;
 
 import java.time.LocalDateTime;
@@ -18,10 +19,13 @@ import java.util.Optional;
 public class ReadingProgressServiceImpl implements ReadingProgressService {
 
     private final ReadingProgressRepository readingProgressRepository;
+    private final BookRepository bookRepository;
 
     @Autowired
-    public ReadingProgressServiceImpl(ReadingProgressRepository readingProgressRepository) {
+    public ReadingProgressServiceImpl(ReadingProgressRepository readingProgressRepository,
+                                     BookRepository bookRepository) {
         this.readingProgressRepository = readingProgressRepository;
+        this.bookRepository = bookRepository;
     }
 
     @Override
@@ -127,6 +131,38 @@ public class ReadingProgressServiceImpl implements ReadingProgressService {
             progress.setIsFavorite(false);
             readingProgressRepository.save(progress);
         }
+    }
+
+    @Override
+    @Transactional
+    public boolean toggleFavorite(User user, String bookId) {
+        // Tìm book từ database
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Book not found: " + bookId));
+
+        // Tìm hoặc tạo reading progress cho user và book
+        Optional<ReadingProgress> progressOpt = readingProgressRepository.findByUserAndBook(user, book);
+        ReadingProgress progress;
+
+        if (progressOpt.isPresent()) {
+            // Nếu đã có progress, toggle trạng thái favorite
+            progress = progressOpt.get();
+            progress.setIsFavorite(!progress.getIsFavorite());
+        } else {
+            // Nếu chưa có progress, tạo mới với favorite = true
+            progress = new ReadingProgress();
+            progress.setProgressId(generateProgressId());
+            progress.setUser(user);
+            progress.setBook(book);
+            progress.setIsFavorite(true);
+            progress.setProgressPercentage(0.0f);
+            progress.setIsCompleted(false);
+            progress.setCreatedAt(LocalDateTime.now());
+            progress.setLastReadAt(LocalDateTime.now());
+        }
+
+        readingProgressRepository.save(progress);
+        return progress.getIsFavorite();
     }
 
     @Override

@@ -24,6 +24,7 @@ public interface ReadingProgressService {
     List<ReadingProgress> getContinueReadingByUser(User user);
     void markAsFavorite(String progressId);
     void unmarkAsFavorite(String progressId);
+    boolean toggleFavorite(User user, String bookId);
     void markAsCompleted(String progressId);
     void updateProgress(String progressId, Float percentage, String location);
 

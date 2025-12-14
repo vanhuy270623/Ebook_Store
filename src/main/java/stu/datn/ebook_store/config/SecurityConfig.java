@@ -22,6 +22,7 @@ public class SecurityConfig {
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .ignoringRequestMatchers("/admin/books/delete/**") // Ignore CSRF for delete endpoint
                         .ignoringRequestMatchers("/reading/api/**") // Ignore CSRF for reading API (progress, bookmarks)
+                        .ignoringRequestMatchers("/api/favorites/**") // Ignore CSRF for favorites API
                 )
 
                 // ===== AUTHORIZATION RULES =====
@@ -53,7 +54,8 @@ public class SecurityConfig {
                                 "/subscription/**", // Subscription management
                                 "/payment/**", // Payment routes (VNPay, Bank Transfer)
                                 "/order/**", // Order routes
-                                "/cart/**" // Cart routes
+                                "/cart/**", // Cart routes
+                                "/api/favorites/**" // Favorites API
 
                         ).hasAnyRole("USER", "ADMIN") // ⚠️ USER hoặc ADMIN
 

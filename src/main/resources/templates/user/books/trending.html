@@ -1,77 +1,15 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sách thịnh hành - EbookStore</title>
-    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
-    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
-    <link rel="stylesheet" th:href="@{/user_template/css/homepage.css}">
-    <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+    <th:block th:replace="~{user/layout/head :: head}"></th:block>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-primary" th:href="@{/user/index}">
-                <i class="fas fa-book-reader me-2"></i>EbookStore
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" th:href="@{/user/index}">Trang chủ</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/books">Sách</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/categories">Danh mục</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/subscription/plans">Gói VIP</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
-                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img th:if="${currentUser != null && currentUser.avatarUrl != null}"
-                                 th:src="@{${currentUser.avatarUrl}}"
-                                 alt="Avatar"
-                                 class="rounded-circle me-2"
-                                 style="width: 32px; height: 32px; object-fit: cover;">
-                            <i th:if="${currentUser == null || currentUser.avatarUrl == null}"
-                               class="fas fa-user-circle me-2" style="font-size: 32px;"></i>
-                            <span sec:authentication="principal.fullName">Người dùng</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" th:href="@{/user/dashboard}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-                            <li><a class="dropdown-item" th:href="@{/user/profile}"><i class="fas fa-user-edit me-2"></i>Hồ sơ</a></li>
-                            <li><a class="dropdown-item" th:href="@{/user/orders}"><i class="fas fa-shopping-bag me-2"></i>Đơn hàng</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form th:action="@{/auth/logout}" method="post" class="d-inline">
-                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                    <button type="submit" class="dropdown-item text-danger">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/cart">
-                            <i class="fas fa-shopping-cart"></i>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+<div th:replace="~{user/layout/navbar :: navbar}"></div>
 
+<div th:if="${success}" th:attr="data-flash-success=${success}" style="display:none;"></div>
+<div th:if="${error}" th:attr="data-flash-error=${error}" style="display:none;"></div>
+<div th:if="${info}" th:attr="data-flash-info=${info}" style="display:none;"></div>
     <!-- Trending Books Content -->
     <section class="section py-5">
         <div class="container">
@@ -149,38 +87,11 @@
     </section>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white py-5 mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-4 mb-4 mb-lg-0">
-                    <h5 class="mb-3"><i class="fas fa-book-reader me-2"></i>EbookStore</h5>
-                    <p class="text-white-50">Thư viện sách điện tử hàng đầu Việt Nam với hơn 10,000+ đầu sách đa thể loại.</p>
-                </div>
-                <div class="col-lg-4 mb-4 mb-lg-0">
-                    <h5 class="mb-3">Liên kết</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="/about" class="text-white-50 text-decoration-none">Về chúng tôi</a></li>
-                        <li><a href="/contact" class="text-white-50 text-decoration-none">Liên hệ</a></li>
-                    </ul>
-                </div>
-                <div class="col-lg-4">
-                    <h5 class="mb-3">Theo dõi</h5>
-                    <div class="d-flex gap-2">
-                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-instagram"></i></a>
-                    </div>
-                </div>
-            </div>
-            <hr class="my-4 bg-white">
-            <div class="text-center text-white-50">
-                <p class="mb-0">&copy; 2024 EbookStore. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
+<div th:replace="~{user/layout/footer :: footer}"></div>
 
-    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
-    <script th:src="@{/user_template/js/user-main.js}"></script>
-    <script th:src="@{/user_template/js/books-common.js}"></script>
+<th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
+<script th:src="@{/user_template/js/user-main.js}"></script>
+<!-- Giữ JS riêng nếu có -->
+<script th:src="@{/user_template/js/books-common.js}"></script>
 </body>
 </html>

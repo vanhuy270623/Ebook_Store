@@ -1,35 +1,19 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thanh Toán Thất Bại - EbookStore</title>
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" th:href="@{/user_template/css/bootstrap.min.css}">
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Custom CSS -->
-    <link rel="stylesheet" th:href="@{/user_template/css/style.css}">
-    <link rel="stylesheet" th:href="@{/user_template/css/user-custom.css}">
+    <th:block th:replace="~{user/layout/head :: head}"></th:block>
+    <!-- CSS riêng cho Payment -->
     <link rel="stylesheet" th:href="@{/user_template/css/payment.css}">
-
-    
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-primary" th:href="@{/user/index}">
-                <i class="fas fa-book-reader me-2"></i>EbookStore
-            </a>
-        </div>
-    </nav>
+    <div th:replace="~{user/layout/navbar :: navbar}"></div>
+
+    <!-- Flash Messages -->
+    <div th:if="${success}" th:attr="data-flash-success=${success}" style="display:none;"></div>
+    <div th:if="${error}" th:attr="data-flash-error=${error}" style="display:none;"></div>
+    <div th:if="${info}" th:attr="data-flash-info=${info}" style="display:none;"></div>
 
     <div class="failed-container">
         <div class="failed-card">
@@ -77,8 +61,12 @@
         </div>
     </div>
 
+    <!-- Footer -->
+    <div th:replace="~{user/layout/footer :: footer}"></div>
+
     <!-- Scripts -->
-    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+    <th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
+    <script th:src="@{/user_template/js/user-main.js}"></script>
 </body>
 </html>
 

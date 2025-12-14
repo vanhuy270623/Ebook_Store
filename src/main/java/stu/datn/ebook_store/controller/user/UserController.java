@@ -109,7 +109,12 @@ public class UserController {
             model.addAttribute("trendingBooks", trendingBooks);
             model.addAttribute("newBooks", newBooks);
             model.addAttribute("user", currentUser);
+            model.addAttribute("currentUser", currentUser);
             model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
+
+            // Layout variables
+            model.addAttribute("pageTitle", "Trang chủ");
+            model.addAttribute("currentPage", "index");
 
         } catch (Exception e) {
             // Log error but still show the page
@@ -145,10 +150,15 @@ public class UserController {
                 .count();
 
         model.addAttribute("user", currentUser);
+        model.addAttribute("currentUser", currentUser);
         model.addAttribute("recentOrders", recentOrders);
         model.addAttribute("booksReading", booksReading);
         model.addAttribute("booksCompleted", booksCompleted);
         model.addAttribute("totalBooks", totalBooks);
+
+        // Layout variables
+        model.addAttribute("pageTitle", "Dashboard");
+        model.addAttribute("currentPage", "dashboard");
 
         return "user/dashboard";
     }
@@ -169,7 +179,12 @@ public class UserController {
         userRequest.setRoleId(currentUser.getRole() != null ? currentUser.getRole().getRoleId() : null);
 
         model.addAttribute("user", currentUser);
+        model.addAttribute("currentUser", currentUser);
         model.addAttribute("userRequest", userRequest);
+
+        // Layout variables
+        model.addAttribute("pageTitle", "Hồ sơ cá nhân");
+        model.addAttribute("currentPage", "profile");
 
         return "user/profile";
     }
@@ -415,6 +430,11 @@ public class UserController {
 
         User currentUser = getCurrentUser(authentication);
         model.addAttribute("user", currentUser);
+        model.addAttribute("currentUser", currentUser);
+
+        // Layout variables
+        model.addAttribute("pageTitle", "Thư viện của tôi");
+        model.addAttribute("currentPage", "library");
 
         // Lấy danh sách sách đang đọc (Reading History)
         // Filter để loại bỏ các record có book null (dữ liệu không nhất quán)
@@ -570,24 +590,5 @@ public class UserController {
         model.addAttribute("totalBooks", totalBooks);
 
         return "user/reading/reading-history";
-    }
-
-    /**
-     * Sách yêu thích (favorites)
-     */
-    @GetMapping("/favorites")
-    public String favorites(
-            @RequestParam(defaultValue = "0") int page,
-            Model model) {
-
-        // TODO: Implement favorites logic when Favorite entity is available
-        // For now, return empty list
-
-        model.addAttribute("favorites", List.of());
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", 0);
-        model.addAttribute("totalBooks", 0);
-
-        return "user/favorites";
     }
 }

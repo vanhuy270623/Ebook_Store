@@ -30,9 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -45,6 +43,10 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private static final String AVATAR_UPLOAD_DIR = "F:/datn_uploads/book_asset/image/avatars/";
+    private static final Set<Order.PaymentStatus> PAID_STATUSES =
+            EnumSet.of(Order.PaymentStatus.COMPLETED, Order.PaymentStatus.PAID);
+    private static final Set<Book.AccessType> RETAIL_ACCESS_TYPES =
+            EnumSet.of(Book.AccessType.PURCHASE, Book.AccessType.BOTH);
 
     private final UserService userService;
     private final OrderService orderService;
@@ -74,6 +76,18 @@ public class UserController {
     }
 
     /**
+     * Lấy danh sách ID các sách user đã mua
+     */
+    private Set<String> getPurchasedBookIds(Authentication authentication) {
+        User currentUser = getCurrentUser(authentication);
+        if (currentUser == null) {
+            return Set.of();
+        }
+        return new HashSet<>(orderItemService.getPurchasedBookIds(
+                currentUser.getUserId(), Order.OrderType.BOOK, PAID_STATUSES, RETAIL_ACCESS_TYPES));
+    }
+
+    /**
      * Trang chủ cho user đã đăng nhập
      */
     @GetMapping("/index")
@@ -95,7 +109,7 @@ public class UserController {
             model.addAttribute("trendingBooks", trendingBooks);
             model.addAttribute("newBooks", newBooks);
             model.addAttribute("user", currentUser);
-
+            model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
 
         } catch (Exception e) {
             // Log error but still show the page
@@ -394,7 +408,7 @@ public class UserController {
      */
     @GetMapping("/library")
     public String library(
-            @RequestParam(defaultValue = "reading") String tab,
+            @RequestParam(defaultValue = "all") String tab,
             @RequestParam(defaultValue = "0") int page,
             Authentication authentication,
             Model model) {

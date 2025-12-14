@@ -1,34 +1,62 @@
 /* Styles cho các trang subscription (gói VIP) */
+/* Tăng specificity để override Bootstrap */
 body.subscription-page {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.pricing-header {
+.subscription-page .pricing-header {
     padding: 60px 0 40px;
     text-align: center;
     color: #fff;
 }
 
-.pricing-header h1 {
-    font-size: 3rem;
+.subscription-page .pricing-header h1 {
+    font-size: 3rem !important;
     font-weight: bold;
     margin-bottom: 1rem;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
 }
 
-.pricing-header p {
-    font-size: 1.2rem;
+.subscription-page .pricing-header p {
+    font-size: 1.2rem !important;
     opacity: 0.95;
 }
 
+/* Subscription header - đồng bộ với pricing-header */
+.subscription-page .subscription-header {
+    padding: 60px 0 40px;
+    text-align: center;
+    color: #fff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin-bottom: 40px;
+}
+
+.subscription-page .subscription-header h1 {
+    font-size: 3rem !important;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.subscription-page .subscription-header p,
+.subscription-page .subscription-header .lead {
+    font-size: 1.2rem !important;
+    opacity: 0.95;
+}
+
+.subscription-page .subscription-header .mt-3 {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.subscription-page .pricing-card,
 .pricing-card {
-    background: #fff;
-    border-radius: 20px;
-    padding: 40px 30px;
+    background: #fff !important;
+    border-radius: 20px !important;
+    padding: 40px 30px !important;
     margin-bottom: 30px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1) !important;
     transition: transform 0.3s, box-shadow 0.3s;
     position: relative;
     overflow: hidden;
@@ -37,16 +65,19 @@ body.subscription-page {
     flex-direction: column;
 }
 
+.subscription-page .pricing-card:hover,
 .pricing-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    transform: translateY(-10px) !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2) !important;
 }
 
+.subscription-page .pricing-card.featured,
 .pricing-card.featured {
-    border: 3px solid #667eea;
-    transform: scale(1.05);
+    border: 3px solid #667eea !important;
+    transform: scale(1.05) !important;
 }
 
+.subscription-page .pricing-card.featured::before,
 .pricing-card.featured::before {
     content: "PHỔ BIẾN NHẤT";
     position: absolute;
@@ -61,86 +92,101 @@ body.subscription-page {
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
+.pricing-card .plan-name,
 .plan-name {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #333;
+    font-size: 1.8rem !important;
+    font-weight: bold !important;
+    color: #333 !important;
     margin-bottom: 15px;
 }
 
+.pricing-card .plan-price,
 .plan-price {
-    font-size: 3rem;
-    font-weight: bold;
-    color: #667eea;
+    font-size: 3rem !important;
+    font-weight: bold !important;
+    color: #667eea !important;
     margin-bottom: 10px;
 }
 
+.pricing-card .plan-price sup,
 .plan-price sup {
-    font-size: 1.5rem;
+    font-size: 1.5rem !important;
 }
 
+.pricing-card .plan-duration,
 .plan-duration {
-    color: #666;
-    font-size: 1rem;
+    color: #666 !important;
+    font-size: 1rem !important;
     margin-bottom: 25px;
 }
 
+.pricing-card .plan-description,
 .plan-description {
-    color: #777;
-    font-size: 1rem;
+    color: #777 !important;
+    font-size: 1rem !important;
     margin-bottom: 25px;
     min-height: 50px;
 }
 
+.pricing-card .features-list,
 .features-list {
-    list-style: none;
-    padding: 0;
-    margin: 25px 0;
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 25px 0 !important;
     flex-grow: 1;
 }
 
+.pricing-card .features-list li,
 .features-list li {
-    padding: 12px 0;
-    color: #555;
-    font-size: 1rem;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 12px 0 !important;
+    color: #555 !important;
+    font-size: 1rem !important;
+    border-bottom: 1px solid #f0f0f0 !important;
 }
 
+.pricing-card .features-list li:last-child,
 .features-list li:last-child {
-    border-bottom: none;
+    border-bottom: none !important;
 }
 
+.pricing-card .features-list i,
 .features-list i {
-    color: #28a745;
-    margin-right: 10px;
-    font-size: 1.1rem;
+    color: #28a745 !important;
+    margin-right: 10px !important;
+    font-size: 1.1rem !important;
 }
 
+.pricing-card .subscribe-btn,
 .subscribe-btn {
-    width: 100%;
-    padding: 15px;
-    border: none;
-    border-radius: 50px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s;
+    width: 100% !important;
+    padding: 15px !important;
+    border: none !important;
+    border-radius: 50px !important;
+    font-size: 1.1rem !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    transition: all 0.3s !important;
     margin-top: auto;
 }
 
+.pricing-card .subscribe-btn.btn-primary,
 .subscribe-btn.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: #fff !important;
+    border-color: transparent !important;
 }
 
+.pricing-card .subscribe-btn.btn-secondary,
 .subscribe-btn.btn-secondary {
-    background: #6c757d;
-    color: #fff;
+    background: #6c757d !important;
+    color: #fff !important;
+    border-color: transparent !important;
 }
 
+.pricing-card .subscribe-btn:hover,
 .subscribe-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    transform: scale(1.05) !important;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2) !important;
 }
 
 .comparison-table {
@@ -287,6 +333,39 @@ body.subscription-page {
     color: #6c757d;
 }
 
+/* Current subscription banner */
+.subscription-page .current-subscription-banner {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    color: #fff !important;
+    padding: 25px 30px !important;
+    border-radius: 15px !important;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 20px rgba(40, 167, 69, 0.3) !important;
+}
+
+.subscription-page .current-subscription-banner h4 {
+    color: #fff !important;
+    margin-bottom: 10px !important;
+}
+
+.subscription-page .current-subscription-banner p {
+    color: #fff !important;
+    opacity: 0.95;
+}
+
+.subscription-page .current-subscription-banner .btn-light {
+    background: #fff !important;
+    color: #28a745 !important;
+    font-weight: 600;
+    border: none;
+}
+
+.subscription-page .current-subscription-banner .btn-light:hover {
+    background: #f8f9fa !important;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+}
+
 /* Responsive */
 @media (max-width: 992px) {
     .pricing-card.featured {
@@ -301,4 +380,3 @@ body.subscription-page {
         grid-template-columns: 1fr;
     }
 }
-

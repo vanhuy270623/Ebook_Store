@@ -89,6 +89,9 @@ public class SubscriptionController {
         // Nếu user đã đăng nhập, kiểm tra gói hiện tại
         User currentUser = getCurrentUser(authentication);
         if (currentUser != null) {
+            // QUAN TRỌNG: Thêm user vào model để template có thể hiển thị
+            model.addAttribute("user", currentUser);
+
             Optional<UserSubscription> activeSubscription =
                 getActiveSubscription(currentUser.getUserId());
 
@@ -115,6 +118,9 @@ public class SubscriptionController {
             redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để xem gói của bạn");
             return "redirect:/auth/login";
         }
+
+        // QUAN TRỌNG: Thêm user vào model để template có thể hiển thị
+        model.addAttribute("user", currentUser);
 
         // Lấy lịch sử tất cả gói đăng ký
         List<UserSubscription> subscriptions =

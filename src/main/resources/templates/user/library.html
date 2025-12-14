@@ -285,7 +285,7 @@
                     <a href="#" th:classappend="${activeTab == 'free'} ? 'active'"
                        id="free-tab" data-bs-toggle="tab" data-bs-target="#free" role="tab">
                         <i class="fas fa-gift"></i>
-                        <span>Miễn phí</span>
+                        <span>Miễn phí (<span th:text="${totalFreeBooks != null ? totalFreeBooks : 0}">0</span>)</span>
                     </a>
                 </li>
             </ul>
@@ -355,8 +355,35 @@
                             </div>
                         </a>
                     </div>
+                    <!-- Sách miễn phí -->
+                    <div th:each="book : ${freeBooks}" class="col-lg-3 col-md-4 col-sm-6">
+                        <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="book-card">
+                            <div class="book-cover">
+                                <img th:if="${book.coverImageUrl != null}"
+                                     th:src="@{${book.coverImageUrl}}"
+                                     th:alt="${book.title}"
+                                     onerror="this.src='/shared/images/book.png'">
+                                <div th:if="${book.coverImageUrl == null}"
+                                     class="bg-secondary d-flex align-items-center justify-content-center h-100 w-100 position-absolute top-0">
+                                    <i class="fas fa-book fa-3x text-white"></i>
+                                </div>
+                                <span class="book-badge free">Miễn phí</span>
+                            </div>
+                            <div class="book-info">
+                                <h3 class="book-title" th:text="${book.title}">Tên sách</h3>
+                                <p class="book-author" th:text="${book.firstAuthorName}">Tác giả</p>
+                                <div class="book-meta">
+                                    <div class="book-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span th:text="${book.averageRating != null ? #numbers.formatDecimal(book.averageRating, 1, 1) : '0.0'}">0.0</span>
+                                    </div>
+                                    <span class="text-success fw-bold">Miễn phí</span>
+                                </div>
+                            </div>
+                        </a>
                     </div>
-                    <div th:if="${purchasedBooks.isEmpty() && subscriptionBooks.isEmpty()}" class="empty-state">
+                    </div>
+                    <div th:if="${purchasedBooks.isEmpty() && subscriptionBooks.isEmpty() && freeBooks.isEmpty()}" class="empty-state">
                         <i class="fas fa-books"></i>
                         <h4>Thư viện trống</h4>
                         <p>Bạn chưa có sách nào. Hãy mua sách hoặc đăng ký gói để bắt đầu đọc!</p>

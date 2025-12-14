@@ -20,12 +20,46 @@ document.addEventListener('DOMContentLoaded', function() {
 function initTabUrlSync() {
     const tabLinks = document.querySelectorAll('#libraryTabs a[data-bs-toggle="tab"]');
 
+    // Xóa tất cả event listener cũ và thêm mới
     tabLinks.forEach(link => {
+        // Clone node để xóa tất cả event listeners cũ
+        const newLink = link.cloneNode(true);
+        link.parentNode.replaceChild(newLink, link);
+    });
+
+    // Lấy lại danh sách links sau khi clone
+    const newTabLinks = document.querySelectorAll('#libraryTabs a[data-bs-toggle="tab"]');
+
+    newTabLinks.forEach(link => {
         link.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
             const tabId = this.getAttribute('data-bs-target').replace('#', '');
+
+            // Xóa class active khỏi tất cả tabs
+            newTabLinks.forEach(l => l.classList.remove('active'));
+
+            // Thêm class active vào tab được click
+            this.classList.add('active');
+
+            // Ẩn tất cả tab panes
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+
+            // Hiển thị tab pane tương ứng
+            const targetPane = document.querySelector(this.getAttribute('data-bs-target'));
+            if (targetPane) {
+                targetPane.classList.add('show', 'active');
+            }
+
+            // Cập nhật URL mà không reload trang
             const url = new URL(window.location);
             url.searchParams.set('tab', tabId);
             window.history.replaceState({}, '', url);
+
+            console.log('Tab switched to:', tabId);
         });
     });
 
@@ -35,9 +69,33 @@ function initTabUrlSync() {
 
     if (activeTab) {
         const tabLink = document.querySelector(`#libraryTabs a[data-bs-target="#${activeTab}"]`);
-        if (tabLink && typeof bootstrap !== 'undefined' && bootstrap.Tab) {
-            const tab = new bootstrap.Tab(tabLink);
-            tab.show();
+        if (tabLink) {
+            // Remove active from all
+            newTabLinks.forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+
+            // Activate the target tab
+            tabLink.classList.add('active');
+            const targetPane = document.querySelector(`#${activeTab}`);
+            if (targetPane) {
+                targetPane.classList.add('show', 'active');
+            }
+        }
+    } else {
+        // Nếu không có tab trong URL, kích hoạt tab "all"
+        const defaultTab = document.querySelector('#libraryTabs a[data-bs-target="#all"]');
+        const allPane = document.querySelector('#all');
+
+        if (defaultTab && allPane) {
+            newTabLinks.forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+
+            defaultTab.classList.add('active');
+            allPane.classList.add('show', 'active');
         }
     }
 }

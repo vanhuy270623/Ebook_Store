@@ -507,45 +507,32 @@ public class UserController {
         model.addAttribute("subscriptionPackageName", subscriptionPackageName);
         model.addAttribute("subscriptionEndDate", subscriptionEndDate);
 
-        // Phân trang cho tab đang active
-        int pageSize = 12;
-        int totalBooks;
-        int totalPages;
-
-        if ("reading".equals(tab)) {
-            totalBooks = readingProgresses.size();
-            totalPages = (int) Math.ceil((double) totalBooks / pageSize);
-            if (page >= totalPages && totalPages > 0) {
-                page = totalPages - 1;
-            }
-            int startIndex = Math.max(0, page * pageSize);
-            int endIndex = Math.min(startIndex + pageSize, totalBooks);
-            List<ReadingProgress> pagedProgress = readingProgresses.subList(startIndex, endIndex);
-            model.addAttribute("readingProgresses", pagedProgress);
-        } else if ("purchased".equals(tab)) {
-            totalBooks = purchasedBooks.size();
-            totalPages = (int) Math.ceil((double) totalBooks / pageSize);
-            if (page >= totalPages && totalPages > 0) {
-                page = totalPages - 1;
-            }
-            int startIndex = Math.max(0, page * pageSize);
-            int endIndex = Math.min(startIndex + pageSize, totalBooks);
-            List<Book> pagedBooks = purchasedBooks.subList(startIndex, endIndex);
-            model.addAttribute("purchasedBooks", pagedBooks);
-        } else {
-            totalBooks = 0;
-            totalPages = 0;
-            // Đảm bảo purchasedBooks luôn có trong model cho tab "all"
-            model.addAttribute("purchasedBooks", purchasedBooks);
+        // Lấy tất cả sách miễn phí (cho tab "all")
+        List<Book> allFreeBooks = bookService.getBooksByAccessType(Book.AccessType.FREE);
+        if (allFreeBooks == null) {
+            allFreeBooks = new ArrayList<>();
         }
+
+        // Đảm bảo tất cả danh sách luôn có trong model (để tránh lỗi isEmpty() trong template)
+        model.addAttribute("purchasedBooks", purchasedBooks);
+        model.addAttribute("subscriptionBooks", subscriptionBooks != null ? subscriptionBooks : new ArrayList<>());
+        model.addAttribute("freeBooks", allFreeBooks);
+
+        // Thêm tổng số sách miễn phí
+        model.addAttribute("totalFreeBooks", allFreeBooks.size());
+
+        // Load tất cả dữ liệu cho các tab (không phân trang vì sẽ dùng JavaScript để chuyển tab)
+        // Điều này giúp chuyển tab mượt mà không cần reload trang
+        model.addAttribute("readingProgresses", readingProgresses);
 
         // Thêm thống kê
         model.addAttribute("totalReadingBooks", readingProgresses.size());
         model.addAttribute("totalPurchasedBooks", purchasedBooks.size());
-        model.addAttribute("activeTab", tab);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("totalBooks", totalBooks);
+        model.addAttribute("activeTab", tab != null && !tab.isEmpty() ? tab : "all");
+
+        // Tính tổng số sách trong thư viện (đã mua + subscription + free)
+        int totalLibraryBooks = purchasedBooks.size() + subscriptionBooks.size() + allFreeBooks.size();
+        model.addAttribute("totalBooks", totalLibraryBooks);
 
         return "user/library";
     }

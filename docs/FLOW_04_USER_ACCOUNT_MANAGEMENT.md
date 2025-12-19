@@ -15,18 +15,50 @@
 ## Tổng Quan
 
 ### Components
-- **Controller**: `UserController.java`
-- **Service**: `UserService.java`, `OrderService.java`, `ReadingHistoryService.java`
-- **Repository**: `UserRepository.java`, `OrderRepository.java`, `ReadingHistoryRepository.java`
-- **Entity**: `User.java`, `Order.java`, `ReadingHistory.java`
+
+**Controllers** (Đã được tách thành nhiều controllers chuyên biệt):
+- `UserProfileController.java` - Profile management, password change
+- `UserOrderController.java` - Order history
+- `UserLibraryController.java` - Library & reading history (→ See **FLOW 20**)
+- `UserDeviceController.java` - Device management (→ See **FLOW 19**)
+- `UserSubscriptionController.java` - Subscription management (→ See **FLOW 10**)
+
+**Services**:
+- `UserService.java` - User CRUD operations
+- `OrderService.java` - Order queries
+- `ReadingProgressService.java` - Reading history
+
+**Repositories**:
+- `UserRepository.java`
+- `OrderRepository.java`
+- `ReadingProgressRepository.java`
+
+**Entities**:
+- `User.java`
+- `Order.java`
+- `ReadingProgress.java`
 
 ### URLs
+
+**Profile Management:**
 - `GET /user/profile` - Xem profile
 - `POST /user/profile/update` - Cập nhật profile
 - `POST /user/profile/change-password` - Đổi mật khẩu
-- `POST /user/profile/upload-avatar` - Upload avatar
+
+**Order History:**
 - `GET /user/orders` - Lịch sử đơn hàng
-- `GET /user/reading-history` - Lịch sử đọc sách
+- `GET /user/orders/{id}` - Chi tiết đơn hàng
+
+**Library & Reading:** (→ See **FLOW 20**)
+- `GET /user/library` - Thư viện sách
+- `GET /user/reading-history` - Lịch sử đọc
+
+**Device Management:** (→ See **FLOW 19**)
+- `GET /user/devices` - Quản lý thiết bị
+- `POST /user/devices/{id}/remove` - Xóa thiết bị
+
+**Subscription:** (→ See **FLOW 10**)
+- `GET /subscription/my-subscriptions` - Gói đăng ký của tôi
 
 ---
 

@@ -1,15 +1,322 @@
 # TODO List - Ebook Store Project
 
-**Cập nhật:** 06/12/2025 ✅ DOCUMENTATION COMPLETE  
-**Tiến độ tổng thể:** 97% ⬆️ (+2% documentation, +3% buổi tối 04/12, +13% ngày 04/12)  
+**Cập nhật:** 20/12/2025 ✅ DOCUMENTATION COMPLETE + 5 NEW FLOWS  
+**Tiến độ tổng thể:** 95% ⬆️ (+3% từ việc hoàn thành documentation update)  
+**Flow Documentation:** 21/21 flows (100%) ✅  
 **Priority:** 🔴 High | 🟡 Medium | 🟢 Low
 
 ---
 
-## 📊 MỚI - PHÂN TÍCH TIẾN ĐỘ & FILES
+## 🎉 MỚI HOÀN THÀNH - DOCUMENTATION UPDATE (20/12/2025)
 
-### Sprint 06/12/2025 - Flow Documentation Completion 🎉
-- ✅ Hoàn thành 100% Flow Documentation (8/8) 📚
+### ✅ 1. FLOW DOCUMENTATION COMPLETE (21/21 Flows)
+**Trạng thái:** ✅ 100% HOÀN THÀNH  
+
+**Flows mới tạo:**
+- ✅ FLOW 18: Secure Book Download
+- ✅ FLOW 19: Device Management
+- ✅ FLOW 20: User Library & Reading History
+- ✅ FLOW 21: Bank Transfer Payment
+- ✅ FLOW 22: Favorites System
+
+**Flows đã cập nhật:**
+- ✅ FLOW 03: Shopping Cart (removed coupon, updated CartItem)
+- ✅ FLOW 04: User Account (controller split)
+- ✅ FLOW 11: Review System (implementation status)
+- ✅ FLOW_INDEX: Updated to v4.0
+
+**Flows đã xóa:**
+- 🗑️ FLOW 16: Coupon Management (không sử dụng)
+
+**Documentation Statistics:**
+- Total Flows: 21 flows
+- Total Lines: ~12,000 lines
+- Total Size: ~600 KB
+- Sequence Diagrams: 110+
+- Code Examples: 450+
+- SQL Queries: 120+
+
+---
+
+## 🎉 HOÀN THÀNH TRƯỚC ĐÓ - CRITICAL FEATURES (19/12/2025)
+
+### ✅ 1. SECURE DOWNLOAD (Tải Xuống Bảo Mật) - COMPLETED
+**Trạng thái:** ✅ 100% HOÀN THÀNH  
+**Controller:** `BookDownloadController.java`  
+**Endpoint:** `GET /books/download/{bookId}`
+
+**Đã implement:**
+- ✅ Controller xử lý download với authentication
+- ✅ Kiểm tra quyền tải xuống qua `DownloadAuthorizationService`
+- ✅ Stream file an toàn (không lộ đường dẫn thực)
+- ✅ Support cả PDF và EPUB
+- ✅ Tên file tiếng Việt đúng encoding (UTF-8)
+- ✅ Error handling chi tiết với HTTP headers
+
+**Tính năng:**
+- Authorization check: Chỉ user đã mua/VIP mới tải được
+- File streaming: Dùng `UrlResource` để stream an toàn
+- Content-Type detection: Tự động nhận diện PDF/EPUB
+- Sanitize filename: Loại bỏ ký tự đặc biệt, giữ tiếng Việt
+
+---
+
+### ✅ 2. DEVICE MANAGEMENT (Quản Lý Thiết Bị) - COMPLETED
+**Trạng thái:** ✅ 100% HOÀN THÀNH  
+**Controller:** `UserDeviceController.java`  
+**Endpoints:**
+- `GET /user/devices` - Trang quản lý thiết bị
+- `POST /user/devices/{deviceId}/remove` - Xóa thiết bị
+- `GET /user/api/devices` - API lấy danh sách (JSON)
+
+**Đã implement:**
+- ✅ Trang quản lý thiết bị với UI đầy đủ
+- ✅ Hiển thị: device name, IP, last active, current device indicator
+- ✅ Xóa thiết bị (remote logout)
+- ✅ Hiển thị "X/Y devices used" dựa trên subscription
+- ✅ Device violation count tracking
+- ✅ Subscription info display
+
+**Tính năng:**
+- Current device indicator: Hiển thị thiết bị hiện tại
+- Remove device: Xóa thiết bị khác (không xóa được current device)
+- Max devices from subscription: FREE=2, BASIC=3, PREMIUM=5, VIP=10
+- API endpoint: Hỗ trợ AJAX calls
+
+---
+
+### ✅ 3. CANCEL SUBSCRIPTION (Hủy Gói Đăng Ký) - COMPLETED
+**Trạng thái:** ✅ 100% HOÀN THÀNH  
+**Controller:** `UserSubscriptionController.java`  
+**Endpoint:** `POST /subscription/cancel/{subscriptionId}`
+
+**Đã implement:**
+- ✅ Endpoint hủy gói đăng ký
+- ✅ Kiểm tra quyền sở hữu (chỉ owner mới hủy được)
+- ✅ Kiểm tra order type (chỉ hủy được SUBSCRIPTION orders)
+- ✅ Cập nhật payment status → CANCELLED
+- ✅ Redirect về trang my-subscriptions với flash message
+- ✅ Error handling đầy đủ
+
+**Tính năng:**
+- Authorization: Chỉ user sở hữu mới hủy được
+- Type validation: Chỉ hủy được subscription orders
+- Status update: Payment status → CANCELLED
+- User feedback: Flash messages (success/error)
+
+---
+
+## 🎯 TRỌNG TÂM: CÁC CHỨC NĂNG CÒN THIẾU
+
+Sau khi hoàn thành 3 luồng critical, còn lại các tính năng sau:
+
+---
+
+## 🔴 HIGH PRIORITY - CẦN HOÀN THIỆN
+
+### 1. 🔴 REVIEW & RATING SYSTEM (Đánh Giá & Xếp Hạng) - P1
+**Trạng thái:** ⚠️ BACKEND CÓ, FRONTEND THIẾU  
+**Độ ưu tiên:** 🔴 HIGH - TĂNG TIN CẬY  
+**Timeline:** 2 ngày
+
+**Vấn đề hiện tại:**
+- `ReviewService` đã có nhưng không có UI để user viết review
+- `AdminReviewController` chưa hoàn thiện (chỉ có khung)
+- Trang chi tiết sách không hiển thị review
+
+**Cần làm:**
+
+#### User Side:
+- [ ] Form đánh giá trong `/user/books/view.html`
+- [ ] API `POST /api/reviews` để gửi review
+- [ ] Hiển thị danh sách review + rating trung bình
+- [ ] Chỉ cho phép review nếu đã mua/đã đọc (Verified Purchase)
+
+#### Admin Side:
+- [ ] Hoàn thiện `AdminReviewController` (approve/reject)
+- [ ] Template `admin/reviews/list.html`
+- [ ] Bộ lọc: Chờ duyệt, Đã duyệt, Spam
+
+**Files cần sửa:**
+- `controller/user/ReviewController.java` (mới)
+- `controller/admin/AdminReviewController.java` (hoàn thiện)
+- `templates/user/books/view.html` (thêm review section)
+- `templates/admin/reviews/*.html` (hoàn thiện)
+
+---
+
+### 2. 🟡 BANNER MANAGEMENT (Quản Lý Banner) - P1
+**Trạng thái:** ⚠️ BACKEND CÓ, FRONTEND THIẾU  
+**Độ ưu tiên:** 🟡 MEDIUM - MARKETING  
+**Timeline:** 1-2 ngày
+
+**Vấn đề hiện tại:**
+- `AdminBannerController` đã có nhưng chưa hoàn chỉnh
+- Trang chủ dùng banner tĩnh (hard-coded trong HTML)
+- Không có carousel/slider
+
+**Cần làm:**
+
+#### Admin Side:
+- [ ] Hoàn thiện CRUD banner trong admin
+- [ ] Upload ảnh banner
+- [ ] Đặt link và vị trí (Home, Sidebar, Category)
+
+#### User Side:
+- [ ] Load banner động từ DB trong `home.html`
+- [ ] Tạo carousel slider (Bootstrap hoặc Owl Carousel)
+- [ ] Hiển thị banner theo vị trí
+
+**Files cần sửa:**
+- `controller/admin/AdminBannerController.java` (hoàn thiện)
+- `templates/admin/banners/*.html` (hoàn thiện)
+- `templates/user/index.html` (dynamic banner)
+
+---
+
+### 3. 🟢 FAVORITES MANAGEMENT (Quản Lý Yêu Thích) - P2
+**Trạng thái:** ⚠️ BACKEND CÓ, FRONTEND THIẾU  
+**Độ ưu tiên:** 🔴 HIGH - TĂNG TIN CẬY  
+**Timeline:** 2 ngày
+
+**Vấn đề hiện tại:**
+- `ReviewService` đã có nhưng không có UI để user viết review
+- `AdminReviewController` chưa hoàn thiện (chỉ có khung)
+- Trang chi tiết sách không hiển thị review
+
+**Cần làm:**
+
+#### User Side:
+- [ ] Form đánh giá trong `/user/books/view.html`
+- [ ] API `POST /api/reviews` để gửi review
+- [ ] Hiển thị danh sách review + rating trung bình
+- [ ] Chỉ cho phép review nếu đã mua/đã đọc (Verified Purchase)
+
+#### Admin Side:
+- [ ] Hoàn thiện `AdminReviewController` (approve/reject)
+- [ ] Template `admin/reviews/list.html`
+- [ ] Bộ lọc: Chờ duyệt, Đã duyệt, Spam
+
+**Files cần sửa:**
+- `controller/user/ReviewController.java` (mới)
+- `controller/admin/AdminReviewController.java` (hoàn thiện)
+- `templates/user/books/view.html` (thêm review section)
+- `templates/admin/reviews/*.html` (hoàn thiện)
+
+---
+
+### 4. 🟡 BANNER MANAGEMENT (Quản Lý Banner) - P1
+**Trạng thái:** ⚠️ BACKEND CÓ, FRONTEND THIẾU  
+**Độ ưu tiên:** 🟡 MEDIUM - MARKETING  
+**Timeline:** 1-2 ngày
+
+**Vấn đề hiện tại:**
+- `AdminBannerController` đã có nhưng chưa hoàn chỉnh
+- Trang chủ dùng banner tĩnh (hard-coded trong HTML)
+- Không có carousel/slider
+
+**Cần làm:**
+
+#### Admin Side:
+- [ ] Hoàn thiện CRUD banner trong admin
+- [ ] Upload ảnh banner
+- [ ] Đặt link và vị trí (Home, Sidebar, Category)
+
+#### User Side:
+- [ ] Load banner động từ DB trong `home.html`
+- [ ] Tạo carousel slider (Bootstrap hoặc Owl Carousel)
+- [ ] Hiển thị banner theo vị trí
+
+**Files cần sửa:**
+- `controller/admin/AdminBannerController.java` (hoàn thiện)
+- `templates/admin/banners/*.html` (hoàn thiện)
+- `templates/user/index.html` (dynamic banner)
+
+---
+
+### 5. 🟢 FAVORITES MANAGEMENT (Quản Lý Yêu Thích) - P2
+**Trạng thái:** ✅ BACKEND HOÀN CHỈNH, FRONTEND CẦN POLISH  
+**Độ ưu tiên:** 🟢 LOW - TIỆN ÍCH  
+**Timeline:** 1 ngày
+
+**Vấn đề hiện tại:**
+- API favorites đã hoạt động tốt
+- Thiếu trang "Tủ sách yêu thích"
+- Icon tim chưa đổi màu động
+
+**Cần làm:**
+- [ ] Tạo trang `/user/library/favorites`
+- [ ] JavaScript toggle icon tim (đỏ/trắng)
+- [ ] Hiển thị số lượng sách yêu thích
+
+**Files cần sửa:**
+- `templates/user/library/favorites.html` (mới)
+- `templates/user/books/view.html` (thêm nút favorite)
+
+---
+
+## 📊 PHÂN TÍCH TIẾN ĐỘ & FILES
+
+### Sprint 19/12/2025 - Critical Features Completion 🎉
+- ✅ Hoàn thành 100% Secure Download (BookDownloadController) 🆕
+  - Endpoint: GET /books/download/{bookId}
+  - Authorization check qua DownloadAuthorizationService
+  - File streaming an toàn với UrlResource
+  - Support PDF & EPUB
+  - UTF-8 filename encoding
+
+- ✅ Hoàn thành 100% Device Management (UserDeviceController) 🆕
+  - Trang quản lý: GET /user/devices
+  - Remove device: POST /user/devices/{deviceId}/remove
+  - API endpoint: GET /user/api/devices
+  - Max devices theo subscription tier
+  - Current device indicator
+
+- ✅ Hoàn thành 100% Cancel Subscription (UserSubscriptionController) 🆕
+  - Endpoint: POST /subscription/cancel/{subscriptionId}
+  - Authorization & validation
+  - Payment status → CANCELLED
+  - Flash messages
+
+- ✅ Controllers Progress: 100% → **100%** (19/19 controllers) ✅ ALL COMPLETE
+- ✅ Critical Features: 85% → **92%** (+7%) 🚀
+- ✅ Overall Progress: 85% → **92%** (+7%) 🎯
+
+**IMPLEMENTATION STATISTICS:**
+- ✅ BookDownloadController: 187 lines (complete download flow)
+- ✅ UserDeviceController: 149 lines (complete device management)
+- ✅ Cancel Subscription: Integrated in UserSubscriptionController
+- ✅ Security: File streaming không lộ đường dẫn
+- ✅ Authorization: Kiểm tra quyền ở mọi endpoint
+- ✅ Error Handling: HTTP headers + flash messages
+
+**KEY FEATURES:**
+- 📥 **Secure Download:** Stream file từ F:/datn_uploads qua controller, không cho truy cập trực tiếp
+- 📱 **Device Management:** User quản lý được thiết bị đăng nhập, xóa thiết bị cũ
+- ❌ **Cancel Subscription:** User tự hủy gói đăng ký, cập nhật status CANCELLED
+
+**IMPACT:**
+- 🔒 Security: Bảo vệ file sách, chỉ user có quyền mới tải được
+- 💰 Business: Kiểm soát sharing account qua device limit
+- 👤 User Control: User tự quản lý thiết bị và subscription
+
+**Next Priority:**
+- 🔴 Review System (User side) - Tăng trust & conversion
+- 🟡 Dynamic Banners - Marketing feature
+- 🟢 Favorites UI Polish - UX enhancement
+
+### Sprint 10/12/2025 - Payment & Subscription Updates 🔄
+- ✅ Thêm thanh toán QR Code Bank Transfer (70% hoàn thành)
+  - Backend: `PaymentController` - QR code generation ✅
+  - Template: `bank-transfer.html` ✅
+  - Còn thiếu: Trang waiting và auto-check status ⚠️
+
+- ✅ Sửa lỗi Subscription Plans
+  - Fix template fragment errors
+  - Hiển thị đúng 4 gói (FREE, BASIC, PREMIUM, VIP)
+  - Thống nhất payment flow
+
+- ✅ Hoàn thành 100% Flow Documentation (17/17) 📚
   - Flow 01: Authentication ✅
   - Flow 02: Admin Book Management ✅
   - Flow 03: Shopping Cart & Checkout ✅

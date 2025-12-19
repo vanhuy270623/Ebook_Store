@@ -5,11 +5,10 @@
 2. [Flow 3.1: Browse & Search Books](#flow-31-browse--search-books)
 3. [Flow 3.2: Add to Cart](#flow-32-add-to-cart)
 4. [Flow 3.3: View Cart](#flow-33-view-cart)
-5. [Flow 3.4: Update Cart](#flow-34-update-cart)
-6. [Flow 3.5: Apply Coupon](#flow-35-apply-coupon)
-7. [Flow 3.6: Checkout](#flow-36-checkout)
-8. [Flow 3.7: Payment Processing](#flow-37-payment-processing)
-9. [Debugging Endpoints](#debugging-endpoints)
+5. [Flow 3.4: Update Cart (Remove Items)](#flow-34-update-cart-remove-items)
+6. [Flow 3.5: Checkout](#flow-35-checkout)
+7. [Flow 3.6: Payment Processing](#flow-36-payment-processing)
+8. [Debugging Endpoints](#debugging-endpoints)
 
 ---
 
@@ -81,8 +80,15 @@
 
 ### Components
 - **Controllers**: `UserBookController.java`, `CartController.java`, `OrderController.java`
-- **Services**: `BookService.java`, `CartService.java`, `OrderService.java`, `CouponService.java`
-- **Entities**: `Book.java`, `CartItem.java`, `Order.java`, `OrderItem.java`, `Coupon.java`
+- **Services**: `BookService.java`, `CartService.java`, `OrderService.java`
+- **Entities**: `Book.java`, `Cart.java`, `CartItem.java`, `Order.java`, `OrderItem.java`
+
+### ⚠️ Important Changes
+**CartItem Structure (Updated 20/12/2025):**
+- ❌ **REMOVED**: `quantity` field
+- ✅ **NEW**: Composite key (cart_id, book_id)
+- ✅ **BEHAVIOR**: Mỗi sách chỉ có thể thêm 1 lần vào giỏ hàng
+- ✅ **REASON**: Ebook không cần mua nhiều bản (mỗi user chỉ cần 1 license)
 
 ---
 
@@ -169,36 +175,124 @@ LIMIT ? OFFSET ?;
 ```
 User → Browser → CartController → CartService → CartItemRepository → Database
   │       │           │               │                │                │
-  │ Click "Add to Cart" (bookId=1, quantity=2)                         │
+  │ Click "Add to Cart" (bookId=book_001)                              │
   │──────────────────────►│                                             │
   │       │               │ addToCart()                                 │
   │       │               ├─────────────►│                              │
-  │       │               │               │ findByUserAndBook()         │
+  │       │               │               │ Check if exists             │
+  │       │               │               │ (cart_id, book_id)          │
   │       │               │               ├────────────────►│           │
   │       │               │               │                 │ SELECT *  │
+  │       │               │               │                 │ WHERE     │
+  │       │               │               │                 │ cart_id=? │
+  │       │               │               │                 │ AND book_id=?
   │       │               │               │                 ├──────────►│
   │       │               │               │                 │◄──────────┤
   │       │               │               │◄────────────────┤           │
   │       │               │               │ if exists:                  │
-  │       │               │               │   update quantity           │
+  │       │               │               │   return error (already in cart)
   │       │               │               │ else:                       │
-  │       │               │               │   create new                │
+  │       │               │               │   create new CartItem       │
   │       │               │               │ save()                      │
   │       │               │               ├────────────────►│           │
-  │       │               │               │                 │ INSERT/   │
-  │       │               │               │                 │ UPDATE    │
+  │       │               │               │                 │ INSERT    │
   │       │               │               │                 ├──────────►│
   │       │               │               │                 │◄──────────┤
   │       │               │               │◄────────────────┤           │
   │       │               │◄─────────────┤                              │
-  │◄──────────────────────┤ redirect:/user/cart                        │
+  │◄──────────────────────┤ redirect:/cart                             │
 ```
 
 ### Implementation Details
 
-**Controller**:
+**Controller** (`CartController.java`):
 ```java
-@PostMapping("/cart/add")
+@PostMapping("/add/{bookId}")
+public String addToCart(
+        @PathVariable String bookId,
+        @RequestParam(value = "redirect", required = false) String redirectUrl,
+        RedirectAttributes redirectAttributes) {
+
+    try {
+        User currentUser = getCurrentUser();
+
+        // Kiểm tra sách tồn tại
+        Book book = bookService.getBookById(bookId)
+                .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+
+        // Kiểm tra sách có thể mua được không
+        if (book.getAccessType() == Book.AccessType.FREE) {
+            redirectAttributes.addFlashAttribute("error", 
+                "Sách này không thể thêm vào giỏ (sách miễn phí)");
+            return getRedirectPath(redirectUrl, bookId);
+        }
+
+        // Lấy hoặc tạo giỏ hàng
+        Cart cart = cartService.getCartByUser(currentUser)
+                .orElseGet(() -> cartService.createCartForUser(currentUser));
+
+        // Kiểm tra sách đã có trong giỏ chưa (composite key)
+        CartItemId cartItemId = new CartItemId(cart.getCartId(), bookId);
+
+        if (cartItemService.getCartItemById(cartItemId).isPresent()) {
+            redirectAttributes.addFlashAttribute("info", 
+                "Sách này đã có trong giỏ hàng");
+            return getRedirectPath(redirectUrl, bookId);
+        }
+
+        // Tạo CartItem mới (NO QUANTITY - mỗi sách chỉ 1 lần)
+        CartItem newItem = new CartItem();
+        newItem.setCart(cart);
+        newItem.setBook(book);
+        cartItemService.saveCartItem(newItem);
+
+        redirectAttributes.addFlashAttribute("success", 
+            "Đã thêm \"" + book.getTitle() + "\" vào giỏ hàng");
+
+        return getRedirectPath(redirectUrl, bookId);
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        return getRedirectPath(redirectUrl, bookId);
+    }
+}
+```
+
+**Entity** (`CartItem.java`):
+```java
+@Entity
+@Table(name = "cart_items")
+public class CartItem {
+    
+    @EmbeddedId
+    private CartItemId id;  // Composite key: (cart_id, book_id)
+    
+    @ManyToOne
+    @MapsId("cartId")
+    @JoinColumn(name = "cart_id")
+    private Cart cart;
+    
+    @ManyToOne
+    @MapsId("bookId")
+    @JoinColumn(name = "book_id")
+    private Book book;
+    
+    @Column(name = "added_at")
+    private LocalDateTime addedAt;
+    
+    // NO quantity field anymore!
+}
+
+@Embeddable
+public class CartItemId implements Serializable {
+    @Column(name = "cart_id")
+    private String cartId;
+    
+    @Column(name = "book_id")
+    private String bookId;
+    
+    // Constructor, equals, hashCode
+}
+```
 public String addToCart(
     @RequestParam Long bookId,
     @RequestParam(defaultValue = "1") Integer quantity,
@@ -270,20 +364,24 @@ public CartItem addToCart(User user, Book book, Integer quantity) {
 
 **SQL Queries**:
 ```sql
--- Check existing cart item
+-- Check if book already in cart (composite key)
 SELECT * FROM cart_items
-WHERE user_id = ? AND book_id = ?
+WHERE cart_id = ? AND book_id = ?;
 
--- Update existing
-UPDATE cart_items
-SET quantity = ?,
-    subtotal = ?,
-    updated_at = NOW()
-WHERE cart_item_id = ?
+-- Insert new cart item (NO quantity)
+INSERT INTO cart_items (cart_id, book_id, added_at)
+VALUES (?, ?, NOW());
+```
 
--- Insert new
-INSERT INTO cart_items (user_id, book_id, quantity, price, subtotal, created_at)
-VALUES (?, ?, ?, ?, ?, NOW())
+**Database Schema**:
+```sql
+CREATE TABLE `cart_items` (
+  `cart_id` varchar(50) NOT NULL,
+  `book_id` varchar(50) NOT NULL,
+  `added_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`cart_id`,`book_id`),  -- Composite key
+  KEY `ci_book_fk` (`book_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
 ---
@@ -292,18 +390,216 @@ VALUES (?, ?, ?, ?, ?, NOW())
 
 ### Sequence Diagram
 ```
-User → Browser → CartController → CartService → CartItemRepository → Database
-  │       │           │               │                │                │
-  │  GET /user/cart                                                     │
-  │──────────────────────►│                                             │
-  │       │               │ getCartItems()                              │
-  │       │               ├─────────────►│                              │
-  │       │               │               │ findByUser()                │
-  │       │               │               ├────────────────►│           │
-  │       │               │               │                 │ SELECT *  │
-  │       │               │               │                 ├──────────►│
-  │       │               │               │                 │◄──────────┤
-  │       │               │               │◄────────────────┤           │
+User → Browser → CartController → CartItemService → CartItemRepository → Database
+  │       │           │                  │                 │                │
+  │  GET /cart                                                              │
+  │──────────────────────►│                                                 │
+  │       │               │ getCartItemsByCart()                            │
+  │       │               ├──────────────────►│                             │
+  │       │               │                   │ findByCart()                │
+  │       │               │                   ├─────────────────►│          │
+  │       │               │                   │                  │ SELECT * │
+  │       │               │                   │                  │ FROM     │
+  │       │               │                   │                  │ cart_items
+  │       │               │                   │                  │ WHERE    │
+  │       │               │                   │                  │ cart_id=?
+  │       │               │                   │                  ├─────────►│
+  │       │               │                   │                  │◄─────────┤
+  │       │               │                   │◄─────────────────┤          │
+  │       │               │◄──────────────────┤                             │
+  │       │               │ calculateTotal()                                │
+  │       │               │ (sum all book prices, no quantity)              │
+  │◄──────────────────────┤ return user/cart/view.html                     │
+```
+
+### Implementation Details
+
+**Controller** (`CartController.java`):
+```java
+@GetMapping
+public String viewCart(Model model) {
+    User currentUser = getCurrentUser();
+
+    List<CartItem> cartItems = new ArrayList<>();
+    BigDecimal cartTotal = BigDecimal.ZERO;
+
+    if (currentUser != null) {
+        Optional<Cart> cartOpt = cartService.getCartByUser(currentUser);
+        if (cartOpt.isPresent()) {
+            Cart cart = cartOpt.get();
+            cartItems = cartItemService.getCartItemsByCart(cart);
+
+            // Calculate total (NO quantity - just sum book prices)
+            cartTotal = cartItems.stream()
+                    .map(item -> item.getBook().getPrice() != null ? 
+                        item.getBook().getPrice() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+    }
+
+    model.addAttribute("cartItems", cartItems);
+    model.addAttribute("cartTotal", cartTotal);
+    model.addAttribute("cartItemCount", cartItems.size());
+
+    return "user/cart/view";
+}
+```
+
+**Service** (`CartItemService.java`):
+```java
+public List<CartItem> getCartItemsByCart(Cart cart) {
+    return cartItemRepository.findByCart(cart);
+}
+```
+
+**SQL Query**:
+```sql
+SELECT ci.*, b.title, b.price, b.cover_image_url
+FROM cart_items ci
+JOIN books b ON ci.book_id = b.book_id
+WHERE ci.cart_id = ?
+ORDER BY ci.added_at DESC;
+```
+
+**Thymeleaf Template** (`user/cart/view.html`):
+```html
+<table class="cart-table">
+    <thead>
+        <tr>
+            <th>Sách</th>
+            <th>Giá</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="item : ${cartItems}">
+            <td>
+                <img th:src="${item.book.coverImageUrl}" width="50">
+                <span th:text="${item.book.title}"></span>
+            </td>
+            <td th:text="${#numbers.formatDecimal(item.book.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
+            <td>
+                <form th:action="@{/cart/remove}" method="post" style="display:inline">
+                    <input type="hidden" name="cartItemId" 
+                           th:value="${item.cart.cartId + ':' + item.book.bookId}">
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                </form>
+            </td>
+        </tr>
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="2"><strong>Tổng cộng:</strong></td>
+            <td>
+                <strong th:text="${#numbers.formatDecimal(cartTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+<div class="cart-actions">
+    <a th:href="@{/user/books}" class="btn btn-secondary">Tiếp tục mua sắm</a>
+    <a th:href="@{/order/checkout}" class="btn btn-primary" th:if="${cartItemCount > 0}">
+        Thanh toán
+    </a>
+</div>
+```
+
+---
+
+## Flow 3.4: Update Cart (Remove Items)
+
+### ⚠️ Important Note
+**CartItem không còn field `quantity`** nên không có chức năng "update quantity" nữa.  
+Chỉ có 2 actions:
+1. **Add to cart** - Thêm sách mới (nếu chưa có)
+2. **Remove from cart** - Xóa sách ra khỏi giỏ
+
+### Sequence Diagram: Remove Item
+```
+User → Browser → CartController → CartItemService → CartItemRepository → Database
+  │       │           │                  │                 │                │
+  │ Click "Remove" (cartItemId = "cart_01:book_13")                        │
+  │──────────────────────►│                                                 │
+  │       │               │ removeCartItem()                                │
+  │       │               ├──────────────────►│                             │
+  │       │               │                   │ deleteById()                │
+  │       │               │                   ├─────────────────►│          │
+  │       │               │                   │                  │ DELETE   │
+  │       │               │                   │                  │ WHERE    │
+  │       │               │                   │                  │ cart_id=?│
+  │       │               │                   │                  │ AND      │
+  │       │               │                   │                  │ book_id=?│
+  │       │               │                   │                  ├─────────►│
+  │       │               │                   │                  │◄─────────┤
+  │       │               │                   │◄─────────────────┤          │
+  │       │               │◄──────────────────┤                             │
+  │◄──────────────────────┤ redirect:/cart                                 │
+```
+
+### Implementation Details
+
+**Controller** (`CartController.java`):
+```java
+@PostMapping("/remove")
+public String removeFromCart(
+        @RequestParam String cartItemId,
+        RedirectAttributes redirectAttributes) {
+
+    try {
+        // CartItemId is composite key, parse from format: "cart_id:book_id"
+        String[] parts = cartItemId.split(":");
+        if (parts.length == 2) {
+            String cartId = parts[0];
+            String bookId = parts[1];
+
+            Optional<Cart> cartOpt = cartService.getCartById(cartId);
+            if (cartOpt.isPresent()) {
+                Optional<Book> bookOpt = bookService.getBookById(bookId);
+                if (bookOpt.isPresent()) {
+                    CartItemId id = new CartItemId(cartId, bookId);
+                    cartItemService.removeCartItem(id);
+
+                    redirectAttributes.addFlashAttribute("success", 
+                        "Đã xóa \"" + bookOpt.get().getTitle() + "\" khỏi giỏ hàng");
+                }
+            }
+        }
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+    }
+
+    return "redirect:/cart";
+}
+
+@PostMapping("/clear")
+public String clearCart(RedirectAttributes redirectAttributes) {
+    try {
+        User currentUser = getCurrentUser();
+        Cart cart = cartService.getCartByUser(currentUser)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy giỏ hàng"));
+
+        cartItemService.clearCart(cart);
+
+        redirectAttributes.addFlashAttribute("success", "Đã xóa toàn bộ giỏ hàng");
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+    }
+
+    return "redirect:/cart";
+}
+```
+
+**SQL Queries**:
+```sql
+-- Remove single item (composite key)
+DELETE FROM cart_items
+WHERE cart_id = ? AND book_id = ?;
+
+-- Clear entire cart
+DELETE FROM cart_items
+WHERE cart_id = ?;
+```
   │       │               │◄─────────────┤                              │
   │       │               │ calculateTotal()                            │
   │◄──────────────────────┤ (return user/cart/view.html)               │

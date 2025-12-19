@@ -303,13 +303,14 @@ public class ReadingController extends BaseController {
     @PostMapping("/api/progress/{bookId}")
     @ResponseBody
     public String saveProgress(@PathVariable String bookId,
-                               @RequestParam int currentPage,
-                               @RequestParam int totalPages,
-                               @RequestParam(required = false) String bookmarkData) {
+                               @RequestParam(required = false) Integer currentPage,
+                               @RequestParam(required = false) Integer totalPages,
+                               @RequestParam(required = false) String location,
+                               @RequestParam(required = false) Float percentage) {
         try {
             log.info("=== SAVE PROGRESS API CALLED ===");
-            log.info("bookId: {}, currentPage: {}, totalPages: {}, bookmarkData: {}",
-                    bookId, currentPage, totalPages, bookmarkData);
+            log.info("bookId: {}, currentPage: {}, totalPages: {}, location: {}, percentage: {}",
+                    bookId, currentPage, totalPages, location, percentage);
 
             User user = getCurrentUser();
             if (user == null) {
@@ -329,12 +330,10 @@ public class ReadingController extends BaseController {
             }
 
             ReadingProgress progress = readingProgressService.getReadingProgressByUserAndBook(user, book).orElse(null);
-            boolean isNewProgress = (progress == null);
 
             if (progress == null) {
                 log.info("Creating NEW ReadingProgress for user {} and book {}", user.getUserId(), bookId);
                 progress = new ReadingProgress();
-                // Không set progressId - để service tự generate với format prog_XX
                 progress.setUser(user);
                 progress.setBook(book);
                 progress.setCreatedAt(LocalDateTime.now());
@@ -345,26 +344,37 @@ public class ReadingController extends BaseController {
                 log.info("Found existing progress: {}", progress.getProgressId());
             }
 
-            // Lưu location data với format chuẩn
-            // - PDF: "page-X" (dễ parse)
-            // - EPUB: JSON string với CFI ({"cfi":"...", "href":"...", "percentage":...})
-            if (bookmarkData != null && !bookmarkData.trim().isEmpty() && !bookmarkData.equals("[]")) {
-                // EPUB gửi JSON object, lưu nguyên
-                progress.setLastReadLocation(bookmarkData);
-            } else {
-                // PDF chỉ gửi page number, format thành "page-X"
+            // FIXED: Lưu location cho cả PDF và EPUB
+            // - EPUB: location là CFI string (epubcfi(...))
+            // - PDF: location là "page-X" hoặc null (dùng currentPage)
+            if (location != null && !location.trim().isEmpty()) {
+                progress.setLastReadLocation(location);
+                log.info("Saved location: {}", location);
+            } else if (currentPage != null) {
+                // PDF fallback
                 progress.setLastReadLocation("page-" + currentPage);
+                log.info("Saved location (PDF): page-{}", currentPage);
             }
 
             // Tính phần trăm progress
-            float percentage = totalPages > 0 ? ((float) currentPage / totalPages) * 100 : 0;
-            // Đảm bảo không vượt 100% và làm tròn 2 chữ số thập phân
-            percentage = Math.min(Math.round(percentage * 100.0f) / 100.0f, 100.0f);
-            progress.setProgressPercentage(percentage);
+            float calculatedPercentage;
+            if (percentage != null) {
+                // EPUB gửi percentage trực tiếp
+                calculatedPercentage = percentage;
+            } else if (totalPages != null && totalPages > 0 && currentPage != null) {
+                // PDF tính từ currentPage/totalPages
+                calculatedPercentage = ((float) currentPage / totalPages) * 100;
+            } else {
+                calculatedPercentage = 0;
+            }
+
+            // Đảm bảo không vượt 100%
+            calculatedPercentage = Math.min(Math.round(calculatedPercentage * 100.0f) / 100.0f, 100.0f);
+            progress.setProgressPercentage(calculatedPercentage);
 
             // Đánh dấu hoàn thành nếu đọc hết
             // >= 95% để tránh lỗi làm tròn hoặc đã đến trang cuối
-            if (percentage >= 95.0f || currentPage >= totalPages) {
+            if (calculatedPercentage >= 95.0f || (currentPage != null && totalPages != null && currentPage >= totalPages)) {
                 progress.setIsCompleted(true);
                 progress.setProgressPercentage(100.0f);
             } else {
@@ -374,7 +384,7 @@ public class ReadingController extends BaseController {
             progress.setLastReadAt(LocalDateTime.now());
 
             log.info("Saving progress - location: {}, percentage: {}%, isCompleted: {}",
-                    progress.getLastReadLocation(), percentage, progress.getIsCompleted());
+                    progress.getLastReadLocation(), calculatedPercentage, progress.getIsCompleted());
 
             ReadingProgress savedProgress = readingProgressService.saveReadingProgress(progress);
 
@@ -382,7 +392,7 @@ public class ReadingController extends BaseController {
             log.info("Progress ID: {}, Location: {}, Percentage: {}%",
                     savedProgress.getProgressId(), savedProgress.getLastReadLocation(), savedProgress.getProgressPercentage());
 
-            return "{\"status\":\"success\",\"message\":\"Progress saved\",\"percentage\":" + percentage + "}";
+            return "{\"status\":\"success\",\"message\":\"Progress saved\",\"percentage\":" + calculatedPercentage + "}";
         } catch (Exception e) {
             log.error("=== ERROR SAVING PROGRESS ===");
             log.error("Error saving reading progress: {}", e.getMessage(), e);

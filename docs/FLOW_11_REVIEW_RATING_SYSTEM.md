@@ -1,5 +1,25 @@
 # ⭐ FLOW 11: REVIEW & RATING SYSTEM (Hệ Thống Đánh Giá & Xếp Hạng)
 
+## ⚠️ Implementation Status
+
+**Backend:** ✅ 90% Complete
+- ✅ Review entity và repository
+- ✅ ReviewService với CRUD operations
+- ✅ Admin moderation endpoints
+- ⚠️ User review submission endpoint (needs testing)
+
+**Frontend:** ⚠️ 40% Complete
+- ❌ User review submission form (MISSING)
+- ❌ Review display in book detail page (INCOMPLETE)
+- ⚠️ Admin moderation UI (BASIC ONLY)
+- ✅ Review entity structure
+
+**Priority:** MEDIUM  
+**Blocking:** No - System can function without reviews  
+**Recommended:** Complete for better user engagement  
+
+---
+
 ## 📋 Mục Lục
 1. [Tổng Quan](#tổng-quan)
 2. [Flow 11.1: User - Submit Review](#flow-111-user---submit-review)

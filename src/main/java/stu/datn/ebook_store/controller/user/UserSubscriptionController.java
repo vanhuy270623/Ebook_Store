@@ -51,8 +51,7 @@ public class UserSubscriptionController extends BaseController {
                         order.getPaymentStatus() != Order.PaymentStatus.CANCELLED) {
                     }
                     // Phải còn trong thời hạn
-                    return order.getEndDate() != null &&
-                           order.getEndDate().isAfter(LocalDateTime.now());
+                    return order.getEndDate() != null && order.getEndDate().isAfter(LocalDateTime.now());
                 })
                 .map(UserSubscription::new)
                 .findFirst();
@@ -82,7 +81,7 @@ public class UserSubscriptionController extends BaseController {
         User currentUser = getCurrentUser();
         if (currentUser != null) {
             // QUAN TRỌNG: Thêm user vào model để template có thể hiển thị
-            
+            model.addAttribute("user", currentUser);
 
             Optional<UserSubscription> activeSubscription =
                 getActiveSubscription(currentUser.getUserId());
@@ -111,7 +110,7 @@ public class UserSubscriptionController extends BaseController {
         }
 
         // QUAN TRỌNG: Thêm user vào model để template có thể hiển thị
-        
+        model.addAttribute("user", currentUser);
 
         // Lấy lịch sử tất cả gói đăng ký
         List<UserSubscription> subscriptions =

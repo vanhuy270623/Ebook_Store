@@ -6,12 +6,13 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.entity.BookAsset;
 import stu.datn.ebook_store.entity.User;
@@ -28,7 +29,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 /**
- * Controller xử lý tải xuống sách
+ * AdminDashboardController xử lý tải xuống sách
  * Endpoint: /books/download/{bookId}
  *
  * FLOW:
@@ -39,7 +40,7 @@ import java.util.Optional;
  */
 @Controller
 @RequestMapping("/books/download")
-public class BookDownloadController {
+public class BookDownloadController extends BaseController {
 
     private final BookService bookService;
     private final DownloadAuthorizationService downloadAuthService;
@@ -58,27 +59,19 @@ public class BookDownloadController {
         this.fileStorageService = fileStorageService;
     }
 
-    /**
-     * Tải xuống sách (PDF hoặc EPUB)
-     *
-     * @param bookId ID của sách cần tải
-     * @param authentication Thông tin user đã đăng nhập
-     * @return File stream hoặc lỗi 403/404
-     */
     @GetMapping("/{bookId}")
     @ResponseBody
     public ResponseEntity<Resource> downloadBook(
-            @PathVariable String bookId,
-            Authentication authentication) {
+            @PathVariable String bookId) {
 
         try {
             // 1. Kiểm tra authentication
-            if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
                 return ResponseEntity.status(401)
                         .body(null);
             }
 
-            User currentUser = (User) authentication.getPrincipal();
 
             // 2. Tìm sách
             Optional<Book> bookOpt = bookService.getBookById(bookId);

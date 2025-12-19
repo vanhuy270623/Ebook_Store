@@ -1,10 +1,10 @@
 package stu.datn.ebook_store.controller.user;
 
-import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.entity.User;
 import stu.datn.ebook_store.service.ReadingProgressService;
 
@@ -12,12 +12,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Controller xử lý các request liên quan đến sách yêu thích
+ * AdminDashboardController xử lý các request liên quan đến sách yêu thích
  * Endpoint: /api/favorites
  */
 @RestController
 @RequestMapping("/api/favorites")
-public class FavoriteController {
+public class FavoriteController extends BaseController {
 
     private final ReadingProgressService readingProgressService;
 
@@ -34,14 +34,13 @@ public class FavoriteController {
      */
     @PostMapping("/toggle")
     public ResponseEntity<Map<String, Object>> toggleFavorite(
-            @RequestBody Map<String, String> request,
-            HttpSession session) {
+            @RequestBody Map<String, String> request) {
 
         Map<String, Object> response = new HashMap<>();
 
         try {
             // Kiểm tra user đã đăng nhập chưa
-            User currentUser = (User) session.getAttribute("loggedInUser");
+            User currentUser = getCurrentUser();
             if (currentUser == null) {
                 response.put("success", false);
                 response.put("message", "Vui lòng đăng nhập để thêm sách yêu thích");
@@ -80,14 +79,12 @@ public class FavoriteController {
      * Response: { "isFavorite": true/false }
      */
     @GetMapping("/check/{bookId}")
-    public ResponseEntity<Map<String, Object>> checkFavorite(
-            @PathVariable String bookId,
-            HttpSession session) {
+    public ResponseEntity<Map<String, Object>> checkFavorite(@PathVariable String bookId) {
 
         Map<String, Object> response = new HashMap<>();
 
         try {
-            User currentUser = (User) session.getAttribute("loggedInUser");
+            User currentUser = getCurrentUser();
             if (currentUser == null) {
                 response.put("isFavorite", false);
                 return ResponseEntity.ok(response);

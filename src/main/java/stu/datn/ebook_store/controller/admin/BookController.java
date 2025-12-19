@@ -9,6 +9,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.dto.request.BookCreateRequest;
 import stu.datn.ebook_store.dto.request.BookUpdateRequest;
 import stu.datn.ebook_store.entity.Author;
@@ -25,16 +26,16 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin/books")
-public class AdminBookController extends BaseAdminController {
+public class BookController extends BaseController {
 
     private final BookService bookService;
     private final BookCategoryRepository bookCategoryRepository;
     private final AuthorService authorService;
 
     @Autowired
-    public AdminBookController(BookService bookService,
-                              BookCategoryRepository bookCategoryRepository,
-                              AuthorService authorService) {
+    public BookController(BookService bookService,
+                          BookCategoryRepository bookCategoryRepository,
+                          AuthorService authorService) {
         this.bookService = bookService;
         this.bookCategoryRepository = bookCategoryRepository;
         this.authorService = authorService;

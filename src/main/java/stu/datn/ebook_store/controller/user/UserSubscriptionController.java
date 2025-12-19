@@ -1,11 +1,12 @@
 package stu.datn.ebook_store.controller.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.dto.UserSubscription;
 import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.Subscription;
@@ -19,7 +20,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Controller hiển thị thông tin gói đăng ký
+ * AdminDashboardController hiển thị thông tin gói đăng ký
  * CHỈ XỬ LÝ: Hiển thị plans, my-subscriptions, cancel
  * KHÔNG XỬ LÝ: Thanh toán (đã chuyển sang PaymentController)
  *
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/subscription")
-public class SubscriptionController {
+public class UserSubscriptionController extends BaseController {
 
     @Autowired
     private SubscriptionService subscriptionService;
@@ -35,15 +36,6 @@ public class SubscriptionController {
     @Autowired
     private OrderService orderService;
 
-    /**
-     * Lấy user hiện tại từ Authentication
-     */
-    private User getCurrentUser(Authentication authentication) {
-        if (authentication == null || authentication.getPrincipal() == null) {
-            return null;
-        }
-        return (User) authentication.getPrincipal();
-    }
 
     /**
      * Lấy subscription đang active của user
@@ -81,16 +73,16 @@ public class SubscriptionController {
      * URL: /subscription/plans
      */
     @GetMapping("/plans")
-    public String showSubscriptionPlans(Authentication authentication, Model model) {
+    public String showSubscriptionPlans(Model model) {
         // Lấy tất cả gói đang active
         List<Subscription> subscriptions = subscriptionService.getActiveSubscriptions();
         model.addAttribute("subscriptions", subscriptions);
 
         // Nếu user đã đăng nhập, kiểm tra gói hiện tại
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = getCurrentUser();
         if (currentUser != null) {
             // QUAN TRỌNG: Thêm user vào model để template có thể hiển thị
-            model.addAttribute("user", currentUser);
+            
 
             Optional<UserSubscription> activeSubscription =
                 getActiveSubscription(currentUser.getUserId());
@@ -109,18 +101,17 @@ public class SubscriptionController {
      * URL: /subscription/my-subscriptions
      */
     @GetMapping("/my-subscriptions")
-    public String mySubscriptions(Authentication authentication,
-                                 Model model,
+    public String mySubscriptions(Model model,
                                  RedirectAttributes redirectAttributes) {
 
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = getCurrentUser();
         if (currentUser == null) {
             redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để xem gói của bạn");
             return "redirect:/auth/login";
         }
 
         // QUAN TRỌNG: Thêm user vào model để template có thể hiển thị
-        model.addAttribute("user", currentUser);
+        
 
         // Lấy lịch sử tất cả gói đăng ký
         List<UserSubscription> subscriptions =
@@ -142,10 +133,9 @@ public class SubscriptionController {
      */
     @PostMapping("/cancel/{subscriptionId}")
     public String cancelSubscription(@PathVariable String subscriptionId,
-                                    Authentication authentication,
                                     RedirectAttributes redirectAttributes) {
 
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = getCurrentUser();
         if (currentUser == null) {
             redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập");
             return "redirect:/auth/login";

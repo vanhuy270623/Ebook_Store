@@ -1,5 +1,6 @@
 package stu.datn.ebook_store.service;
 
+import stu.datn.ebook_store.entity.Cart;
 import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.Subscription;
 import stu.datn.ebook_store.entity.User;
@@ -46,5 +47,33 @@ public interface OrderService {
     // Subscription management methods
     List<Order> getOrdersByUserIdAndType(String userId, Order.OrderType orderType);
     Order updateOrder(Order order);
-}
 
+    // ========== Business Logic Methods ==========
+
+    /**
+     * Tạo order từ giỏ hàng
+     * @param user User tạo order
+     * @param cart Cart chứa items
+     * @param paymentMethod Phương thức thanh toán
+     * @return Order đã được tạo
+     * @throws RuntimeException nếu validation thất bại
+     */
+    Order createOrderFromCart(User user, Cart cart, Order.PaymentMethod paymentMethod);
+
+    /**
+     * Hủy đơn hàng
+     * @param orderId ID đơn hàng
+     * @param user User hủy (để check quyền)
+     * @return true nếu hủy thành công
+     * @throws RuntimeException nếu không thể hủy
+     */
+    boolean cancelOrder(String orderId, User user);
+
+    /**
+     * Kiểm tra user có quyền xem order không
+     * @param order Order cần kiểm tra
+     * @param user User hiện tại
+     * @return true nếu có quyền
+     */
+    boolean canUserAccessOrder(Order order, User user);
+}

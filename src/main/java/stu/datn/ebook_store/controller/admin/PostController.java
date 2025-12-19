@@ -10,6 +10,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.dto.request.PostCreateRequest;
 import stu.datn.ebook_store.dto.request.PostUpdateRequest;
 import stu.datn.ebook_store.entity.Post;
@@ -25,12 +26,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Controller xử lý quản lý bài viết/blog (CRUD Post)
+ * AdminDashboardController xử lý quản lý bài viết/blog (CRUD Post)
  * Pattern: Tương tự AdminBannerController
  */
 @Controller
 @RequestMapping("/admin/posts")
-public class AdminPostController extends BaseAdminController {
+public class PostController extends BaseController {
 
     private static final String REDIRECT_POSTS = "redirect:/admin/posts";
 
@@ -39,8 +40,8 @@ public class AdminPostController extends BaseAdminController {
     private final CategoryService categoryService;
 
     @Autowired
-    public AdminPostController(PostService postService, FileStorageService fileStorageService,
-                              CategoryService categoryService) {
+    public PostController(PostService postService, FileStorageService fileStorageService,
+                          CategoryService categoryService) {
         this.postService = postService;
         this.fileStorageService = fileStorageService;
         this.categoryService = categoryService;

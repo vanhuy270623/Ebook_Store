@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.dto.request.CategoryCreateRequest;
 import stu.datn.ebook_store.dto.request.CategoryUpdateRequest;
 import stu.datn.ebook_store.entity.Category;
@@ -19,19 +20,19 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Controller xử lý quản lý danh mục (CRUD Category)
+ * AdminDashboardController xử lý quản lý danh mục (CRUD Category)
  * Pattern: Tương tự AdminAuthorController, AdminUserController, AdminBookController
  */
 @Controller
 @RequestMapping("/admin/categories")
-public class AdminCategoryController extends BaseAdminController {
+public class CategoryController extends BaseController {
 
     private static final String REDIRECT_CATEGORIES = "redirect:/admin/categories";
 
     private final CategoryService categoryService;
 
     @Autowired
-    public AdminCategoryController(CategoryService categoryService) {
+    public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
     }
 

@@ -1,12 +1,12 @@
 package stu.datn.ebook_store.controller.user;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.entity.BookAsset;
 import stu.datn.ebook_store.entity.Order;
@@ -22,15 +22,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Controller xử lý chức năng đọc sách
+ * AdminDashboardController xử lý chức năng đọc sách
  * Hỗ trợ PDF và EPUB format
  * Tracking reading progress và bookmarks
  */
 @Controller
 @RequestMapping("/reading")
-@RequiredArgsConstructor
 @Slf4j
-public class ReadingController {
+public class ReadingController extends BaseController {
 
     private final BookService bookService;
     private final BookAssetService bookAssetService;
@@ -38,14 +37,17 @@ public class ReadingController {
     private final OrderService orderService;
     private final OrderItemService orderItemService;
 
-    /**
-     * Helper method: Lấy User hiện tại từ Authentication
-     */
-    private User getCurrentUser(Authentication authentication) {
-        if (authentication == null || authentication.getPrincipal() == null) {
-            return null;
-        }
-        return (User) authentication.getPrincipal();
+    @Autowired
+    public ReadingController(BookService bookService,
+                             BookAssetService bookAssetService,
+                             ReadingProgressService readingProgressService,
+                             OrderService orderService,
+                             OrderItemService orderItemService) {
+        this.bookService = bookService;
+        this.bookAssetService = bookAssetService;
+        this.readingProgressService = readingProgressService;
+        this.orderService = orderService;
+        this.orderItemService = orderItemService;
     }
 
     /**
@@ -53,28 +55,27 @@ public class ReadingController {
      */
     @GetMapping("/book/{bookId}")
     public String openBook(@PathVariable String bookId,
-                           Authentication authentication,
                            Model model,
                            RedirectAttributes redirectAttributes) {
         try {
             log.info("Opening book with ID: {}", bookId);
+            User currentUser = getCurrentUser();
 
             // Kiểm tra user đã đăng nhập
-            User user = getCurrentUser(authentication);
-            if (user == null) {
+            if (currentUser == null) {
                 log.warn("User not authenticated, redirecting to login");
                 redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để đọc sách");
                 return "redirect:/auth/login";
             }
-            log.debug("User found: {} ({})", user.getUsername(), user.getUserId());
+            log.debug("User found: {} ({})", currentUser.getUsername(), currentUser.getUserId());
 
             Book book = bookService.getBookById(bookId)
                     .orElseThrow(() -> new RuntimeException("Book not found: " + bookId));
             log.debug("Book found: {}", book.getTitle());
 
             // Kiểm tra quyền truy cập
-            if (!canUserAccessBook(user, book)) {
-                log.warn("User {} does not have access to book {}", user.getUserId(), bookId);
+            if (!canUserAccessBook(currentUser, book)) {
+                log.warn("User {} does not have access to book {}", currentUser.getUserId(), bookId);
                 redirectAttributes.addFlashAttribute("error", "Bạn không có quyền đọc cuốn sách này");
                 return "redirect:/books/view/" + bookId;
             }
@@ -118,19 +119,19 @@ public class ReadingController {
             ReadingProgress progress = null;
             try {
                 progress = readingProgressService
-                        .getReadingProgressByUserAndBook(user, book)
+                        .getReadingProgressByUserAndBook(currentUser, book)
                         .orElseGet(() -> {
                             try {
-                                log.info("Creating new reading progress for user {} and book {}", user.getUserId(), book.getBookId());
+                                log.info("Creating new reading progress for user {} and book {}", currentUser.getUserId(), book.getBookId());
                                 ReadingProgress newProgress = new ReadingProgress();
                                 // Không set progressId - để service tự generate với format prog_XX
-                                newProgress.setUser(user);
+                                newProgress.setUser(currentUser);
                                 newProgress.setBook(book);
                                 newProgress.setBookAsset(readableAsset);
                                 newProgress.setProgressPercentage(0.0f);
                                 newProgress.setIsCompleted(false);
                                 newProgress.setIsFavorite(false);
-                                newProgress.setAccessType(determineAccessType(book, user));
+                                newProgress.setAccessType(determineAccessType(book, currentUser));
                                 newProgress.setCreatedAt(LocalDateTime.now());
                                 newProgress.setLastReadAt(LocalDateTime.now());
                                 ReadingProgress saved = readingProgressService.saveReadingProgress(newProgress);
@@ -154,7 +155,7 @@ public class ReadingController {
             model.addAttribute("book", book);
             model.addAttribute("asset", readableAsset);
             model.addAttribute("progress", progress);
-            model.addAttribute("user", user);
+            model.addAttribute("user", currentUser);
 
             // Chuyển hướng đến reader phù hợp
             if (BookAsset.FileType.PDF.equals(readableAsset.getFileType())) {
@@ -176,10 +177,9 @@ public class ReadingController {
      */
     @GetMapping("/pdf/{bookId}")
     public String pdfViewer(@PathVariable String bookId,
-                            Authentication authentication,
                             Model model,
                             RedirectAttributes redirectAttributes) {
-        return prepareReaderView(bookId, "PDF", authentication, model, redirectAttributes, "user/reading/pdf-viewer");
+        return prepareReaderView(bookId, "PDF", model, redirectAttributes, "user/reading/pdf-viewer");
     }
 
     /**
@@ -187,10 +187,9 @@ public class ReadingController {
      */
     @GetMapping("/epub/{bookId}")
     public String epubReader(@PathVariable String bookId,
-                             Authentication authentication,
                              Model model,
                              RedirectAttributes redirectAttributes) {
-        return prepareReaderView(bookId, "EPUB", authentication, model, redirectAttributes, "user/reading/epub-viewer");
+        return prepareReaderView(bookId, "EPUB", model, redirectAttributes, "user/reading/epub-viewer");
     }
 
     /**
@@ -198,7 +197,6 @@ public class ReadingController {
      */
     @GetMapping("/reader/{bookId}")
     public String reader(@PathVariable String bookId,
-                         Authentication authentication,
                          Model model,
                          RedirectAttributes redirectAttributes) {
         // Redirect đến /choose-format để kiểm tra số lượng file và tự động chọn
@@ -212,11 +210,10 @@ public class ReadingController {
      */
     @GetMapping("/choose-format/{bookId}")
     public String chooseFormat(@PathVariable String bookId,
-                               Authentication authentication,
                                Model model,
                                RedirectAttributes redirectAttributes) {
         try {
-            User user = getCurrentUser(authentication);
+            User user = getCurrentUser();
             if (user == null) {
                 redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để đọc sách");
                 return "redirect:/auth/login";
@@ -308,14 +305,13 @@ public class ReadingController {
     public String saveProgress(@PathVariable String bookId,
                                @RequestParam int currentPage,
                                @RequestParam int totalPages,
-                               @RequestParam(required = false) String bookmarkData,
-                               Authentication authentication) {
+                               @RequestParam(required = false) String bookmarkData) {
         try {
             log.info("=== SAVE PROGRESS API CALLED ===");
             log.info("bookId: {}, currentPage: {}, totalPages: {}, bookmarkData: {}",
                     bookId, currentPage, totalPages, bookmarkData);
 
-            User user = getCurrentUser(authentication);
+            User user = getCurrentUser();
             if (user == null) {
                 log.error("User not authenticated for progress save");
                 return "{\"status\":\"error\",\"message\":\"User not authenticated\"}";
@@ -399,9 +395,9 @@ public class ReadingController {
      */
     @GetMapping("/api/progress/{bookId}")
     @ResponseBody
-    public ReadingProgress getProgress(@PathVariable String bookId, Authentication authentication) {
+    public ReadingProgress getProgress(@PathVariable String bookId) {
         try {
-            User user = getCurrentUser(authentication);
+            User user = getCurrentUser();
             if (user == null) {
                 log.error("User not authenticated");
                 return null;
@@ -431,14 +427,13 @@ public class ReadingController {
                               @RequestParam String location,
                               @RequestParam(required = false) Integer pageNumber,
                               @RequestParam(required = false) Float percentage,
-                              @RequestParam(required = false) String note,
-                              Authentication authentication) {
+                              @RequestParam(required = false) String note) {
         try {
             log.info("=== ADD BOOKMARK REQUEST ===");
             log.info("bookId: {}, location: {}, pageNumber: {}, percentage: {}, note: {}",
                     bookId, location, pageNumber, percentage, note);
 
-            User user = getCurrentUser(authentication);
+            User user = getCurrentUser();
             if (user == null) {
                 log.error("User not authenticated");
                 return "{\"status\":\"error\",\"message\":\"User not authenticated\"}";
@@ -494,10 +489,9 @@ public class ReadingController {
     @DeleteMapping("/api/bookmarks/{bookId}/{bookmarkId}")
     @ResponseBody
     public String removeBookmark(@PathVariable String bookId,
-                                 @PathVariable String bookmarkId,
-                                 Authentication authentication) {
+                                 @PathVariable String bookmarkId) {
         try {
-            User user = getCurrentUser(authentication);
+            User user = getCurrentUser();
             if (user == null) {
                 return "{\"status\":\"error\",\"message\":\"User not authenticated\"}";
             }
@@ -527,10 +521,9 @@ public class ReadingController {
      */
     @GetMapping("/api/bookmarks/{bookId}")
     @ResponseBody
-    public List<ReadingProgress.BookmarkData> getBookmarks(@PathVariable String bookId,
-                                                           Authentication authentication) {
+    public List<ReadingProgress.BookmarkData> getBookmarks(@PathVariable String bookId) {
         try {
-            User user = getCurrentUser(authentication);
+            User user = getCurrentUser();
             if (user == null) {
                 return new java.util.ArrayList<>();
             }
@@ -577,10 +570,10 @@ public class ReadingController {
     /**
      * Helper method to prepare reader view
      */
-    private String prepareReaderView(String bookId, String expectedType, Authentication authentication,
+    private String prepareReaderView(String bookId, String expectedType,
                                      Model model, RedirectAttributes redirectAttributes, String viewName) {
         try {
-            User user = getCurrentUser(authentication);
+            User user = getCurrentUser();
             if (user == null) {
                 redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để đọc sách");
                 return "redirect:/auth/login";
@@ -766,3 +759,6 @@ public class ReadingController {
         return ReadingProgress.AccessType.FREE;
     }
 }
+
+
+

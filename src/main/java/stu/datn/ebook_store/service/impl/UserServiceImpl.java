@@ -554,7 +554,7 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * Xóa device với kiểm tra current device (dành cho Controller)
+     * Xóa device với kiểm tra current device (dành cho AdminDashboardController)
      */
     @Transactional
     public void removeDeviceWithCurrentCheck(String userId, String deviceId, String currentDeviceId) throws Exception {

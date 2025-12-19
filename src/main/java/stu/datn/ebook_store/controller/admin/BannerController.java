@@ -10,6 +10,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.dto.request.BannerCreateRequest;
 import stu.datn.ebook_store.dto.request.BannerUpdateRequest;
 import stu.datn.ebook_store.entity.Banner;
@@ -24,12 +25,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Controller xử lý quản lý banner/quảng cáo (CRUD Banner)
+ * AdminDashboardController xử lý quản lý banner/quảng cáo (CRUD Banner)
  * Pattern: Tương tự AdminAuthorController, AdminCategoryController
  */
 @Controller
 @RequestMapping("/admin/banners")
-public class AdminBannerController extends BaseAdminController {
+public class BannerController extends BaseController {
 
     private static final String REDIRECT_BANNERS = "redirect:/admin/banners";
 
@@ -37,7 +38,7 @@ public class AdminBannerController extends BaseAdminController {
     private final FileStorageService fileStorageService;
 
     @Autowired
-    public AdminBannerController(BannerService bannerService, FileStorageService fileStorageService) {
+    public BannerController(BannerService bannerService, FileStorageService fileStorageService) {
         this.bannerService = bannerService;
         this.fileStorageService = fileStorageService;
     }

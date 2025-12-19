@@ -73,7 +73,7 @@ public class GlobalExceptionHandler {
         mav.addObject("errorType", "NullPointerException");
         mav.addObject("errorMessage", "Dữ liệu không tồn tại hoặc chưa được khởi tạo");
         mav.addObject("debugInfo", buildDebugInfo(ex, request));
-        mav.addObject("solution", "Kiểm tra các biến trong Controller có được add vào Model chưa. " +
+        mav.addObject("solution", "Kiểm tra các biến trong AdminDashboardController có được add vào Model chưa. " +
                 "Sử dụng th:if để kiểm tra null trong template.");
 
         return mav;

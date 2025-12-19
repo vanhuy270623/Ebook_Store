@@ -1,11 +1,11 @@
 package stu.datn.ebook_store.controller.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.entity.*;
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.CartItemService;
@@ -25,7 +25,7 @@ import java.util.Optional;
  */
 @Controller
 @RequestMapping("/cart")
-public class CartController {
+public class CartController extends BaseController {
 
     private final CartService cartService;
     private final CartItemService cartItemService;
@@ -39,18 +39,11 @@ public class CartController {
     }
 
     /**
-     * Lấy user hiện tại từ authentication
-     */
-    private User getCurrentUser(Authentication authentication) {
-        return (User) authentication.getPrincipal();
-    }
-
-    /**
      * Xem giỏ hàng
      */
     @GetMapping
-    public String viewCart(Authentication authentication, Model model) {
-        User currentUser = getCurrentUser(authentication);
+    public String viewCart(Model model) {
+        User currentUser = getCurrentUser();
 
         List<CartItem> cartItems = new ArrayList<>();
         BigDecimal cartTotal = BigDecimal.ZERO;
@@ -82,11 +75,10 @@ public class CartController {
     public String addToCart(
             @PathVariable String bookId,
             @RequestParam(value = "redirect", required = false) String redirectUrl,
-            Authentication authentication,
             RedirectAttributes redirectAttributes) {
 
         try {
-            User currentUser = getCurrentUser(authentication);
+            User currentUser = getCurrentUser();
 
             // Kiểm tra sách tồn tại
             Book book = bookService.getBookById(bookId)
@@ -174,12 +166,10 @@ public class CartController {
      * Xóa toàn bộ giỏ hàng
      */
     @PostMapping("/clear")
-    public String clearCart(
-            Authentication authentication,
-            RedirectAttributes redirectAttributes) {
+    public String clearCart(RedirectAttributes redirectAttributes) {
 
         try {
-            User currentUser = getCurrentUser(authentication);
+            User currentUser = getCurrentUser();
             Optional<Cart> cartOpt = cartService.getCartByUser(currentUser);
 
             if (cartOpt.isPresent()) {
@@ -208,12 +198,12 @@ public class CartController {
      */
     @GetMapping("/count")
     @ResponseBody
-    public Map<String, Object> getCartCount(Authentication authentication) {
+    public Map<String, Object> getCartCount() {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            if (authentication != null && authentication.isAuthenticated()) {
-                User currentUser = getCurrentUser(authentication);
+            User currentUser = getCurrentUser();
+            if (currentUser != null) {
                 Optional<Cart> cartOpt = cartService.getCartByUser(currentUser);
 
                 int count = 0;
@@ -246,10 +236,10 @@ public class CartController {
      */
     @GetMapping("/check")
     @ResponseBody
-    public Map<String, Object> checkCart(Authentication authentication) {
+    public Map<String, Object> checkCart() {
         Map<String, Object> response = new HashMap<>();
         try {
-            User currentUser = getCurrentUser(authentication);
+            User currentUser = getCurrentUser();
             Optional<Cart> cartOpt = cartService.getCartByUser(currentUser);
 
             if (cartOpt.isEmpty()) {

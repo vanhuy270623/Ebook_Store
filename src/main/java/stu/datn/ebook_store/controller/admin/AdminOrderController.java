@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.OrderItem;
 import stu.datn.ebook_store.entity.User;
@@ -22,13 +23,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Controller quản lý đơn hàng (Admin)
+ * AdminDashboardController quản lý đơn hàng (Admin)
  * Endpoints: /admin/orders/*
  * Chức năng: Xem, quản lý, cập nhật trạng thái đơn hàng
  */
 @Controller
 @RequestMapping("/admin/orders")
-public class AdminOrderController extends BaseAdminController {
+public class AdminOrderController extends BaseController {
 
     private static final String REDIRECT_ORDERS = "redirect:/admin/orders";
 

@@ -9,6 +9,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.dto.request.AuthorCreateRequest;
 import stu.datn.ebook_store.dto.request.AuthorUpdateRequest;
 import stu.datn.ebook_store.entity.Author;
@@ -22,12 +23,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Controller xử lý quản lý tác giả (CRUD Author)
+ * AdminDashboardController xử lý quản lý tác giả (CRUD Author)
  * Pattern: Tương tự AdminUserController và AdminBookController
  */
 @Controller
 @RequestMapping("/admin/authors")
-public class AdminAuthorController extends BaseAdminController {
+public class AuthorController extends BaseController {
 
     private static final String REDIRECT_AUTHORS = "redirect:/admin/authors";
 
@@ -35,7 +36,7 @@ public class AdminAuthorController extends BaseAdminController {
     private final FileStorageService fileStorageService;
 
     @Autowired
-    public AdminAuthorController(AuthorService authorService, FileStorageService fileStorageService) {
+    public AuthorController(AuthorService authorService, FileStorageService fileStorageService) {
         this.authorService = authorService;
         this.fileStorageService = fileStorageService;
     }

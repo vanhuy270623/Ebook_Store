@@ -1,94 +1,58 @@
 package stu.datn.ebook_store.controller.user;
 
+import stu.datn.ebook_store.controller.BaseController;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.dto.BankTransferInfo;
 import stu.datn.ebook_store.dto.UserSubscription;
 import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.OrderItem;
 import stu.datn.ebook_store.entity.Subscription;
 import stu.datn.ebook_store.entity.User;
-import stu.datn.ebook_store.service.OrderService;
-import stu.datn.ebook_store.service.OrderItemService;
-import stu.datn.ebook_store.service.SubscriptionService;
+import stu.datn.ebook_store.service.*;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import jakarta.servlet.http.HttpServletRequest;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
+
 import java.time.LocalDateTime;
 import java.util.*;
 
 /**
  * Controller xử lý thanh toán cho cả sách lẻ và gói đăng ký
  * Endpoints: /payment/*
+ *
+ * Note: Business logic đã được chuyển sang VNPayService và BankTransferService
  */
 @Controller
 @RequestMapping("/payment")
-public class PaymentController {
+public class PaymentController extends BaseController {
 
     private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
 
     private final OrderService orderService;
     private final OrderItemService orderItemService;
+    private final SubscriptionService subscriptionService;
+    private final VNPayService vnPayService;
+    private final BankTransferService bankTransferService;
 
     @Autowired
-    private SubscriptionService subscriptionService;
-
-
-    @Value("${vnpay.url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
-    private String vnpayUrl;
-
-    @Value("${vnpay.tmn_code:9CB3LH80}")
-    private String vnpayTmnCode;
-
-    @Value("${vnpay.hash_secret:UDN2E28HUBUULOWK5KAGTA3GVU523HPK}")
-    private String vnpayHashSecret;
-
-    @Value("${vnpay.return_url:http://localhost:2706/payment/vnpay/return}")
-    private String vnpayReturnUrl;
-
-    @Value("${bank.name:TPbank}")
-    private String bankName;
-
-    @Value("${bank.account_number:79992706999}")
-    private String bankAccountNumber;
-
-    @Value("${bank.account_name:CONG TY EBOOK STORE}")
-    private String bankAccountName;
-
-    @Value("${bank.branch:Chi nhanh TP.HCM}")
-    private String bankBranch;
-
-    @Value("${bank.code:TP}")
-    private String bankCode;
-
-    @Value("${bank.qr_template:https://img.vietqr.io/image/{bank_code}-{account_number}-{template}.png?amount={amount}&addInfo={content}&accountName={account_name}}")
-    private String qrTemplate;
-
-    @Autowired
-    public PaymentController(OrderService orderService, OrderItemService orderItemService) {
+    public PaymentController(OrderService orderService,
+                           OrderItemService orderItemService,
+                           SubscriptionService subscriptionService,
+                           VNPayService vnPayService,
+                           BankTransferService bankTransferService) {
         this.orderService = orderService;
         this.orderItemService = orderItemService;
+        this.subscriptionService = subscriptionService;
+        this.vnPayService = vnPayService;
+        this.bankTransferService = bankTransferService;
     }
 
-    /**
-     * Lấy user hiện tại
-     */
-    private User getCurrentUser(Authentication authentication) {
-        if (authentication == null || authentication.getPrincipal() == null) {
-            return null;
-        }
-        return (User) authentication.getPrincipal();
-    }
 
     /**
      * Lấy địa chỉ IP của client
@@ -117,12 +81,11 @@ public class PaymentController {
     @GetMapping("/vnpay")
     public String initiateVNPayPayment(
             @RequestParam String orderId,
-            Authentication authentication,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
 
         try {
-            User currentUser = getCurrentUser(authentication);
+            User currentUser = getCurrentUser();
             if (currentUser == null) {
                 redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập");
                 return "redirect:/auth/login";
@@ -137,81 +100,22 @@ public class PaymentController {
                 throw new RuntimeException("Bạn không có quyền thanh toán đơn hàng này");
             }
 
-            // Tạo payment URL
-            String paymentUrl = createVNPayPaymentUrl(order, request);
+            // Tạo payment URL qua VNPayService
+            String paymentUrl = vnPayService.createPaymentUrl(order, request);
 
             return "redirect:" + paymentUrl;
 
         } catch (Exception e) {
+            logger.error("Error initiating VNPay payment for order {}: {}", orderId, e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Lỗi khởi tạo thanh toán: " + e.getMessage());
             return "redirect:/order/checkout";
         }
     }
 
-    /**
-     * Tạo URL thanh toán VNPay
-     */
-    private String createVNPayPaymentUrl(Order order, HttpServletRequest request) {
-        Map<String, String> vnpParams = new HashMap<>();
-
-        vnpParams.put("vnp_Version", "2.1.0");
-        vnpParams.put("vnp_Command", "pay");
-        vnpParams.put("vnp_TmnCode", vnpayTmnCode);
-        vnpParams.put("vnp_Amount", String.valueOf(order.getTotalAmount().multiply(new java.math.BigDecimal(100)).longValue()));
-        vnpParams.put("vnp_CurrCode", "VND");
-        vnpParams.put("vnp_TxnRef", order.getOrderId());
-        vnpParams.put("vnp_OrderInfo", "Thanh toan don hang " + order.getOrderId());
-        vnpParams.put("vnp_OrderType", "other");
-        vnpParams.put("vnp_Locale", "vn");
-        vnpParams.put("vnp_ReturnUrl", vnpayReturnUrl);
-        vnpParams.put("vnp_IpAddr", getClientIp(request));
-
-        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-        String vnpCreateDate = formatter.format(cld.getTime());
-        vnpParams.put("vnp_CreateDate", vnpCreateDate);
-
-        cld.add(Calendar.MINUTE, 15);
-        String vnpExpireDate = formatter.format(cld.getTime());
-        vnpParams.put("vnp_ExpireDate", vnpExpireDate);
-
-        // Build query string
-        List<String> fieldNames = new ArrayList<>(vnpParams.keySet());
-        Collections.sort(fieldNames);
-        StringBuilder hashData = new StringBuilder();
-        StringBuilder query = new StringBuilder();
-
-        Iterator<String> itr = fieldNames.iterator();
-        while (itr.hasNext()) {
-            String fieldName = itr.next();
-            String fieldValue = vnpParams.get(fieldName);
-            if ((fieldValue != null) && (!fieldValue.isEmpty())) {
-                // Build hash data
-                hashData.append(fieldName);
-                hashData.append('=');
-                hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
-
-                // Build query
-                query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII));
-                query.append('=');
-                query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
-
-                if (itr.hasNext()) {
-                    query.append('&');
-                    hashData.append('&');
-                }
-            }
-        }
-
-        String queryUrl = query.toString();
-        String vnpSecureHash = hmacSHA512(vnpayHashSecret, hashData.toString());
-        queryUrl += "&vnp_SecureHash=" + vnpSecureHash;
-
-        return vnpayUrl + "?" + queryUrl;
-    }
 
     /**
      * Callback từ VNPay
+     * Business logic validation đã chuyển sang VNPayService
      */
     @GetMapping("/vnpay/return")
     public String vnpayReturn(
@@ -219,24 +123,17 @@ public class PaymentController {
             RedirectAttributes redirectAttributes) {
 
         try {
-            // Lấy secure hash
-            String vnpSecureHash = params.get("vnp_SecureHash");
-            params.remove("vnp_SecureHash");
-            params.remove("vnp_SecureHashType");
-
-            // Xác thực chữ ký
-            String signValue = getSignatureData(params);
-            String calculatedHash = hmacSHA512(vnpayHashSecret, signValue);
-
-            if (!calculatedHash.equals(vnpSecureHash)) {
+            // Xác thực chữ ký qua VNPayService
+            if (!vnPayService.validateCallback(params)) {
+                logger.warn("Invalid VNPay callback signature");
                 redirectAttributes.addFlashAttribute("error", "Chữ ký không hợp lệ");
                 return "redirect:/payment/error";
             }
 
-            // Lấy thông tin
-            String orderId = params.get("vnp_TxnRef");
-            String responseCode = params.get("vnp_ResponseCode");
-            String transactionNo = params.get("vnp_TransactionNo");
+            // Lấy thông tin từ callback
+            String orderId = vnPayService.getOrderId(params);
+            String responseCode = vnPayService.getResponseCode(params);
+            String transactionNo = vnPayService.getTransactionId(params);
 
             Order order = orderService.getOrderById(orderId).orElse(null);
             if (order == null) {
@@ -316,16 +213,16 @@ public class PaymentController {
 
     /**
      * Khởi tạo thanh toán chuyển khoản ngân hàng (QR Code)
+     * Business logic đã chuyển sang BankTransferService
      */
     @GetMapping("/bank-transfer")
     public String initiateBankTransferPayment(
             @RequestParam String orderId,
-            Authentication authentication,
             Model model,
             RedirectAttributes redirectAttributes) {
 
         try {
-            User currentUser = getCurrentUser(authentication);
+            User currentUser = getCurrentUser();
             if (currentUser == null) {
                 redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập");
                 return "redirect:/auth/login";
@@ -345,11 +242,14 @@ public class PaymentController {
             order.setPaymentStatus(Order.PaymentStatus.PENDING);
             orderService.saveOrder(order);
 
-            // Tạo nội dung chuyển khoản
-            String transferContent = "EBOOKSTORE " + orderId;
+            // Tạo nội dung chuyển khoản qua BankTransferService
+            String transferContent = bankTransferService.generateTransferContent(orderId);
 
-            // Tạo URL QR code
-            String qrUrl = generateQRCodeUrl(order, transferContent);
+            // Tạo URL QR code qua BankTransferService
+            String qrUrl = bankTransferService.generateQRCodeUrl(order, transferContent);
+
+            // Lấy thông tin ngân hàng qua BankTransferService
+            BankTransferInfo bankInfo = bankTransferService.getBankInfo();
 
             // Lấy danh sách order items
             List<OrderItem> orderItems = orderItemService.getOrderItemsByOrderId(orderId);
@@ -358,99 +258,63 @@ public class PaymentController {
             model.addAttribute("order", order);
             model.addAttribute("orderItems", orderItems);
             model.addAttribute("qrCodeUrl", qrUrl);
-            model.addAttribute("bankName", bankName);
-            model.addAttribute("bankAccountNumber", bankAccountNumber);
-            model.addAttribute("bankAccountName", bankAccountName);
-            model.addAttribute("bankBranch", bankBranch);
+            model.addAttribute("bankName", bankInfo.getBankName());
+            model.addAttribute("bankAccountNumber", bankInfo.getAccountNumber());
+            model.addAttribute("bankAccountName", bankInfo.getAccountName());
+            model.addAttribute("bankBranch", bankInfo.getBranch());
             model.addAttribute("transferContent", transferContent);
 
             return "user/payment/bank-transfer";
 
         } catch (Exception e) {
+            logger.error("Error initiating bank transfer for order {}: {}", orderId, e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Lỗi khởi tạo thanh toán: " + e.getMessage());
             return "redirect:/order/checkout";
         }
     }
 
-    /**
-     * Tạo URL QR code cho thanh toán ngân hàng
-     */
-    private String generateQRCodeUrl(Order order, String content) {
-        try {
-            // Log để debug
-            System.out.println("=== Generating QR Code ===");
-            System.out.println("Bank Code: " + bankCode);
-            System.out.println("Account Number: " + bankAccountNumber);
-            System.out.println("Account Name: " + bankAccountName);
-            System.out.println("Amount: " + order.getTotalAmount().longValue());
-            System.out.println("Content: " + content);
-            System.out.println("QR Template: " + qrTemplate);
-
-            String url = qrTemplate
-                    .replace("{bank_code}", bankCode)
-                    .replace("{account_number}", bankAccountNumber)
-                    .replace("{template}", "compact2")
-                    .replace("{amount}", String.valueOf(order.getTotalAmount().longValue()))
-                    .replace("{content}", URLEncoder.encode(content, StandardCharsets.UTF_8))
-                    .replace("{account_name}", URLEncoder.encode(bankAccountName, StandardCharsets.UTF_8));
-
-            System.out.println("Generated QR URL: " + url);
-
-            return url;
-        } catch (Exception e) {
-            System.err.println("Error generating QR code URL: " + e.getMessage());
-            e.printStackTrace();
-            // Return a default QR code URL instead of throwing exception
-            return "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" +
-                   URLEncoder.encode("Thanh toan don hang: " + order.getOrderId(), StandardCharsets.UTF_8);
-        }
-    }
 
     /**
      * Xác nhận đã chuyển khoản
+     * Business logic đã chuyển sang BankTransferService
      */
     @PostMapping("/bank-transfer/confirm")
     @ResponseBody
     public Map<String, Object> confirmBankTransfer(
-            @RequestParam String orderId,
-            Authentication authentication) {
+            @RequestParam String orderId) {
 
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // Debug logging
-            System.out.println("=== Confirm Bank Transfer ===");
-            System.out.println("Received orderId: " + orderId);
-            System.out.println("Authentication: " + (authentication != null ? "Present" : "Null"));
+            logger.info("=== Confirm Bank Transfer ===");
+            logger.info("Received orderId: {}", orderId);
 
-            User currentUser = getCurrentUser(authentication);
+            User currentUser = getCurrentUser();
             if (currentUser == null) {
-                System.out.println("ERROR: Current user is null");
+                logger.warn("User not authenticated for bank transfer confirmation");
                 response.put("success", false);
                 response.put("message", "Vui lòng đăng nhập");
                 return response;
             }
 
-            System.out.println("Current user: " + currentUser.getUserId());
+            logger.info("Current user: {}", currentUser.getUserId());
 
             // Lấy order
-            System.out.println("Looking for order: " + orderId);
             Order order = orderService.getOrderById(orderId)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
 
-            System.out.println("Order found: " + order.getOrderId());
-            System.out.println("Order user: " + order.getUser().getUserId());
+            logger.info("Order found: {} for user: {}", order.getOrderId(), order.getUser().getUserId());
 
             // Kiểm tra quyền
             if (!order.getUser().getUserId().equals(currentUser.getUserId())) {
-                System.out.println("ERROR: User mismatch - Order user: " + order.getUser().getUserId() + ", Current user: " + currentUser.getUserId());
+                logger.warn("User {} attempted to confirm order {} belonging to user {}",
+                           currentUser.getUserId(), orderId, order.getUser().getUserId());
                 throw new RuntimeException("Bạn không có quyền xác nhận đơn hàng này");
             }
 
             // Kiểm tra trạng thái hiện tại
-            System.out.println("Current order status: " + order.getPaymentStatus());
             if (order.getPaymentStatus() != Order.PaymentStatus.PENDING) {
-                System.out.println("ERROR: Order status is not PENDING");
+                logger.warn("Order {} status is not PENDING: {}", orderId, order.getPaymentStatus());
                 response.put("success", false);
                 response.put("message", "Đơn hàng đã được xác nhận trước đó");
                 return response;
@@ -483,12 +347,11 @@ public class PaymentController {
     @GetMapping("/bank-transfer/waiting")
     public String bankTransferWaiting(
             @RequestParam String orderId,
-            Authentication authentication,
             Model model,
             RedirectAttributes redirectAttributes) {
 
         try {
-            User currentUser = getCurrentUser(authentication);
+            User currentUser = getCurrentUser();
             if (currentUser == null) {
                 redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập");
                 return "redirect:/auth/login";
@@ -517,54 +380,6 @@ public class PaymentController {
 
 
 
-    /**
-     * HMAC SHA512
-     */
-    private String hmacSHA512(String key, String data) {
-        try {
-            Mac sha512_HMAC = Mac.getInstance("HmacSHA512");
-            SecretKeySpec secret_key = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
-            sha512_HMAC.init(secret_key);
-            byte[] hash = sha512_HMAC.doFinal(data.getBytes(StandardCharsets.UTF_8));
-
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-
-            return hexString.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("Error generating HMAC", e);
-        }
-    }
-
-    /**
-     * Get signature data from params
-     */
-    private String getSignatureData(Map<String, String> params) {
-        List<String> fieldNames = new ArrayList<>(params.keySet());
-        Collections.sort(fieldNames);
-        StringBuilder hashData = new StringBuilder();
-
-        Iterator<String> itr = fieldNames.iterator();
-        while (itr.hasNext()) {
-            String fieldName = itr.next();
-            String fieldValue = params.get(fieldName);
-            if ((fieldValue != null) && (!fieldValue.isEmpty())) {
-                hashData.append(fieldName);
-                hashData.append('=');
-                hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
-                if (itr.hasNext()) {
-                    hashData.append('&');
-                }
-            }
-        }
-
-        return hashData.toString();
-    }
-
     // ========================================================================
     // SUBSCRIPTION PAYMENT METHODS
     // ========================================================================
@@ -574,11 +389,10 @@ public class PaymentController {
      */
     @GetMapping("/subscription/checkout/{subscriptionId}")
     public String showSubscriptionCheckout(@PathVariable String subscriptionId,
-                                          Authentication authentication,
                                           Model model,
                                           RedirectAttributes redirectAttributes) {
 
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = getCurrentUser();
         if (currentUser == null) {
             redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để đăng ký gói");
             return "redirect:/auth/login";
@@ -607,7 +421,7 @@ public class PaymentController {
                 .findFirst();
 
         model.addAttribute("subscription", subscription);
-        model.addAttribute("user", currentUser);
+        
         model.addAttribute("currentSubscription", activeSubscription.orElse(null));
         model.addAttribute("hasActiveSubscription", activeSubscription.isPresent());
 
@@ -620,11 +434,10 @@ public class PaymentController {
     @PostMapping("/subscription/process")
     public String processSubscriptionPayment(@RequestParam("subscriptionId") String subscriptionId,
                                             @RequestParam("paymentMethod") String paymentMethod,
-                                            Authentication authentication,
                                             HttpServletRequest request,
                                             RedirectAttributes redirectAttributes) {
 
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = getCurrentUser();
         if (currentUser == null) {
             redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập");
             return "redirect:/auth/login";
@@ -668,8 +481,8 @@ public class PaymentController {
 
             // Xử lý theo phương thức thanh toán
             if ("VNPAY".equalsIgnoreCase(paymentMethod)) {
-                // Chuyển đến VNPAY
-                String paymentUrl = createVNPayPaymentUrl(order, request);
+                // Chuyển đến VNPAY qua VNPayService
+                String paymentUrl = vnPayService.createPaymentUrl(order, request);
                 return "redirect:" + paymentUrl;
             } else if ("BANK_TRANSFER".equalsIgnoreCase(paymentMethod)) {
                 // Chuyển đến trang chuyển khoản ngân hàng
@@ -691,11 +504,10 @@ public class PaymentController {
      */
     @GetMapping("/subscription/bank-transfer")
     public String showSubscriptionBankTransfer(@RequestParam("orderId") String orderId,
-                                              Authentication authentication,
                                               Model model,
                                               RedirectAttributes redirectAttributes) {
 
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = getCurrentUser();
         if (currentUser == null) {
             return "redirect:/auth/login";
         }
@@ -714,11 +526,15 @@ public class PaymentController {
             return "redirect:/subscription/plans";
         }
 
+        // Lấy thông tin ngân hàng qua BankTransferService
+        BankTransferInfo bankInfo = bankTransferService.getBankInfo();
+
         model.addAttribute("order", order);
-        model.addAttribute("bankName", bankName);
-        model.addAttribute("bankAccountNumber", bankAccountNumber);
-        model.addAttribute("bankAccountName", bankAccountName);
-        model.addAttribute("bankBranch", bankBranch);
+        model.addAttribute("bankName", bankInfo.getBankName());
+        model.addAttribute("bankAccountNumber", bankInfo.getAccountNumber());
+        model.addAttribute("bankAccountName", bankInfo.getAccountName());
+        model.addAttribute("bankBranch", bankInfo.getBranch());
+
 
         return "user/payment/subscription-bank-transfer";
     }
@@ -728,11 +544,10 @@ public class PaymentController {
      */
     @GetMapping("/subscription/success")
     public String subscriptionPaymentSuccess(@RequestParam("orderId") String orderId,
-                                            Authentication authentication,
                                             Model model,
                                             RedirectAttributes redirectAttributes) {
 
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = getCurrentUser();
         if (currentUser == null) {
             return "redirect:/auth/login";
         }
@@ -762,10 +577,9 @@ public class PaymentController {
     @GetMapping("/subscription/failed")
     public String subscriptionPaymentFailed(@RequestParam(value = "orderId", required = false) String orderId,
                                            @RequestParam(value = "message", required = false) String message,
-                                           Authentication authentication,
                                            Model model) {
 
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = getCurrentUser();
         if (currentUser != null && orderId != null) {
             Optional<Order> orderOpt = orderService.getOrderById(orderId);
             orderOpt.ifPresent(order -> {

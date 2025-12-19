@@ -9,6 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.dto.request.UserCreateRequest;
 import stu.datn.ebook_store.dto.request.UserUpdateRequest;
 import stu.datn.ebook_store.entity.Role;
@@ -21,11 +22,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Controller xử lý quản lý người dùng (CRUD User)
+ * AdminDashboardController xử lý quản lý người dùng (CRUD User)
  */
 @Controller
 @RequestMapping("/admin/users")
-public class AdminUserController extends BaseAdminController {
+public class UserController extends BaseController {
 
     private static final String ROOT_ADMIN_ID = "user_admin_01";
     private static final String REDIRECT_USERS = "redirect:/admin/users";
@@ -35,7 +36,7 @@ public class AdminUserController extends BaseAdminController {
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AdminUserController(UserService userService, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    public UserController(UserService userService, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;

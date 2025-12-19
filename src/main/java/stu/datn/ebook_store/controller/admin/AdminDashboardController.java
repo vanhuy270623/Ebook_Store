@@ -4,18 +4,18 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.UserService;
 import stu.datn.ebook_store.service.OrderService;
 import stu.datn.ebook_store.service.ReviewService;
 
-@Controller
+@org.springframework.stereotype.Controller
 @RequestMapping("/admin")
-public class AdminController extends BaseAdminController {
+public class AdminDashboardController extends BaseController {
 
     private final BookService bookService;
     private final UserService userService;
@@ -23,8 +23,8 @@ public class AdminController extends BaseAdminController {
     private final ReviewService reviewService;
 
     @Autowired
-    public AdminController(BookService bookService, UserService userService,
-                          OrderService orderService, ReviewService reviewService) {
+    public AdminDashboardController(BookService bookService, UserService userService,
+                                    OrderService orderService, ReviewService reviewService) {
         this.bookService = bookService;
         this.userService = userService;
         this.orderService = orderService;

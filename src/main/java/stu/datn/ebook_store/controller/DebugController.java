@@ -20,7 +20,7 @@ import java.sql.Connection;
 import java.util.*;
 
 /**
- * Debug Controller - Các endpoint để debug và kiểm tra hệ thống
+ * Debug AdminDashboardController - Các endpoint để debug và kiểm tra hệ thống
  *
  * ⚠️ CHÚ Ý: Chỉ sử dụng trong môi trường development
  * ⚠️ PHẢI TẮT hoặc bảo mật các endpoint này trước khi deploy production

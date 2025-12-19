@@ -1,4 +1,4 @@
-package stu.datn.ebook_store.controller.admin;
+package stu.datn.ebook_store.controller;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -9,7 +9,7 @@ import stu.datn.ebook_store.entity.User;
  * Base controller for all admin controllers
  * Provides common functionality like adding current user to model
  */
-public abstract class BaseAdminController {
+public abstract class BaseController {
 
     @ModelAttribute("user")
     public User addUserToModel() {

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.entity.Review;
 import stu.datn.ebook_store.service.ReviewService;
 
@@ -15,20 +16,20 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Controller xử lý quản lý đánh giá (Review Management)
+ * AdminDashboardController xử lý quản lý đánh giá (Review Management)
  * Chức năng: Duyệt, từ chối đánh giá từ người dùng
  * Pattern: Tương tự AdminPostController, AdminBannerController
  */
 @Controller
 @RequestMapping("/admin/reviews")
-public class AdminReviewController extends BaseAdminController {
+public class ReviewController extends BaseController {
 
     private static final String REDIRECT_REVIEWS = "redirect:/admin/reviews";
 
     private final ReviewService reviewService;
 
     @Autowired
-    public AdminReviewController(ReviewService reviewService) {
+    public ReviewController(ReviewService reviewService) {
         this.reviewService = reviewService;
     }
 

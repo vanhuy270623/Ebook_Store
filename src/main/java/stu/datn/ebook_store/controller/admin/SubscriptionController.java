@@ -3,17 +3,16 @@ package stu.datn.ebook_store.controller.admin;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.dto.request.SubscriptionCreateRequest;
 import stu.datn.ebook_store.dto.request.SubscriptionUpdateRequest;
 import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.Subscription;
-import stu.datn.ebook_store.entity.User;
 import stu.datn.ebook_store.service.OrderService;
 import stu.datn.ebook_store.service.SubscriptionService;
 
@@ -23,13 +22,13 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Controller quản lý gói subscription (Admin)
+ * AdminDashboardController quản lý gói subscription (Admin)
  * Endpoints: /admin/subscriptions/*
  * Pattern: Tương tự AdminCategoryController
  */
 @Controller
 @RequestMapping("/admin/subscriptions")
-public class AdminSubscriptionController extends BaseAdminController {
+public class SubscriptionController extends BaseController {
 
     private static final String REDIRECT_SUBSCRIPTIONS = "redirect:/admin/subscriptions";
 
@@ -37,7 +36,7 @@ public class AdminSubscriptionController extends BaseAdminController {
     private final OrderService orderService;
 
     @Autowired
-    public AdminSubscriptionController(SubscriptionService subscriptionService, OrderService orderService) {
+    public SubscriptionController(SubscriptionService subscriptionService, OrderService orderService) {
         this.subscriptionService = subscriptionService;
         this.orderService = orderService;
     }

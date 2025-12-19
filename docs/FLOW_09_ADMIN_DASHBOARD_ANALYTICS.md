@@ -619,7 +619,7 @@ public CompletableFuture<Long> getTotalUsersCountAsync() {
     return CompletableFuture.completedFuture(getTotalUsersCount());
 }
 
-// Controller usage
+// AdminDashboardController usage
 CompletableFuture<Long> booksFuture = bookService.getTotalBooksCountAsync();
 CompletableFuture<Long> usersFuture = userService.getTotalUsersCountAsync();
 

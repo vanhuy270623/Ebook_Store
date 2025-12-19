@@ -3,12 +3,14 @@ package stu.datn.ebook_store.service.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import stu.datn.ebook_store.entity.Order;
-import stu.datn.ebook_store.entity.Subscription;
-import stu.datn.ebook_store.entity.User;
+import stu.datn.ebook_store.entity.*;
 import stu.datn.ebook_store.repository.OrderRepository;
+import stu.datn.ebook_store.service.CartItemService;
+import stu.datn.ebook_store.service.CartService;
+import stu.datn.ebook_store.service.OrderItemService;
 import stu.datn.ebook_store.service.OrderService;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -18,10 +20,19 @@ import java.util.Optional;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
+    private final CartService cartService;
+    private final CartItemService cartItemService;
+    private final OrderItemService orderItemService;
 
     @Autowired
-    public OrderServiceImpl(OrderRepository orderRepository) {
+    public OrderServiceImpl(OrderRepository orderRepository,
+                           CartService cartService,
+                           CartItemService cartItemService,
+                           OrderItemService orderItemService) {
         this.orderRepository = orderRepository;
+        this.cartService = cartService;
+        this.cartItemService = cartItemService;
+        this.orderItemService = orderItemService;
     }
 
     @Override
@@ -229,5 +240,77 @@ public class OrderServiceImpl implements OrderService {
         // Format with 2 digits: 01, 02, 03, etc.
         return prefix + String.format("%02d", typeCount + 1);
     }
-}
 
+    @Override
+    @Transactional
+    public Order createOrderFromCart(User user, Cart cart, Order.PaymentMethod paymentMethod) {
+        // Validate cart
+        if (!cartService.isCartValidForCheckout(cart, user)) {
+            List<String> errors = cartService.getCartValidationErrors(cart, user);
+            throw new RuntimeException(String.join(", ", errors));
+        }
+
+        List<CartItem> cartItems = cartItemService.getCartItemsByCart(cart);
+        BigDecimal totalAmount = cartService.calculateCartTotal(cart);
+
+        // Create Order
+        Order order = new Order();
+        order.setUser(user);
+        order.setOrderType(Order.OrderType.BOOK);
+        order.setTotalAmount(totalAmount);
+        order.setPaymentStatus(Order.PaymentStatus.PENDING);
+        order.setPaymentMethod(paymentMethod);
+        order.setCreatedAt(LocalDateTime.now());
+
+        Order savedOrder = saveOrder(order);
+
+        // Create OrderItems
+        for (CartItem cartItem : cartItems) {
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrder(savedOrder);
+            orderItem.setBook(cartItem.getBook());
+            orderItem.setPriceAtPurchase(cartItem.getBook().getPrice());
+            orderItemService.saveOrderItem(orderItem);
+        }
+
+        // Clear cart
+        cartService.clearCart(cart);
+
+        return savedOrder;
+    }
+
+    @Override
+    @Transactional
+    public boolean cancelOrder(String orderId, User user) {
+        Order order = getOrderById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        // Kiểm tra quyền
+        if (!canUserAccessOrder(order, user)) {
+            throw new RuntimeException("Bạn không có quyền hủy đơn hàng này");
+        }
+
+        // Chỉ cho phép hủy đơn PENDING
+        if (order.getPaymentStatus() != Order.PaymentStatus.PENDING) {
+            throw new RuntimeException("Chỉ có thể hủy đơn hàng đang chờ thanh toán");
+        }
+
+        // Cancel order
+        order.setPaymentStatus(Order.PaymentStatus.CANCELLED);
+        saveOrder(order);
+
+        return true;
+    }
+
+    @Override
+    public boolean canUserAccessOrder(Order order, User user) {
+        // Admin có quyền xem tất cả
+        if (user.getRole() != null &&
+            "ADMIN".equals(user.getRole().getRoleName().name())) {
+            return true;
+        }
+
+        // User chỉ xem được order của mình
+        return order.getUser().getUserId().equals(user.getUserId());
+    }
+}

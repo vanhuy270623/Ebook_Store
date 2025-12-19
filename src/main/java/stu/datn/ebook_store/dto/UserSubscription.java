@@ -48,24 +48,36 @@ public class UserSubscription {
         this.createdAt = order.getCreatedAt();
 
         // Xác định trạng thái
-        if (order.getPaymentStatus() == Order.PaymentStatus.CANCELLED) {
-            this.status = Status.CANCELLED;
-            this.isActive = false;
-        } else if (order.getPaymentStatus() == Order.PaymentStatus.PENDING ||
-                   order.getPaymentStatus() == Order.PaymentStatus.WAITING_APPROVAL) {
+        // QUAN TRỌNG: CANCELLED vẫn giữ quyền đến hết thời gian đã thanh toán
+
+        LocalDateTime now = LocalDateTime.now();
+        boolean isTimeValid = order.getEndDate() != null && order.getEndDate().isAfter(now);
+        boolean isTimeExpired = order.getEndDate() != null && order.getEndDate().isBefore(now);
+
+        if (order.getPaymentStatus() == Order.PaymentStatus.PENDING ||
+            order.getPaymentStatus() == Order.PaymentStatus.WAITING_APPROVAL) {
+            // Chưa thanh toán
             this.status = Status.PENDING;
             this.isActive = false;
-        } else if ((order.getPaymentStatus() == Order.PaymentStatus.COMPLETED ||
-                    order.getPaymentStatus() == Order.PaymentStatus.PAID) &&
-                   order.getEndDate() != null &&
-                   order.getEndDate().isAfter(LocalDateTime.now())) {
-            this.status = Status.ACTIVE;
-            this.isActive = true;
-        } else if (order.getEndDate() != null &&
-                   order.getEndDate().isBefore(LocalDateTime.now())) {
+
+        } else if (isTimeExpired) {
+            // Đã hết hạn (bất kể payment status)
             this.status = Status.EXPIRED;
             this.isActive = false;
+
+        } else if (order.getPaymentStatus() == Order.PaymentStatus.CANCELLED && isTimeValid) {
+            // Đã hủy NHƯNG còn thời gian → Vẫn active đến hết thời gian đã trả
+            this.status = Status.CANCELLED;
+            this.isActive = true;  // ← QUAN TRỌNG: Vẫn active!
+
+        } else if ((order.getPaymentStatus() == Order.PaymentStatus.COMPLETED ||
+                    order.getPaymentStatus() == Order.PaymentStatus.PAID) && isTimeValid) {
+            // Đang hoạt động bình thường
+            this.status = Status.ACTIVE;
+            this.isActive = true;
+
         } else {
+            // Trường hợp khác
             this.status = Status.PENDING;
             this.isActive = false;
         }

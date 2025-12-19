@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 /**
  * Controller xử lý quản lý banner/quảng cáo (CRUD Banner)
- * Pattern: Tương tự AdminAuthorController, AdminCategoryController, AdminCouponController
+ * Pattern: Tương tự AdminAuthorController, AdminCategoryController
  */
 @Controller
 @RequestMapping("/admin/banners")

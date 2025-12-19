@@ -591,4 +591,111 @@ public class UserController {
 
         return "user/reading/reading-history";
     }
+
+    // ============================================================================
+    // DEVICE MANAGEMENT - Quản lý thiết bị
+    // ============================================================================
+
+    /**
+     * Trang quản lý thiết bị
+     */
+    @GetMapping("/devices")
+    public String devicesPage(Authentication authentication,
+                             jakarta.servlet.http.HttpSession session,
+                             Model model) {
+        User currentUser = getCurrentUser(authentication);
+        String currentDeviceId = (String) session.getAttribute("currentDeviceId");
+
+        // Lấy danh sách devices
+        List<stu.datn.ebook_store.entity.UserDevice> devices = userService.getUserDevices(currentUser.getUserId());
+
+        // Lấy subscription hiện tại để biết max_devices
+        int maxDevices = getUserMaxDevices(currentUser.getUserId());
+        String subscriptionInfo = getSubscriptionInfo(currentUser.getUserId());
+
+        // Tạo DTO cho view
+        List<stu.datn.ebook_store.dto.DeviceResponseDto> deviceDtos = devices.stream()
+            .map(d -> stu.datn.ebook_store.dto.DeviceResponseDto.fromEntity(
+                d, d.getDeviceId().equals(currentDeviceId)))
+            .collect(Collectors.toList());
+
+        model.addAttribute("devices", deviceDtos);
+        model.addAttribute("currentDeviceId", currentDeviceId);
+        model.addAttribute("maxDevices", maxDevices);
+        model.addAttribute("currentCount", devices.size());
+        model.addAttribute("violationCount", currentUser.getDeviceViolationCount());
+        model.addAttribute("subscriptionInfo", subscriptionInfo);
+
+        return "user/devices/manage";
+    }
+
+    /**
+     * Helper: Lấy max devices từ subscription
+     */
+    private int getUserMaxDevices(String userId) {
+        return userService.getUserMaxDevices(userId);
+    }
+
+    /**
+     * Helper: Lấy thông tin subscription hiện tại
+     */
+    private String getSubscriptionInfo(String userId) {
+        return userService.getUserSubscriptionInfo(userId);
+    }
+
+    /**
+     * Xóa thiết bị
+     */
+    @PostMapping("/devices/{deviceId}/remove")
+    @ResponseBody
+    public Map<String, Object> removeDevice(
+            @PathVariable String deviceId,
+            Authentication authentication,
+            jakarta.servlet.http.HttpSession session) {
+
+        Map<String, Object> response = new HashMap<>();
+        User currentUser = getCurrentUser(authentication);
+        String currentDeviceId = (String) session.getAttribute("currentDeviceId");
+
+        try {
+            userService.removeDeviceWithCurrentCheck(currentUser.getUserId(), deviceId, currentDeviceId);
+            response.put("success", true);
+            response.put("message", "Xóa thiết bị thành công");
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+        }
+
+        return response;
+    }
+
+    /**
+     * API: Lấy danh sách devices (JSON)
+     */
+    @GetMapping("/api/devices")
+    @ResponseBody
+    public Map<String, Object> getDevicesApi(Authentication authentication,
+                                             jakarta.servlet.http.HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        User currentUser = getCurrentUser(authentication);
+        String currentDeviceId = (String) session.getAttribute("currentDeviceId");
+
+        List<stu.datn.ebook_store.entity.UserDevice> devices = userService.getUserDevices(currentUser.getUserId());
+        List<stu.datn.ebook_store.dto.DeviceResponseDto> deviceDtos = devices.stream()
+            .map(d -> stu.datn.ebook_store.dto.DeviceResponseDto.fromEntity(
+                d, d.getDeviceId().equals(currentDeviceId)))
+            .collect(Collectors.toList());
+
+        int maxDevices = getUserMaxDevices(currentUser.getUserId());
+        String subscriptionInfo = getSubscriptionInfo(currentUser.getUserId());
+
+        response.put("success", true);
+        response.put("devices", deviceDtos);
+        response.put("currentCount", devices.size());
+        response.put("maxDevices", maxDevices);
+        response.put("violationCount", currentUser.getDeviceViolationCount());
+        response.put("subscriptionInfo", subscriptionInfo);
+
+        return response;
+    }
 }

@@ -208,9 +208,32 @@
                                 <a th:href="@{/user/orders}" class="btn btn-outline-primary">
                                     <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách
                                 </a>
-                                <button th:if="${order.paymentStatus == T(stu.datn.ebook_store.entity.Order.PaymentStatus).PENDING}"
-                                        class="btn btn-success">
+                                <!-- VNPAY Payment Button -->
+                                <a th:if="${order.paymentStatus == T(stu.datn.ebook_store.entity.Order.PaymentStatus).PENDING} and ${order.paymentMethod == T(stu.datn.ebook_store.entity.Order.PaymentMethod).VNPAY}"
+                                   th:href="@{/payment/vnpay(orderId=${order.orderId})}"
+                                   class="btn btn-success">
                                     <i class="fas fa-credit-card me-2"></i>Thanh toán ngay
+                                </a>
+                                <!-- Bank Transfer Payment Button -->
+                                <a th:if="${order.paymentStatus == T(stu.datn.ebook_store.entity.Order.PaymentStatus).PENDING} and ${order.paymentMethod == T(stu.datn.ebook_store.entity.Order.PaymentMethod).BANK_TRANSFER}"
+                                   th:href="@{/payment/bank-transfer(orderId=${order.orderId})}"
+                                   class="btn btn-success">
+                                    <i class="fas fa-university me-2"></i>Thanh toán ngay
+                                </a>
+                                <!-- Credit Card Payment Button -->
+                                <button th:if="${order.paymentStatus == T(stu.datn.ebook_store.entity.Order.PaymentStatus).PENDING} and ${order.paymentMethod == T(stu.datn.ebook_store.entity.Order.PaymentMethod).CREDIT_CARD}"
+                                        type="button"
+                                        class="btn btn-success"
+                                        onclick="alert('Chức năng thanh toán thẻ tín dụng đang được phát triển.')">
+                                    <i class="fas fa-credit-card me-2"></i>Thanh toán ngay
+                                </button>
+                                <!-- Cancel Order Button -->
+                                <button th:if="${order.paymentStatus == T(stu.datn.ebook_store.entity.Order.PaymentStatus).PENDING}"
+                                        type="button"
+                                        class="btn btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#cancelOrderModal">
+                                    <i class="fas fa-times-circle me-2"></i>Hủy đơn hàng
                                 </button>
                             </div>
                         </div>
@@ -233,6 +256,38 @@
 
     <!-- Footer -->
     <div th:replace="~{user/layout/footer :: footer}"></div>
+
+    <!-- Cancel Order Modal -->
+    <div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cancelOrderModalLabel">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                        Xác nhận hủy đơn hàng
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn hủy đơn hàng này?</p>
+                    <p class="text-muted small mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Đơn hàng đã hủy không thể khôi phục.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Đóng
+                    </button>
+                    <form th:action="@{/order/{orderId}/cancel(orderId=${order.orderId})}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-2"></i>Xác nhận hủy
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
     <script th:src="@{/user_template/js/user-main.js}"></script>

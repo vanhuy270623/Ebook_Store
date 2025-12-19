@@ -191,7 +191,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ModelAndView handleGenericException(Exception ex, HttpServletRequest request) {
-        log.error("❌ Unhandled Exception tại: {}", request.getRequestURI(), ex);
+        String requestUri = request.getRequestURI();
+
+        // Ignore browser/dev tools requests - không log để tránh spam
+        if (isBrowserToolsRequest(requestUri)) {
+            log.debug("Ignored browser tools request: {}", requestUri);
+            ModelAndView mav = new ModelAndView("error/404");
+            return mav;
+        }
+
+        log.error("❌ Unhandled Exception tại: {}", requestUri, ex);
 
         ModelAndView mav = new ModelAndView("error/500");
         mav.addObject("errorType", ex.getClass().getSimpleName());
@@ -200,6 +209,26 @@ public class GlobalExceptionHandler {
         mav.addObject("solution", "Vui lòng liên hệ admin hoặc thử lại sau");
 
         return mav;
+    }
+
+    /**
+     * Kiểm tra request có phải từ browser tools không
+     */
+    private boolean isBrowserToolsRequest(String requestUri) {
+        if (requestUri == null) return false;
+
+        // Chrome DevTools
+        if (requestUri.contains("/.well-known/appspecific/")) return true;
+        if (requestUri.contains("/json/version")) return true;
+        if (requestUri.contains("/json/list")) return true;
+
+        // Favicon requests
+        if (requestUri.endsWith("/favicon.ico")) return true;
+
+        // Source maps
+        if (requestUri.endsWith(".map")) return true;
+
+        return false;
     }
 
     /**

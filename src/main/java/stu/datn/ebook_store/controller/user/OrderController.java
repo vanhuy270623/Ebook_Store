@@ -30,7 +30,6 @@ public class OrderController {
     private final OrderItemService orderItemService;
     private final CartService cartService;
     private final CartItemService cartItemService;
-    private final CouponService couponService;
 
     private static final Set<Order.PaymentStatus> PAID_STATUSES =
             EnumSet.of(Order.PaymentStatus.COMPLETED, Order.PaymentStatus.PAID);
@@ -39,13 +38,11 @@ public class OrderController {
 
     @Autowired
     public OrderController(OrderService orderService, OrderItemService orderItemService,
-                          CartService cartService, CartItemService cartItemService,
-                          CouponService couponService) {
+                          CartService cartService, CartItemService cartItemService) {
         this.orderService = orderService;
         this.orderItemService = orderItemService;
         this.cartService = cartService;
         this.cartItemService = cartItemService;
-        this.couponService = couponService;
     }
 
     /**
@@ -113,7 +110,6 @@ public class OrderController {
      */
     @PostMapping("/create")
     public String createOrder(
-            @RequestParam(required = false) String couponCode,
             @RequestParam String paymentMethod,
             Authentication authentication,
             RedirectAttributes redirectAttributes) {
@@ -148,22 +144,6 @@ public class OrderController {
                     .map(item -> item.getBook().getPrice() != null ? item.getBook().getPrice() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            if (couponCode != null && !couponCode.trim().isEmpty()) {
-                Coupon appliedCoupon = couponService.getCouponByCode(couponCode).orElse(null);
-                if (appliedCoupon != null && appliedCoupon.getUsageLimit() != null && appliedCoupon.getUsageLimit() > 0) {
-                    BigDecimal discount = BigDecimal.ZERO;
-                    if (appliedCoupon.getDiscountType() == Coupon.DiscountType.PERCENT) {
-                        discount = totalAmount.multiply(appliedCoupon.getDiscountValue())
-                                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-                    } else if (appliedCoupon.getDiscountType() == Coupon.DiscountType.FIXED) {
-                        discount = appliedCoupon.getDiscountValue();
-                    }
-
-                    totalAmount = totalAmount.subtract(discount);
-                    appliedCoupon.setUsageLimit(appliedCoupon.getUsageLimit() - 1);
-                    couponService.saveCoupon(appliedCoupon);
-                }
-            }
 
             Order order = new Order();
             order.setUser(currentUser);

@@ -2,6 +2,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="EbookStore - Thư viện sách điện tử hàng đầu Việt Nam">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title th:text="${pageTitle != null ? pageTitle + ' - EbookStore' : 'EbookStore - Thư viện sách điện tử'}">EbookStore</title>
 
     <!-- Favicon -->
@@ -13,6 +15,9 @@
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- SweetAlert2 CSS (for beautiful alerts) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <!-- Tiny Slider CSS -->
     <link rel="stylesheet" th:href="@{/user_template/css/tiny-slider.css}">

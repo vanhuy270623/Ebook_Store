@@ -75,4 +75,12 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("SELECT u FROM User u WHERE u.deletedAt IS NOT NULL ORDER BY u.deletedAt DESC")
     List<User> findDeletedUsers();
 
+    // Find user by email including deleted ones (for duplicate check)
+    @Query("SELECT u FROM User u WHERE u.email = :email")
+    Optional<User> findByEmailIncludingDeleted(@Param("email") String email);
+
+    // Find user by username including deleted ones (for duplicate check)
+    @Query("SELECT u FROM User u WHERE u.username = :username")
+    Optional<User> findByUsernameIncludingDeleted(@Param("username") String username);
+
 }

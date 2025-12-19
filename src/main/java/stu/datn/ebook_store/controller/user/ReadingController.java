@@ -326,6 +326,12 @@ public class ReadingController {
                     .orElseThrow(() -> new RuntimeException("Book not found"));
             log.info("Book found: {} ({})", book.getTitle(), book.getBookId());
 
+            // Kiểm tra quyền truy cập
+            if (!canUserAccessBook(user, book)) {
+                log.warn("User {} does not have access to book {}", user.getUserId(), bookId);
+                return "{\"status\":\"error\",\"message\":\"Bạn không có quyền đọc cuốn sách này\"}";
+            }
+
             ReadingProgress progress = readingProgressService.getReadingProgressByUserAndBook(user, book).orElse(null);
             boolean isNewProgress = (progress == null);
 
@@ -402,6 +408,13 @@ public class ReadingController {
             }
             Book book = bookService.getBookById(bookId)
                     .orElseThrow(() -> new RuntimeException("Book not found"));
+
+            // Kiểm tra quyền truy cập
+            if (!canUserAccessBook(user, book)) {
+                log.warn("User {} does not have access to book {}", user.getUserId(), bookId);
+                return null;
+            }
+
             return readingProgressService.getReadingProgressByUserAndBook(user, book).orElse(null);
         } catch (Exception e) {
             log.error("Error getting reading progress: {}", e.getMessage());
@@ -436,6 +449,12 @@ public class ReadingController {
                     .orElseThrow(() -> new RuntimeException("Book not found: " + bookId));
             log.info("Book found: {}", book.getTitle());
 
+            // Kiểm tra quyền truy cập
+            if (!canUserAccessBook(user, book)) {
+                log.warn("User {} does not have access to book {}", user.getUserId(), bookId);
+                return "{\"status\":\"error\",\"message\":\"Bạn không có quyền đọc cuốn sách này\"}";
+            }
+
             ReadingProgress progress = readingProgressService
                     .getReadingProgressByUserAndBook(user, book)
                     .orElse(null);
@@ -446,7 +465,7 @@ public class ReadingController {
                 progress = new ReadingProgress();
                 progress.setUser(user);
                 progress.setBook(book);
-                progress.setAccessType(ReadingProgress.AccessType.FREE);
+                progress.setAccessType(determineAccessType(book, user));
                 progress = readingProgressService.saveReadingProgress(progress);
                 log.info("Created progress with ID: {}", progress.getProgressId());
             }
@@ -518,6 +537,12 @@ public class ReadingController {
 
             Book book = bookService.getBookById(bookId)
                     .orElseThrow(() -> new RuntimeException("Book not found"));
+
+            // Kiểm tra quyền truy cập
+            if (!canUserAccessBook(user, book)) {
+                log.warn("User {} does not have access to book {}", user.getUserId(), bookId);
+                return new java.util.ArrayList<>();
+            }
 
             ReadingProgress progress = readingProgressService
                     .getReadingProgressByUserAndBook(user, book)
@@ -669,7 +694,11 @@ public class ReadingController {
     }
 
     /**
-     * Kiểm tra user có subscription active không
+     * Kiểm tra user có subscription active không (không tính gói FREE)
+     * Chỉ gói BASIC, PREMIUM, VIP mới được coi là có subscription
+     *
+     * QUAN TRỌNG: User hủy gói (CANCELLED) vẫn được duy trì quyền đến hết end_date
+     * Ví dụ: Đăng ký 01/12 → 30/12, hủy 07/12 → Vẫn đọc đến 30/12
      */
     private boolean hasActiveSubscription(String userId) {
         try {
@@ -677,12 +706,36 @@ public class ReadingController {
 
             LocalDateTime now = LocalDateTime.now();
             return subscriptionOrders.stream()
-                    .anyMatch(order ->
-                        (order.getPaymentStatus() == Order.PaymentStatus.COMPLETED ||
-                         order.getPaymentStatus() == Order.PaymentStatus.PAID) &&
-                        order.getEndDate() != null &&
-                        order.getEndDate().isAfter(now)
-                    );
+                    .anyMatch(order -> {
+                        // Kiểm tra payment status:
+                        // - COMPLETED, PAID: Đang hoạt động bình thường
+                        // - CANCELLED: Đã hủy NHƯNG vẫn duy trì quyền đến hết thời gian đã thanh toán
+                        boolean isValidPaymentStatus = (order.getPaymentStatus() == Order.PaymentStatus.COMPLETED ||
+                                                        order.getPaymentStatus() == Order.PaymentStatus.PAID ||
+                                                        order.getPaymentStatus() == Order.PaymentStatus.CANCELLED);
+
+                        // Kiểm tra end_date còn hạn
+                        boolean isNotExpired = order.getEndDate() != null &&
+                                               order.getEndDate().isAfter(now);
+
+                        if (!isValidPaymentStatus || !isNotExpired) {
+                            return false;
+                        }
+
+                        // Kiểm tra package_name - LOẠI TRỪ GÓI FREE
+                        if (order.getSubscription() != null &&
+                            order.getSubscription().getPackageName() != null) {
+                            String packageName = order.getSubscription().getPackageName().name();
+                            boolean isValidPackage = !packageName.equals("FREE");
+
+                            log.debug("User {} subscription check - Package: {}, PaymentStatus: {}, EndDate: {}, Valid: {}",
+                                     userId, packageName, order.getPaymentStatus(), order.getEndDate(), isValidPackage);
+
+                            return isValidPackage;
+                        }
+
+                        return false;
+                    });
         } catch (Exception e) {
             log.error("Error checking subscription status for user {}: {}", userId, e.getMessage());
             return false;

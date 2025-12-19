@@ -53,10 +53,10 @@ public class SubscriptionController {
 
         return orders.stream()
                 .filter(order -> {
-                    // Phải đã thanh toán
+                    // Phải đã thanh toán HOẶC đã hủy (CANCELLED vẫn giữ quyền đến hết thời gian đã trả)
                     if (order.getPaymentStatus() != Order.PaymentStatus.COMPLETED &&
-                        order.getPaymentStatus() != Order.PaymentStatus.PAID) {
-                        return false;
+                        order.getPaymentStatus() != Order.PaymentStatus.PAID &&
+                        order.getPaymentStatus() != Order.PaymentStatus.CANCELLED) {
                     }
                     // Phải còn trong thời hạn
                     return order.getEndDate() != null &&

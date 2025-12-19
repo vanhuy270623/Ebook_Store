@@ -109,8 +109,14 @@
                     <div class="d-grid gap-3">
                         <!-- FREE Book -->
                         <div th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).FREE}">
-                            <a th:href="@{/reading/reader/{id}(id=${book.bookId})}" class="btn action-btn-success w-100">
+                            <a th:href="@{/reading/reader/{id}(id=${book.bookId})}" class="btn action-btn-success w-100 mb-2">
                                 <i class="fas fa-book-reader me-2"></i>Đọc ngay
+                            </a>
+                            <a th:if="${book.isDownloadable}"
+                               th:href="@{/books/download/{id}(id=${book.bookId})}"
+                               class="btn btn-outline-primary w-100"
+                               download>
+                                <i class="fas fa-download me-2"></i>Tải xuống
                             </a>
                         </div>
 
@@ -128,8 +134,15 @@
                                     <i class="fas fa-cart-plus me-2"></i>Thêm vào giỏ hàng
                                 </button>
                             </form>
-                            <a th:href="@{/reading/reader/{id}(id=${book.bookId})}" class="btn action-btn-success w-100">
+                            <a th:href="@{/reading/reader/{id}(id=${book.bookId})}" class="btn action-btn-success w-100 mb-2">
                                 <i class="fas fa-book-reader me-2"></i>Đọc sách
+                            </a>
+                            <!-- Nút tải xuống: chỉ hiện khi đã mua và sách cho phép tải -->
+                            <a th:if="${purchasedBookIds.contains(book.bookId) && book.isDownloadable}"
+                               th:href="@{/books/download/{id}(id=${book.bookId})}"
+                               class="btn btn-outline-success w-100"
+                               download>
+                                <i class="fas fa-download me-2"></i>Tải xuống sách đã mua
                             </a>
                         </div>
 
@@ -160,8 +173,21 @@
                             <a th:href="@{/reading/reader/{id}(id=${book.bookId})}" class="btn action-btn-success w-100 mb-2">
                                 <i class="fas fa-book-reader me-2"></i>Đọc sách
                             </a>
+                            <!-- Nút tải xuống: CHỈ hiện khi đã MUA LẺ và sách cho phép tải -->
+                            <a th:if="${purchasedBookIds.contains(book.bookId) && book.isDownloadable}"
+                               th:href="@{/books/download/{id}(id=${book.bookId})}"
+                               class="btn btn-outline-success w-100 mb-2"
+                               download>
+                                <i class="fas fa-download me-2"></i>Tải xuống sách đã mua
+                            </a>
+                            <!-- Thông báo cho user chưa mua -->
+                            <div th:if="${!purchasedBookIds.contains(book.bookId) && book.isDownloadable}"
+                                 class="alert alert-info mb-2 py-2 px-3" style="font-size: 0.85rem;">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Mua sách để tải xuống. VIP chỉ đọc online.
+                            </div>
                             <a href="/subscription/plans" class="btn action-btn-warning w-100">
-                                <i class="fas a-crown me-2"></i>Hoặc dùng VIP
+                                <i class="fas fa-crown me-2"></i>Hoặc dùng VIP
                             </a>
                         </div>
 
@@ -340,6 +366,7 @@
     <!-- Scripts -->
     <th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
     <script th:src="@{/user_template/js/user-main.js}"></script>
+    <script th:src="@{/user_template/js/book-download.js}"></script>
 </body>
 </html>
 

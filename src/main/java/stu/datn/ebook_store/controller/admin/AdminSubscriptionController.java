@@ -25,7 +25,7 @@ import java.util.Optional;
 /**
  * Controller quản lý gói subscription (Admin)
  * Endpoints: /admin/subscriptions/*
- * Pattern: Tương tự AdminCategoryController, AdminCouponController
+ * Pattern: Tương tự AdminCategoryController
  */
 @Controller
 @RequestMapping("/admin/subscriptions")

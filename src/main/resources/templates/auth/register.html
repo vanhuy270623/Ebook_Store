@@ -48,7 +48,14 @@
             <!-- Error Message -->
             <div th:if="${errorMessage}" class="alert-error">
               <i class="fa fa-exclamation-circle"></i>
-              <span th:text="${errorMessage}"></span>
+              <span th:utext="${#strings.replace(errorMessage, '&#10;', '&lt;br/&gt;')}"></span>
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Success Message -->
+            <div th:if="${successMessage}" class="alert-success">
+              <i class="fa fa-check-circle"></i>
+              <span th:text="${successMessage}"></span>
               <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
 

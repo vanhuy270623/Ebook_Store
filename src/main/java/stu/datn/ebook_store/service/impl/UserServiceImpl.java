@@ -1,19 +1,19 @@
 package stu.datn.ebook_store.service.impl;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import org.springframework.transaction.annotation.Transactional;
+import stu.datn.ebook_store.dto.DeviceInfoDto;
+import stu.datn.ebook_store.entity.*;
+import stu.datn.ebook_store.repository.*;
 import stu.datn.ebook_store.service.UserService;
-import stu.datn.ebook_store.repository.UserRepository;
-import stu.datn.ebook_store.repository.RoleRepository;
 import stu.datn.ebook_store.dto.RegisterDto;
-import stu.datn.ebook_store.entity.User;
-import stu.datn.ebook_store.entity.Role;
+import stu.datn.ebook_store.util.DeviceFingerprintUtil;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -22,11 +22,46 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository,
-                           PasswordEncoder passwordEncoder) {
+    // Device Management - CHỈ dùng bảng có sẵn
+    private final UserDeviceRepository deviceRepository;
+    private final SubscriptionRepository subscriptionRepository;
+
+    // Configuration
+    private static final int DEFAULT_MAX_DEVICES = 1; // FREE users
+    private static final int MAX_VIOLATIONS_BEFORE_LOCK = 3;
+
+    public UserServiceImpl(UserRepository userRepository,
+                           RoleRepository roleRepository,
+                           PasswordEncoder passwordEncoder,
+                           UserDeviceRepository deviceRepository,
+                           SubscriptionRepository subscriptionRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.deviceRepository = deviceRepository;
+        this.subscriptionRepository = subscriptionRepository;
+    }
+
+    /**
+     * Lấy giới hạn thiết bị cho user dựa trên subscription
+     * FREE: 1 device, BASIC: 2 devices, PREMIUM/VIP: 3 devices
+     */
+    private int getMaxDevicesForUser(User user) {
+        try {
+            Optional<Subscription> activeSubscription = subscriptionRepository
+                    .findActiveSubscriptionByUserId(user.getUserId(), LocalDateTime.now());
+
+            if (activeSubscription.isPresent()) {
+                Integer maxDevices = activeSubscription.get().getMaxDevices();
+                return maxDevices != null ? maxDevices : DEFAULT_MAX_DEVICES;
+            }
+
+            // Không có subscription active -> FREE (1 device)
+            return DEFAULT_MAX_DEVICES;
+        } catch (Exception e) {
+            // Fallback nếu có lỗi
+            return DEFAULT_MAX_DEVICES;
+        }
     }
 
     /**
@@ -67,19 +102,35 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void registerUser(RegisterDto registerDto) throws Exception {
-        // 1. Kiểm tra username đã tồn tại chưa (chỉ kiểm tra user chưa bị xóa)
-        if (userRepository.findActiveByUsername(registerDto.getUsername()).isPresent()) {
-            throw new Exception("Username đã tồn tại");
+        // 1. Kiểm tra username đã tồn tại chưa (kiểm tra CẢ user đã bị xóa mềm)
+        Optional<User> existingUserByUsername = userRepository.findByUsernameIncludingDeleted(registerDto.getUsername());
+        if (existingUserByUsername.isPresent()) {
+            User existingUser = existingUserByUsername.get();
+            if (existingUser.isDeleted()) {
+                throw new Exception("Tên người dùng '" + registerDto.getUsername() +
+                    "' đã từng được sử dụng bởi tài khoản đã bị xóa. Vui lòng chọn tên khác hoặc liên hệ quản trị viên để khôi phục tài khoản.");
+            } else {
+                throw new Exception("Tên người dùng '" + registerDto.getUsername() +
+                    "' đã được sử dụng. Vui lòng chọn tên khác.");
+            }
         }
 
-        // 2. Kiểm tra email đã tồn tại chưa (chỉ kiểm tra user chưa bị xóa)
-        if (userRepository.findActiveByEmail(registerDto.getEmail()).isPresent()) {
-            throw new Exception("Email đã được sử dụng");
+        // 2. Kiểm tra email đã tồn tại chưa (kiểm tra CẢ user đã bị xóa mềm)
+        Optional<User> existingUserByEmail = userRepository.findByEmailIncludingDeleted(registerDto.getEmail());
+        if (existingUserByEmail.isPresent()) {
+            User existingUser = existingUserByEmail.get();
+            if (existingUser.isDeleted()) {
+                throw new Exception("Email '" + registerDto.getEmail() +
+                    "' đã từng được đăng ký cho tài khoản đã bị xóa. Vui lòng sử dụng email khác hoặc liên hệ quản trị viên để khôi phục tài khoản.");
+            } else {
+                throw new Exception("Email '" + registerDto.getEmail() +
+                    "' đã được đăng ký. Vui lòng sử dụng email khác hoặc đăng nhập.");
+            }
         }
 
         // 3. Tìm role "USER" (từ CSDL)
         Role userRole = roleRepository.findByRoleName(Role.RoleName.USER)
-                .orElseThrow(() -> new Exception("Không tìm thấy Role 'USER'. Vui lòng thêm role này vào CSDL."));
+                .orElseThrow(() -> new Exception("Lỗi hệ thống: Không tìm thấy Role 'USER'. Vui lòng liên hệ quản trị viên."));
 
         // 4. Tự động sinh User ID theo format "user_normal_số thứ tự"
         String newUserId = generateNextUserId();
@@ -96,7 +147,36 @@ public class UserServiceImpl implements UserService {
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 
-        userRepository.save(user);
+        try {
+            userRepository.save(user);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Xử lý lỗi constraint violation từ database (trường hợp hiếm gặp)
+            String errorMessage = e.getMessage();
+
+            // Kiểm tra chính xác constraint nào bị vi phạm
+            if (errorMessage.contains("key 'users.email'") ||
+                (errorMessage.contains("Duplicate entry") && errorMessage.contains("for key 'users.email'"))) {
+                throw new Exception("Email '" + registerDto.getEmail() + "' đã được đăng ký. Vui lòng sử dụng email khác hoặc đăng nhập.");
+            } else if (errorMessage.contains("key 'users.username'") ||
+                       (errorMessage.contains("Duplicate entry") && errorMessage.contains("for key 'users.username'"))) {
+                throw new Exception("Tên người dùng '" + registerDto.getUsername() + "' đã được sử dụng. Vui lòng chọn tên khác.");
+            } else if (errorMessage.contains("users.email")) {
+                throw new Exception("Email '" + registerDto.getEmail() + "' đã được đăng ký. Vui lòng sử dụng email khác.");
+            } else if (errorMessage.contains("users.username")) {
+                throw new Exception("Tên người dùng '" + registerDto.getUsername() + "' đã tồn tại. Vui lòng chọn tên khác.");
+            } else {
+                throw new Exception("Không thể tạo tài khoản. Vui lòng kiểm tra lại thông tin và thử lại.");
+            }
+        } catch (Exception e) {
+            // Nếu đã là Exception tùy chỉnh từ catch block trên, throw lại
+            if (e.getMessage().contains("đã được") ||
+                e.getMessage().contains("đã tồn tại") ||
+                e.getMessage().contains("Không thể tạo") ||
+                e.getMessage().startsWith("Lỗi hệ thống")) {
+                throw e;
+            }
+            throw new Exception("Đã xảy ra lỗi khi đăng ký: " + e.getMessage());
+        }
     }
 
     /**
@@ -259,5 +339,277 @@ public class UserServiceImpl implements UserService {
 
         // Use the custom repository search method for active users only
         return userRepository.searchActiveByKeyword(keyword.trim());
+    }
+
+    // ============================================================================
+    // DEVICE MANAGEMENT IMPLEMENTATION - Tích hợp logic quản lý thiết bị
+    // ============================================================================
+
+    /**
+     * Xác thực login với kiểm tra device (Logic chính của hệ thống)
+     */
+    @Override
+    @Transactional
+    public Map<String, Object> authenticateWithDeviceCheck(
+            String username,
+            String password,
+            DeviceInfoDto deviceInfo,
+            HttpServletRequest request) throws Exception {
+
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. Xác thực username/password
+        User user = authenticateUser(username, password);
+
+        // 2. Kiểm tra account đã bị lock chưa
+        if (user.isLocked()) {
+            result.put("status", "ACCOUNT_LOCKED");
+            result.put("reason", user.getAccountLockedReason());
+            throw new Exception(user.getAccountLockedReason());
+        }
+
+        // 3. Lấy thông tin device fingerprint
+        String deviceFingerprint = deviceInfo != null && deviceInfo.getDeviceFingerprint() != null
+                ? deviceInfo.getDeviceFingerprint()
+                : DeviceFingerprintUtil.generateServerSideFingerprint(request);
+
+        String clientIp = DeviceFingerprintUtil.getClientIpAddress(request);
+
+        // 4. Kiểm tra xem device đã tồn tại chưa
+        Optional<UserDevice> existingDevice = deviceRepository
+                .findActiveDeviceByFingerprint(user.getUserId(), deviceFingerprint);
+
+        if (existingDevice.isPresent()) {
+            // Device đã đăng ký -> Cho phép login
+            UserDevice device = existingDevice.get();
+            updateDeviceOnLogin(device, clientIp, request);
+
+            result.put("status", "SUCCESS");
+            result.put("device", device);
+            result.put("user", user);
+            return result;
+        }
+
+        // 5. Device mới -> Kiểm tra giới hạn (dựa trên subscription)
+        int maxDevicesAllowed = getMaxDevicesForUser(user);
+        int activeDeviceCount = deviceRepository.countByUser_UserIdAndIsActiveTrue(user.getUserId());
+
+        if (activeDeviceCount >= maxDevicesAllowed) {
+            // VƯỢT QUÁ GIỚI HẠN
+            handleDeviceLimitExceeded(user, deviceFingerprint, clientIp, request, maxDevicesAllowed);
+
+            result.put("status", "DEVICE_LIMIT_EXCEEDED");
+            result.put("activeDeviceCount", activeDeviceCount);
+            result.put("maxDevices", maxDevicesAllowed);
+            result.put("violationCount", user.getDeviceViolationCount());
+
+            return result;
+        }
+
+        // 6. Đăng ký device mới (còn slot)
+        UserDevice newDevice = registerNewDevice(user, deviceInfo, deviceFingerprint, clientIp, request);
+
+        result.put("status", "SUCCESS");
+        result.put("device", newDevice);
+        result.put("user", user);
+        result.put("isNewDevice", true);
+
+        return result;
+    }
+
+    /**
+     * Xử lý khi vượt quá giới hạn thiết bị
+     */
+    private void handleDeviceLimitExceeded(User user, String fingerprint, String ip,
+                                          HttpServletRequest request, int maxDevices) throws Exception {
+        // Tăng violation count
+        user.incrementDeviceViolation();
+
+        // KHÓA TÀI KHOẢN nếu vượt quá 3 lần
+        if (user.getDeviceViolationCount() >= MAX_VIOLATIONS_BEFORE_LOCK) {
+            user.lockAccount(String.format(
+                "Tài khoản đã bị khóa do vượt quá %d lần giới hạn thiết bị. " +
+                "Vui lòng liên hệ admin để mở khóa.",
+                MAX_VIOLATIONS_BEFORE_LOCK
+            ));
+        }
+
+        userRepository.save(user);
+
+        // Throw exception
+        if (user.isLocked()) {
+            throw new Exception(user.getAccountLockedReason());
+        } else {
+            throw new Exception(String.format(
+                "Bạn đã đạt giới hạn %d thiết bị theo gói của bạn. " +
+                "Vui lòng xóa thiết bị cũ tại trang quản lý thiết bị hoặc nâng cấp gói. " +
+                "Vi phạm: %d/%d lần.",
+                maxDevices, user.getDeviceViolationCount(), MAX_VIOLATIONS_BEFORE_LOCK
+            ));
+        }
+    }
+
+    /**
+     * Đăng ký device mới
+     */
+    private UserDevice registerNewDevice(User user, DeviceInfoDto deviceInfo,
+                                        String fingerprint, String ip,
+                                        HttpServletRequest request) {
+        UserDevice device = new UserDevice();
+        device.setDeviceId(DeviceFingerprintUtil.generateDeviceId(user.getUserId(), fingerprint));
+        device.setUser(user);
+        device.setDeviceFingerprint(fingerprint);
+        device.setIpAddress(ip);
+        device.setLastIp(ip);
+
+        String userAgent = request.getHeader("User-Agent");
+        device.setUserAgent(userAgent);
+        device.setBrowserName(DeviceFingerprintUtil.parseBrowserName(userAgent));
+        device.setOsName(DeviceFingerprintUtil.parseOsName(userAgent));
+
+        if (deviceInfo != null) {
+            device.setDeviceName(deviceInfo.getDeviceName() != null
+                ? deviceInfo.getDeviceName()
+                : device.getBrowserName() + " on " + device.getOsName());
+
+            try {
+                device.setDeviceType(UserDevice.DeviceType.valueOf(deviceInfo.getDeviceType()));
+            } catch (Exception e) {
+                device.setDeviceType(UserDevice.DeviceType.WEB);
+            }
+        } else {
+            device.setDeviceName(device.getBrowserName() + " on " + device.getOsName());
+            device.setDeviceType(UserDevice.DeviceType.WEB);
+        }
+
+        device.setIsActive(true);
+        device.setLoginCount(1);
+        device.setLastLogin(LocalDateTime.now());
+
+        // Nếu là device đầu tiên -> Set trusted
+        long existingDeviceCount = deviceRepository.countByUser_UserIdAndIsTrustedTrue(user.getUserId());
+        if (existingDeviceCount == 0) {
+            device.setIsTrusted(true);
+        }
+
+        return deviceRepository.save(device);
+    }
+
+    /**
+     * Cập nhật device khi login thành công
+     */
+    private void updateDeviceOnLogin(UserDevice device, String currentIp, HttpServletRequest request) {
+        device.setLastLogin(LocalDateTime.now());
+        device.incrementLoginCount();
+
+        // Kiểm tra IP có đổi không
+        if (device.getLastIp() != null && !device.getLastIp().equals(currentIp)) {
+            // IP đổi -> Giảm trust score
+            if (DeviceFingerprintUtil.isSameSubnet(device.getLastIp(), currentIp)) {
+                device.updateTrustScore(-1); // Cùng subnet: -1
+            } else {
+                device.updateTrustScore(-5); // Khác subnet: -5
+                device.incrementSuspiciousLoginCount();
+            }
+        } else {
+            // Cùng IP -> Tăng trust score
+            device.updateTrustScore(1);
+        }
+
+        device.setLastIp(currentIp);
+        deviceRepository.save(device);
+    }
+
+
+
+    /**
+     * Lấy danh sách devices của user
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserDevice> getUserDevices(String userId) {
+        return deviceRepository.findByUser_UserIdAndIsActiveTrue(userId);
+    }
+
+    /**
+     * Xóa device (KHÔNG cho xóa trusted device và current device)
+     */
+    @Override
+    @Transactional
+    public void removeDevice(String userId, String deviceId) throws Exception {
+        UserDevice device = deviceRepository.findById(deviceId)
+                .orElseThrow(() -> new Exception("Không tìm thấy thiết bị"));
+
+        if (!device.getUser().getUserId().equals(userId)) {
+            throw new Exception("Bạn không có quyền xóa thiết bị này");
+        }
+
+        if (device.getIsTrusted()) {
+            throw new Exception("Không thể xóa thiết bị tin cậy (thiết bị đăng ký đầu tiên)");
+        }
+
+        // Xóa device (soft delete)
+        device.setIsActive(false);
+        deviceRepository.save(device);
+    }
+
+    /**
+     * Xóa device với kiểm tra current device (dành cho Controller)
+     */
+    @Transactional
+    public void removeDeviceWithCurrentCheck(String userId, String deviceId, String currentDeviceId) throws Exception {
+        // Kiểm tra không cho xóa thiết bị hiện tại
+        if (deviceId.equals(currentDeviceId)) {
+            throw new Exception("Không thể xóa thiết bị đang sử dụng. Vui lòng đăng xuất trước khi xóa thiết bị này.");
+        }
+
+        // Gọi logic xóa thông thường
+        removeDevice(userId, deviceId);
+    }
+    /**
+     * Đếm số violations (lấy từ users.device_violation_count)
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public long getUnresolvedViolationsCount(String userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return 0;
+        return user.getDeviceViolationCount() != null ? user.getDeviceViolationCount() : 0;
+    }
+
+    /**
+     * Lấy giới hạn thiết bị của user (public method)
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public int getUserMaxDevices(String userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return DEFAULT_MAX_DEVICES;
+        }
+        return getMaxDevicesForUser(user);
+    }
+
+    /**
+     * Lấy thông tin subscription hiện tại
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public String getUserSubscriptionInfo(String userId) {
+        try {
+            Optional<Subscription> activeSubscription = subscriptionRepository
+                    .findActiveSubscriptionByUserId(userId, LocalDateTime.now());
+
+            if (activeSubscription.isPresent()) {
+                Subscription sub = activeSubscription.get();
+                return String.format("Gói %s (%d thiết bị)",
+                    sub.getPackageName().name(),
+                    sub.getMaxDevices());
+            }
+
+            return "Gói FREE (1 thiết bị)";
+        } catch (Exception e) {
+            return "Gói FREE (1 thiết bị)";
+        }
     }
 }

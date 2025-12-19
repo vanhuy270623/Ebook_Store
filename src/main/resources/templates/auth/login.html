@@ -67,6 +67,11 @@
               <!-- CSRF Token for Spring Security -->
               <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
+              <!-- Device Fingerprint Hidden Fields -->
+              <input type="hidden" name="deviceFingerprint" id="deviceFingerprint">
+              <input type="hidden" name="deviceName" id="deviceName">
+              <input type="hidden" name="deviceType" id="deviceType">
+
               <div class="form-group">
                 <label class="form-label">Tên đăng nhập</label>
                 <input type="text" name="username" class="form-control" placeholder="Nhập tên đăng nhập của bạn" required autofocus>
@@ -85,8 +90,9 @@
                 <a href="#" class="forgot-password">Quên mật khẩu?</a>
               </div>
 
-              <button type="submit" class="btn btn-primary">
-                Đăng nhập
+              <button type="submit" class="btn btn-primary" id="loginButton">
+                <span id="loginButtonText">Đăng nhập</span>
+                <span id="loginButtonSpinner" class="spinner-border spinner-border-sm ms-2" style="display:none;"></span>
               </button>
             </form>
 
@@ -138,7 +144,38 @@
     </div>
   </main>
 
+  <script th:src="@{/shared/device-fingerprint.js}"></script>
   <script th:src="@{/shared/js/auth.js}"></script>
+  <script>
+    // Device Fingerprint Collection on Login
+    document.addEventListener('DOMContentLoaded', async function() {
+      const loginForm = document.getElementById('loginForm');
+      const loginButton = document.getElementById('loginButton');
+      const loginButtonText = document.getElementById('loginButtonText');
+      const loginButtonSpinner = document.getElementById('loginButtonSpinner');
+
+      // Generate fingerprint on page load
+      try {
+        const fingerprint = await DeviceFingerprint.generate();
+        document.getElementById('deviceFingerprint').value = fingerprint.hash;
+        document.getElementById('deviceName').value = DeviceFingerprint.getDeviceName();
+        document.getElementById('deviceType').value = DeviceFingerprint.getDeviceType();
+
+        console.log('Device fingerprint generated:', fingerprint.hash.substring(0, 16) + '...');
+      } catch (error) {
+        console.error('Failed to generate device fingerprint:', error);
+        // Continue without fingerprint - server will generate one
+      }
+
+      // Handle form submission
+      loginForm.addEventListener('submit', function(e) {
+        // Show loading state
+        loginButton.disabled = true;
+        loginButtonText.textContent = 'Đang xác thực...';
+        loginButtonSpinner.style.display = 'inline-block';
+      });
+    });
+  </script>
 </body>
 </html>
 

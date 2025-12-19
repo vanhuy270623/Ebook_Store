@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{user/layout/head :: head}"></th:block>
+    <title>Quản lý thiết bị - Ebook Store</title>
+
+    <!-- Device Management CSS -->
+    <link rel="stylesheet" th:href="@{/user_template/css/device-management.css}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div th:replace="~{user/layout/navbar :: navbar}"></div>
+
+    <!-- Flash Messages -->
+    <div th:if="${success}" th:attr="data-flash-success=${success}" style="display:none;"></div>
+    <div th:if="${error}" th:attr="data-flash-error=${error}" style="display:none;"></div>
+
+    <!-- Main Content -->
+    <section class="section py-5">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="mb-4">
+                <h1 class="h2 mb-2">
+                    <i class="fas fa-mobile-alt text-primary me-2"></i>
+                    Quản lý thiết bị
+                </h1>
+                <p class="text-muted">Quản lý các thiết bị được phép truy cập tài khoản của bạn</p>
+            </div>
+
+            <!-- Alert Messages -->
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Device Limit Info -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <h5 class="mb-1">
+                                        Giới hạn thiết bị
+                                        <span class="badge bg-primary ms-2" th:text="${subscriptionInfo}">Gói FREE</span>
+                                    </h5>
+                                    <p class="text-muted mb-0">
+                                        Bạn có thể đăng nhập trên tối đa <strong th:text="${maxDevices}">3</strong> thiết bị
+                                    </p>
+                                    <small class="text-info">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Nâng cấp gói để tăng số thiết bị:
+                                        <a th:href="@{/subscribe}" class="text-decoration-none">BASIC (2), PREMIUM/VIP (3)</a>
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <h3 class="mb-0">
+                                        <span th:text="${currentCount}">0</span>/<span th:text="${maxDevices}">3</span>
+                                    </h3>
+                                    <small class="text-muted">Đã sử dụng</small>
+                                </div>
+                            </div>
+                            <div class="progress progress-thin">
+                                <div class="progress-bar"
+                                     th:classappend="${currentCount >= maxDevices ? 'bg-danger' : (currentCount >= maxDevices * 0.8 ? 'bg-warning' : 'bg-success')}"
+                                     role="progressbar"
+                                     th:style="'width: ' + (${currentCount} * 100.0 / ${maxDevices}) + '%'">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Violation Warning -->
+                <div class="col-md-4" th:if="${violationCount != null && violationCount > 0}">
+                    <div class="card border-0 shadow-sm violation-warning">
+                        <div class="card-body">
+                            <h6 class="text-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Cảnh báo
+                            </h6>
+                            <p class="mb-0 small">
+                                Bạn đã vi phạm giới hạn thiết bị <strong th:text="${violationCount}">0</strong> lần.
+                                <br>
+                                <span class="text-danger">Sau 3 lần tài khoản sẽ bị khóa.</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Devices List -->
+            <div class="row">
+                <div class="col-12">
+                    <h5 class="mb-3">
+                        <i class="fas fa-list me-2"></i>
+                        Danh sách thiết bị
+                    </h5>
+                </div>
+
+                <!-- Device Cards -->
+                <div th:if="${devices.isEmpty()}" class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Chưa có thiết bị nào được đăng ký
+                    </div>
+                </div>
+
+                <div th:each="device : ${devices}" class="col-md-6 mb-3">
+                    <div class="card device-card border-0 shadow-sm"
+                         th:classappend="${device.isCurrentDevice ? 'current' : ''} + ' ' + ${device.isTrusted ? 'trusted' : ''}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex align-items-start">
+                                    <div class="device-icon me-3">
+                                        <i th:class="${device.deviceType == 'MOBILE' ? 'fas fa-mobile-alt' :
+                                                     (device.deviceType == 'TABLET' ? 'fas fa-tablet-alt' :
+                                                     (device.deviceType == 'DESKTOP' ? 'fas fa-desktop' : 'fas fa-laptop'))}"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1" th:text="${device.deviceName}">Chrome on Windows</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-globe me-1"></i>
+                                            <span th:text="${device.browserName}">Chrome</span> •
+                                            <span th:text="${device.osName}">Windows</span>
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- Badges -->
+                                <div>
+                                    <span th:if="${device.isCurrentDevice}"
+                                          class="badge bg-success trust-badge mb-1">
+                                        <i class="fas fa-check-circle me-1"></i>Thiết bị hiện tại
+                                    </span>
+                                    <span th:if="${device.isTrusted}"
+                                          class="badge bg-primary trust-badge">
+                                        <i class="fas fa-shield-alt me-1"></i>Tin cậy
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Device Info -->
+                            <div class="mb-3">
+                                <div class="row g-2 small text-muted">
+                                    <div class="col-6">
+                                        <i class="fas fa-network-wired me-1"></i>
+                                        IP: <span th:text="${device.ipAddress}">192.168.1.1</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <i class="fas fa-sign-in-alt me-1"></i>
+                                        Đăng nhập: <span th:text="${device.loginCount}">0</span> lần
+                                    </div>
+                                    <div class="col-6">
+                                        <i class="fas fa-clock me-1"></i>
+                                        <span th:text="${device.daysSinceLastLogin != null ? device.daysSinceLastLogin + ' ngày trước' : 'Mới đăng ký'}">
+                                            Mới đăng ký
+                                        </span>
+                                    </div>
+                                    <div class="col-6">
+                                        <i class="fas fa-shield-alt me-1"></i>
+                                        Tin cậy:
+                                        <span th:text="${device.trustScore}"
+                                              th:classappend="${device.trustScore >= 80 ? 'text-success' :
+                                                             (device.trustScore >= 50 ? 'text-warning' : 'text-danger')}">
+                                            100
+                                        </span>/100
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Trust Score Progress -->
+                            <div class="mb-3">
+                                <div class="progress progress-thin">
+                                    <div class="progress-bar"
+                                         th:classappend="${device.trustScore >= 80 ? 'bg-success' :
+                                                        (device.trustScore >= 50 ? 'bg-warning' : 'bg-danger')}"
+                                         role="progressbar"
+                                         th:style="'width: ' + ${device.trustScore} + '%'">
+                                    </div>
+                                </div>
+                                <small class="text-muted">Điểm tin cậy</small>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Đăng ký:
+                                    <span th:text="${#temporals.format(device.createdAt, 'dd/MM/yyyy HH:mm')}">
+                                        01/01/2025
+                                    </span>
+                                </small>
+
+                                <button th:if="${!device.isTrusted && !device.isCurrentDevice}"
+                                        class="btn btn-sm btn-outline-danger btn-remove-device"
+                                        th:attr="data-device-id=${device.deviceId}, data-device-name=${device.deviceName}">
+                                    <i class="fas fa-trash me-1"></i>Xóa
+                                </button>
+                                <button th:if="${device.isCurrentDevice}"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        disabled
+                                        title="Không thể xóa thiết bị đang sử dụng">
+                                    <i class="fas fa-ban me-1"></i>Đang sử dụng
+                                </button>
+                                <button th:if="${device.isTrusted && !device.isCurrentDevice}"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        disabled
+                                        title="Không thể xóa thiết bị tin cậy">
+                                    <i class="fas fa-lock me-1"></i>Không thể xóa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Cards -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h6><i class="fas fa-info-circle text-primary me-2"></i>Lưu ý quan trọng</h6>
+                            <ul class="small text-muted mb-0">
+                                <li>Thiết bị <strong class="text-primary">tin cậy</strong> là thiết bị đầu tiên bạn đăng ký, không thể xóa</li>
+                                <li>Bạn có thể xóa các thiết bị khác để thêm thiết bị mới</li>
+                                <li>Sau 3 lần vượt quá giới hạn, tài khoản sẽ bị khóa tự động</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h6><i class="fas fa-shield-alt text-success me-2"></i>Bảo mật</h6>
+                            <ul class="small text-muted mb-0">
+                                <li>Điểm tin cậy giảm khi bạn đổi IP bất thường</li>
+                                <li>Nếu thấy thiết bị lạ, hãy xóa ngay và đổi mật khẩu</li>
+                                <li>Liên hệ admin nếu tài khoản bị khóa do vượt quá giới hạn</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <div th:replace="~{user/layout/footer :: footer}"></div>
+
+    <!-- Remove Device Modal -->
+    <div class="modal fade" id="removeDeviceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                        Xác nhận xóa thiết bị
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa thiết bị:</p>
+                    <p class="text-primary fw-bold" id="deviceNameToRemove"></p>
+                    <p class="text-muted small mb-0">
+                        Bạn sẽ phải đăng nhập lại trên thiết bị này nếu muốn sử dụng.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-danger" id="confirmRemoveDevice">
+                        <i class="fas fa-trash me-1"></i>Xóa thiết bị
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script th:src="@{/user_template/js/device-management.js}"></script>
+</body>
+</html>
+

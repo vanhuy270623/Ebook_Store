@@ -1,0 +1,147 @@
+/**
+ * Device Management Styles
+ * File: device-management.css
+ * Purpose: Styles for user device management page
+ */
+
+/* Device Card Styles */
+.device-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid #e9ecef;
+}
+
+.device-card.current {
+    border-left-color: #28a745;
+    background-color: #f8fff9;
+}
+
+.device-card.trusted {
+    border-left-color: #007bff;
+}
+
+.device-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+/* Badge Styles */
+.trust-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Device Icon */
+.device-icon {
+    font-size: 2rem;
+    color: #6c757d;
+}
+
+/* Progress Bar */
+.progress-thin {
+    height: 8px;
+}
+
+/* Violation Warning */
+.violation-warning {
+    border-left: 4px solid #dc3545;
+    background-color: #fff5f5;
+}
+
+/* Device Limit Card */
+.device-limit-card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .device-icon {
+        font-size: 1.5rem;
+    }
+
+    .device-card {
+        margin-bottom: 1rem;
+    }
+
+    .trust-badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+/* Animation for device cards */
+.device-card {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Trust Score Colors */
+.trust-score-high {
+    color: #28a745;
+}
+
+.trust-score-medium {
+    color: #ffc107;
+}
+
+.trust-score-low {
+    color: #dc3545;
+}
+
+/* Device Info Grid */
+.device-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+@media (max-width: 576px) {
+    .device-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Modal Customization */
+.modal-header {
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.modal-footer {
+    border-top: 2px solid #f0f0f0;
+}
+
+/* Info Cards */
+.info-card {
+    border: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    transition: transform 0.2s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Device Management Page Header */
+.device-management-header {
+    margin-bottom: 2rem;
+}
+
+.device-management-header h1 {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.device-management-header .text-muted {
+    font-size: 0.95rem;
+}
+

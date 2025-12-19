@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 /**
  * Controller xử lý quản lý bài viết/blog (CRUD Post)
- * Pattern: Tương tự AdminBannerController, AdminCouponController
+ * Pattern: Tương tự AdminBannerController
  */
 @Controller
 @RequestMapping("/admin/posts")

@@ -65,6 +65,19 @@ public class User implements Serializable {
     @Column(name = "restored_at")
     private LocalDateTime restoredAt;
 
+    // Device Management & Security
+    @Column(name = "device_violation_count")
+    private Integer deviceViolationCount = 0;
+
+    @Column(name = "account_locked_reason", length = 500)
+    private String accountLockedReason;
+
+    @Column(name = "locked_at")
+    private LocalDateTime lockedAt;
+
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
     @PrePersist
     protected void onCreate() {
         if (this.isActive == null) {
@@ -101,6 +114,41 @@ public class User implements Serializable {
         this.deletedAt = null;
         this.restoredAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+    }
+
+    // Device violation methods
+    public void incrementDeviceViolation() {
+        if (this.deviceViolationCount == null) {
+            this.deviceViolationCount = 0;
+        }
+        this.deviceViolationCount++;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void resetDeviceViolations() {
+        this.deviceViolationCount = 0;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // Account locking methods
+    public void lockAccount(String reason) {
+        this.isActive = false;
+        this.accountLockedReason = reason;
+        this.lockedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void unlockAccount() {
+        this.isActive = true;
+        this.accountLockedReason = null;
+        this.lockedAt = null;
+        this.lockedUntil = null;
+        this.deviceViolationCount = 0;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public boolean isLocked() {
+        return this.lockedAt != null && !this.isActive;
     }
 
     // Override toString to display username instead of object reference

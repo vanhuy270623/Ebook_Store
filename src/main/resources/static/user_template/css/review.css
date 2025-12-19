@@ -1,0 +1,161 @@
+/**
+ * Review System Styles
+ * Styling for review submission form and review display
+ */
+
+/* Star Rating Input */
+.star-rating-input {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 5px;
+    font-size: 2rem;
+}
+
+.star-rating-input input[type="radio"] {
+    display: none;
+}
+
+.star-rating-input label {
+    cursor: pointer;
+    color: #ddd;
+    transition: color 0.2s ease;
+}
+
+.star-rating-input label:hover,
+.star-rating-input label:hover ~ label,
+.star-rating-input input:checked ~ label {
+    color: #ffc107;
+}
+
+.star-rating-input label i {
+    transition: transform 0.2s ease;
+}
+
+.star-rating-input label:hover i {
+    transform: scale(1.1);
+}
+
+/* Review Item */
+.review-item {
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.review-item:hover {
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.review-item .rating-stars {
+    font-size: 1rem;
+}
+
+.review-item .rating-stars i {
+    margin-right: 2px;
+}
+
+/* Rating Stars Display */
+.rating-stars {
+    display: inline-flex;
+    gap: 2px;
+}
+
+.rating-stars i {
+    font-size: inherit;
+}
+
+.rating-stars .fa-star,
+.rating-stars .fa-star-half-alt {
+    color: #ffc107;
+}
+
+.rating-stars .far.fa-star {
+    color: #ddd;
+}
+
+/* Average Rating Display */
+.info-section .bg-light {
+    border-left: 4px solid #007bff;
+}
+
+/* Review Form */
+#reviewForm textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+#reviewForm .btn-primary {
+    padding: 10px 30px;
+    font-weight: 500;
+}
+
+/* Progress Warning */
+#progressWarning {
+    border-left: 4px solid #ffc107;
+}
+
+#progressWarning .progress {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Verified Purchase Badge */
+.badge.bg-success {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 8px;
+}
+
+/* Empty State */
+.reviews-list + div.text-center {
+    padding: 3rem 1rem;
+}
+
+.reviews-list + div.text-center i {
+    opacity: 0.3;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .star-rating-input {
+        font-size: 1.5rem;
+    }
+
+    .info-section .display-4 {
+        font-size: 2.5rem;
+    }
+}
+
+/* Animation for new review */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.review-item.new {
+    animation: slideIn 0.5s ease;
+}
+
+/* Edit Review Button */
+.alert-success .btn-outline-primary {
+    border-width: 2px;
+    font-weight: 500;
+}
+
+.alert-success .btn-outline-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+}
+
+/* Review Count Badge */
+.info-section h5 .text-muted {
+    font-size: 1rem;
+    font-weight: normal;
+}
+

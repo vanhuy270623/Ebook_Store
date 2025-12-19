@@ -9,9 +9,11 @@ import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.User;
+import stu.datn.ebook_store.entity.Review;
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.CategoryService;
 import stu.datn.ebook_store.service.OrderItemService;
+import stu.datn.ebook_store.service.ReviewService;
 
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -35,13 +37,15 @@ public class UserBookController extends BaseController {
     private final BookService bookService;
     private final CategoryService categoryService;
     private final OrderItemService orderItemService;
+    private final ReviewService reviewService;
 
     @Autowired
     public UserBookController(BookService bookService, CategoryService categoryService,
-                              OrderItemService orderItemService) {
+                              OrderItemService orderItemService, ReviewService reviewService) {
         this.bookService = bookService;
         this.categoryService = categoryService;
         this.orderItemService = orderItemService;
+        this.reviewService = reviewService;
     }
 
     private Set<String> getPurchasedBookIds() {
@@ -150,11 +154,27 @@ public class UserBookController extends BaseController {
                                 .toList();
                     }
 
+                    // Lấy reviews của sách (chỉ lấy reviews đã được duyệt)
+                    List<Review> reviews = reviewService.getApprovedReviewsByBook(book);
+                    long reviewCount = reviewService.countApprovedReviewsByBook(book);
+                    Double avgRating = reviewService.getAverageRatingForBook(book);
+
+                    // Check if current user has reviewed
+                    Review userReview = null;
+                    if (getCurrentUser() != null) {
+                        userReview = reviewService.getReviewByUserAndBook(getCurrentUser(), book)
+                                .orElse(null);
+                    }
+
                     model.addAttribute("book", book);
                     model.addAttribute("relatedBooks", relatedBooks);
                     model.addAttribute("categories", categoryService.getAllCategories());
                     model.addAttribute("purchasedBookIds", getPurchasedBookIds());
                     model.addAttribute("currentUser", getCurrentUser());
+                    model.addAttribute("reviews", reviews);
+                    model.addAttribute("reviewCount", reviewCount);
+                    model.addAttribute("avgRating", avgRating != null ? avgRating : 0.0);
+                    model.addAttribute("userReview", userReview);
 
                     return "user/books/view";
                 })

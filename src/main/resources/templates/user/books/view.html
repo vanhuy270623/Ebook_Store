@@ -5,6 +5,7 @@
     <th:block th:replace="~{user/layout/head :: head}"></th:block>
     <!-- CSS riêng cho Book View -->
     <link rel="stylesheet" th:href="@{/user_template/css/book-view.css}">
+    <link rel="stylesheet" th:href="@{/user_template/css/review.css}">
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -315,6 +316,166 @@
                         </table>
                     </div>
 
+                    <!-- Reviews Section -->
+                    <div class="info-section">
+                        <h5 class="mb-4">
+                            <i class="fas fa-comments text-primary me-2"></i>Đánh giá từ độc giả
+                            <span class="text-muted">([[${reviewCount}]])</span>
+                        </h5>
+
+                        <!-- Average Rating Display -->
+                        <div th:if="${reviewCount > 0}" class="mb-4 p-3 bg-light rounded">
+                            <div class="row align-items-center">
+                                <div class="col-md-3 text-center">
+                                    <div class="display-4 fw-bold text-primary" th:text="${#numbers.formatDecimal(avgRating, 1, 1)}">0.0</div>
+                                    <div class="rating-stars mb-2">
+                                        <i th:each="i : ${#numbers.sequence(1, 5)}"
+                                           th:classappend="${avgRating >= i} ? 'fas fa-star text-warning' :
+                                                           (${avgRating >= i - 0.5} ? 'fas fa-star-half-alt text-warning' : 'far fa-star text-warning')">
+                                        </i>
+                                    </div>
+                                    <div class="text-muted small">([[${reviewCount}]] đánh giá)</div>
+                                </div>
+                                <div class="col-md-9">
+                                    <div class="text-muted">Trung bình đánh giá từ người đọc đã mua sách</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Review Form (Only show if user can review) -->
+                        <div sec:authorize="isAuthenticated()" class="mb-4">
+                            <!-- Review Form Container - Always present but hidden if already reviewed -->
+                            <div id="reviewFormContainer" th:style="${userReview != null} ? 'display: none;' : ''">
+                                <div class="card border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <i class="fas fa-edit me-2"></i>Viết đánh giá của bạn
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="reviewForm">
+                                            <input type="hidden" name="bookId" th:value="${book.bookId}">
+
+                                            <!-- Star Rating Input -->
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Đánh giá của bạn:</label>
+                                                <div class="star-rating-input">
+                                                    <input type="radio" name="rating" value="5" id="star5" required>
+                                                    <label for="star5" title="5 sao - Xuất sắc"><i class="fas fa-star"></i></label>
+
+                                                    <input type="radio" name="rating" value="4" id="star4">
+                                                    <label for="star4" title="4 sao - Tốt"><i class="fas fa-star"></i></label>
+
+                                                    <input type="radio" name="rating" value="3" id="star3">
+                                                    <label for="star3" title="3 sao - Trung bình"><i class="fas fa-star"></i></label>
+
+                                                    <input type="radio" name="rating" value="2" id="star2">
+                                                    <label for="star2" title="2 sao - Tạm được"><i class="fas fa-star"></i></label>
+
+                                                    <input type="radio" name="rating" value="1" id="star1">
+                                                    <label for="star1" title="1 sao - Kém"><i class="fas fa-star"></i></label>
+                                                </div>
+                                            </div>
+
+                                            <!-- Comment -->
+                                            <div class="mb-3">
+                                                <label for="comment" class="form-label fw-bold">Nhận xét của bạn:</label>
+                                                <textarea name="comment" id="comment" class="form-control" rows="4"
+                                                          placeholder="Chia sẻ cảm nhận của bạn về cuốn sách này..."></textarea>
+                                            </div>
+
+                                            <!-- Submit Button -->
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-paper-plane me-2"></i>Gửi đánh giá
+                                            </button>
+
+                                            <!-- Cancel button (only show if user has existing review) -->
+                                            <button th:if="${userReview != null}"
+                                                    type="button"
+                                                    class="btn btn-secondary ms-2"
+                                                    onclick="cancelEditReview()">
+                                                <i class="fas fa-times me-2"></i>Hủy
+                                            </button>
+                                        </form>
+
+                                        <!-- Progress Warning (will be shown by JS if needed) -->
+                                        <div id="progressWarning" class="alert alert-warning mt-3" style="display: none;">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <span id="progressWarningText"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- If user already reviewed - Show summary -->
+                            <div th:if="${userReview != null}" id="userReviewSummary" class="alert alert-success">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        <strong>Bạn đã đánh giá sách này:</strong>
+                                        <div class="mt-2">
+                                            <span class="rating-stars">
+                                                <i th:each="i : ${#numbers.sequence(1, 5)}"
+                                                   th:classappend="${userReview.rating >= i} ? 'fas fa-star text-warning' : 'far fa-star text-warning'">
+                                                </i>
+                                            </span>
+                                            <span class="ms-2" th:text="${userReview.rating} + ' sao'">5 sao</span>
+                                        </div>
+                                        <div th:if="${userReview.comment != null && !userReview.comment.isEmpty()}"
+                                             class="mt-2 text-muted" th:text="${userReview.comment}">
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="editReview()">
+                                        <i class="fas fa-edit me-1"></i>Chỉnh sửa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Login prompt for guests -->
+                        <div sec:authorize="!isAuthenticated()" class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <a th:href="@{/auth/login}" class="alert-link">Đăng nhập</a> để viết đánh giá cho sách này.
+                        </div>
+
+                        <!-- Reviews List -->
+                        <div th:if="${reviewCount > 0}" class="reviews-list">
+                            <hr class="my-4">
+                            <h6 class="mb-3">Các đánh giá khác:</h6>
+
+                            <div th:each="review : ${reviews}" class="review-item mb-3 p-3 border rounded">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <strong th:text="${review.user.fullName}">Tên người dùng</strong>
+                                        <span th:if="${review.isVerifiedPurchase}"
+                                              class="badge bg-success ms-2">
+                                            <i class="fas fa-check-circle me-1"></i>Đã mua sách
+                                        </span>
+                                    </div>
+                                    <small class="text-muted" th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy HH:mm')}">
+                                        01/01/2024
+                                    </small>
+                                </div>
+
+                                <div class="rating-stars mb-2">
+                                    <i th:each="i : ${#numbers.sequence(1, 5)}"
+                                       th:classappend="${review.rating >= i} ? 'fas fa-star text-warning' : 'far fa-star text-warning'">
+                                    </i>
+                                    <span class="ms-2 text-muted" th:text="${review.rating} + ' sao'">5 sao</span>
+                                </div>
+
+                                <p th:if="${review.comment != null && !review.comment.isEmpty()}"
+                                   class="mb-0 text-muted" th:text="${review.comment}">
+                                    Nội dung đánh giá
+                                </p>
+                            </div>
+                        </div>
+
+                        <div th:if="${reviewCount == 0}" class="text-center text-muted py-4">
+                            <i class="far fa-comment-alt fa-3x mb-3"></i>
+                            <p>Chưa có đánh giá nào cho sách này.</p>
+                            <p class="small">Hãy là người đầu tiên đánh giá!</p>
+                        </div>
+                    </div>
+
                     <!-- Related Books Section -->
                     <div th:if="${!relatedBooks.isEmpty()}" class="info-section">
                         <h5 class="mb-4">
@@ -367,6 +528,7 @@
     <th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
     <script th:src="@{/user_template/js/user-main.js}"></script>
     <script th:src="@{/user_template/js/book-download.js}"></script>
+    <script th:src="@{/user_template/js/review.js}"></script>
 </body>
 </html>
 

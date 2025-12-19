@@ -59,13 +59,24 @@
 							<h3 class="box-title">Danh sách đánh giá (<span th:text="${totalReviews ?: 0}">0</span>)</h3>
 							<div class="box-tools pull-right">
 								<div class="btn-group">
-									<a th:href="@{/admin/reviews(approved=false)}" class="btn btn-sm btn-default">
-										<i class="fa fa-hourglass"></i> Chờ duyệt
+									<a th:href="@{/admin/reviews(filter=unapproved)}"
+									   th:classappend="${currentFilter == 'unapproved' ? 'active' : ''}"
+									   class="btn btn-sm btn-default">
+										<i class="fa fa-hourglass"></i> Chờ duyệt (<span th:text="${totalUnapproved ?: 0}">0</span>)
 									</a>
-									<a th:href="@{/admin/reviews(approved=true)}" class="btn btn-sm btn-default">
+									<a th:href="@{/admin/reviews(filter=approved)}"
+									   th:classappend="${currentFilter == 'approved' ? 'active' : ''}"
+									   class="btn btn-sm btn-default">
 										<i class="fa fa-check"></i> Đã duyệt
 									</a>
-									<a th:href="@{/admin/reviews}" class="btn btn-sm btn-default">
+									<a th:href="@{/admin/reviews(filter=verified)}"
+									   th:classappend="${currentFilter == 'verified' ? 'active' : ''}"
+									   class="btn btn-sm btn-default">
+										<i class="fa fa-shopping-cart"></i> Verified Purchase (<span th:text="${totalVerified ?: 0}">0</span>)
+									</a>
+									<a th:href="@{/admin/reviews}"
+									   th:classappend="${currentFilter == null || currentFilter == '' ? 'active' : ''}"
+									   class="btn btn-sm btn-default">
 										<i class="fa fa-list"></i> Tất cả
 									</a>
 								</div>
@@ -78,7 +89,7 @@
 										<th>Sách</th>
 										<th>Người dùng</th>
 										<th>Đánh giá</th>
-										<th>Tiêu đề</th>
+										<th>Nội dung</th>
 										<th>Trạng thái</th>
 										<th>Ngày</th>
 										<th>Thao tác</th>
@@ -86,41 +97,79 @@
 								</thead>
 								<tbody>
 									<tr th:each="review : ${reviews}">
-										<td th:text="${review.book?.title ?: 'N/A'}">Sách</td>
-										<td th:text="${review.user?.fullName ?: 'Ẩn danh'}">User</td>
+										<td>
+											<div th:text="${review.book?.title ?: 'N/A'}">Sách</div>
+											<small class="text-muted" th:text="${review.book?.bookId ?: ''}"></small>
+										</td>
+										<td>
+											<div th:text="${review.user?.fullName ?: 'Ẩn danh'}">User</div>
+											<span th:if="${review.isVerifiedPurchase}"
+												  class="label label-success">
+												<i class="fa fa-check-circle"></i> Đã mua
+											</span>
+										</td>
 										<td>
 											<th:block th:each="i : ${#numbers.sequence(1, review.rating ?: 0)}">
 												<span class="fa fa-star" style="color: #FFB81C;"></span>
 											</th:block>
-											<span th:text="'(' + ${review.rating ?: 0} + ')'"></span>
+											<span th:text="'(' + ${review.rating ?: 0} + '/5)'"></span>
 										</td>
 										<td>
-											<span th:if="${review.title != null and !#strings.isEmpty(review.title)}"
-												  th:text="${#strings.length(review.title) > 30 ? #strings.substring(review.title, 0, 30) + '...' : review.title}">
-												Tiêu đề
+											<span th:if="${review.comment != null and !#strings.isEmpty(review.comment)}"
+												  th:text="${#strings.length(review.comment) > 50 ? #strings.substring(review.comment, 0, 50) + '...' : review.comment}">
+												Nội dung
 											</span>
-											<span th:if="${review.title == null or #strings.isEmpty(review.title)}">Không có tiêu đề</span>
+											<span th:if="${review.comment == null or #strings.isEmpty(review.comment)}"
+												  class="text-muted">
+												<em>Không có nhận xét</em>
+											</span>
 										</td>
 										<td>
-											<span class="label label-warning" th:if="${review.status == 'PENDING'}">Chờ duyệt</span>
-											<span class="label label-success" th:if="${review.status == 'APPROVED'}">Đã duyệt</span>
-											<span class="label label-danger" th:if="${review.status == 'REJECTED'}">Từ chối</span>
+											<span class="label label-success" th:if="${review.isApproved}">
+												<i class="fa fa-check"></i> Đã duyệt
+											</span>
+											<span class="label label-warning" th:unless="${review.isApproved}">
+												<i class="fa fa-hourglass"></i> Chờ duyệt
+											</span>
 										</td>
-										<td th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy')}">01/01/2024</td>
+										<td th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024</td>
 										<td>
-											<a th:href="@{/admin/reviews/view/{id}(id=${review.reviewId})}" class="btn btn-sm btn-info"><i class="fa fa-search"></i></a>
-											<th:block th:if="${review.status == 'PENDING'}">
-												<form th:action="@{/admin/reviews/approve/{id}(id=${review.reviewId})}" method="post" style="display:inline;">
-													<button type="submit" class="btn btn-sm btn-success" title="Duyệt"><i class="fa fa-check"></i></button>
+											<a th:href="@{/admin/reviews/view/{id}(id=${review.reviewId})}"
+											   class="btn btn-sm btn-info"
+											   title="Xem chi tiết">
+												<i class="fa fa-eye"></i>
+											</a>
+											<th:block th:unless="${review.isApproved}">
+												<form th:action="@{/admin/reviews/approve/{id}(id=${review.reviewId})}"
+													  method="post"
+													  style="display:inline;">
+													<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+													<button type="submit" class="btn btn-sm btn-success" title="Duyệt">
+														<i class="fa fa-check"></i>
+													</button>
 												</form>
-												<form th:action="@{/admin/reviews/reject/{id}(id=${review.reviewId})}" method="post" style="display:inline;">
-													<button type="submit" class="btn btn-sm btn-danger" title="Từ chối"><i class="fa fa-times"></i></button>
+												<form th:action="@{/admin/reviews/reject/{id}(id=${review.reviewId})}"
+													  method="post"
+													  style="display:inline;">
+													<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+													<button type="submit" class="btn btn-sm btn-warning" title="Từ chối">
+														<i class="fa fa-times"></i>
+													</button>
 												</form>
 											</th:block>
+											<button type="button"
+													class="btn btn-sm btn-danger"
+													onclick="deleteReview('[[${review.reviewId}]]')"
+													title="Xóa">
+												<i class="fa fa-trash"></i>
+											</button>
 										</td>
 									</tr>
 									<tr th:if="${#lists.isEmpty(reviews)}">
-										<td colspan="7" class="text-center text-muted">Không có dữ liệu</td>
+										<td colspan="7" class="text-center text-muted">
+											<i class="fa fa-inbox fa-3x" style="opacity: 0.3;"></i>
+											<p>Không có đánh giá nào</p>
+										</td>
 									</tr>
 								</tbody>
 							</table>

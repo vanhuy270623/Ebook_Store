@@ -6,7 +6,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import stu.datn.ebook_store.entity.Banner;
 import stu.datn.ebook_store.entity.Book;
+import stu.datn.ebook_store.service.BannerService;
 import stu.datn.ebook_store.service.BookService;
 
 import java.util.*;
@@ -16,6 +18,9 @@ public class HomeController {
 
     @Autowired
     private BookService bookService;
+
+    @Autowired
+    private BannerService bannerService;
 
     @GetMapping("/")
     public String home(Model model) {
@@ -28,6 +33,10 @@ public class HomeController {
         }
 
         try {
+            // Load active banners for HOME position (with date filtering and ordering)
+            List<Banner> homeBanners = bannerService.getActiveBannersForDisplay(Banner.BannerPosition.HOME);
+            model.addAttribute("banners", homeBanners);
+
             // Get free books (ACCESS_TYPE = 'FREE')
             List<Book> freeBooks = bookService.getBooksByAccessType(Book.AccessType.FREE);
 

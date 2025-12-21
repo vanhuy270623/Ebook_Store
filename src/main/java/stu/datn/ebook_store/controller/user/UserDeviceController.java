@@ -59,6 +59,10 @@ public class UserDeviceController {
         int maxDevices = getUserMaxDevices(currentUser.getUserId());
         String subscriptionInfo = getSubscriptionInfo(currentUser.getUserId());
 
+        // Kiểm tra xem user có phải admin không
+        boolean isAdmin = currentUser.getRole() != null &&
+                         currentUser.getRole().getRoleName() == stu.datn.ebook_store.entity.Role.RoleName.ADMIN;
+
         // Tạo DTO cho view
         List<DeviceResponseDto> deviceDtos = devices.stream()
             .map(d -> DeviceResponseDto.fromEntity(
@@ -71,6 +75,7 @@ public class UserDeviceController {
         model.addAttribute("currentCount", devices.size());
         model.addAttribute("violationCount", currentUser.getDeviceViolationCount());
         model.addAttribute("subscriptionInfo", subscriptionInfo);
+        model.addAttribute("isAdmin", isAdmin);
 
         return "user/devices/manage";
     }
@@ -135,12 +140,17 @@ public class UserDeviceController {
         int maxDevices = getUserMaxDevices(currentUser.getUserId());
         String subscriptionInfo = getSubscriptionInfo(currentUser.getUserId());
 
+        // Kiểm tra xem user có phải admin không
+        boolean isAdmin = currentUser.getRole() != null &&
+                         currentUser.getRole().getRoleName() == stu.datn.ebook_store.entity.Role.RoleName.ADMIN;
+
         response.put("success", true);
         response.put("devices", deviceDtos);
         response.put("currentCount", devices.size());
         response.put("maxDevices", maxDevices);
         response.put("violationCount", currentUser.getDeviceViolationCount());
         response.put("subscriptionInfo", subscriptionInfo);
+        response.put("isAdmin", isAdmin);
 
         return response;
     }

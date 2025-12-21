@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{user/layout/head :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/user_template/css/library.css}">
+    <title>Sách yêu thích | Ebook Store</title>
+</head>
+<body class="library-page">
+
+<div th:replace="~{user/layout/navbar :: navbar}"></div>
+
+<div th:if="${success}" th:attr="data-flash-success=${success}" style="display:none;"></div>
+<div th:if="${error}" th:attr="data-flash-error=${error}" style="display:none;"></div>
+
+<section class="hero-banner">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <div class="hero-content">
+                    <h1 class="hero-title animate__animated animate__fadeInUp">
+                        <i class="fas fa-heart me-2 text-danger"></i>Sách yêu thích
+                    </h1>
+                    <p class="hero-subtitle animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                        Bộ sưu tập những cuốn sách bạn tâm đắc nhất
+                    </p>
+
+                    <!-- Library Stats -->
+                    <div class="library-stats-grid animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                        <div class="stat-card">
+                            <div class="stat-icon favorite">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number" th:text="${totalFavorites}">0</div>
+                                <div class="stat-label">Yêu thích</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block">
+                <img th:src="@{/shared/images/book.png}" alt="Favorite Books" class="img-fluid animate__animated animate__fadeInRight">
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+
+
+    <div class="tab-content pt-4">
+        <div class="tab-pane fade show active">
+            <section class="section">
+                <div class="row g-4" th:unless="${#lists.isEmpty(favoriteBooks)}">
+                    <div th:each="progress : ${favoriteBooks}" class="col-lg-3 col-md-4 col-sm-6">
+                        <a th:href="@{/books/view/{id}(id=${progress.book.bookId})}" class="book-card">
+                            <div class="book-cover">
+                                <img th:if="${progress.book.coverImageUrl != null}"
+                                     th:src="@{${progress.book.coverImageUrl}}"
+                                     th:alt="${progress.book.title}"
+                                     onerror="this.src='/shared/images/book.png'">
+                                <div th:if="${progress.book.coverImageUrl == null}"
+                                     class="bg-secondary d-flex align-items-center justify-content-center h-100 w-100 position-absolute top-0">
+                                    <i class="fas fa-book fa-3x text-white"></i>
+                                </div>
+
+                                <div class="book-actions" style="opacity: 1;">
+                                    <object>
+                                        <button class="action-btn favorite active"
+                                                title="Bỏ yêu thích"
+                                                th:data-id="${progress.book.bookId}"
+                                                onclick="event.preventDefault(); removeFavorite(this.getAttribute('data-id'))">
+                                            <i class="fas fa-heart"></i>
+                                        </button>
+                                    </object>
+                                </div>
+                            </div>
+
+                            <div class="book-info">
+                                <h3 class="book-title" th:text="${progress.book.title}">Tên sách</h3>
+                                <p class="book-author" th:text="${progress.book.firstAuthorName}">Tác giả</p>
+
+                                <div class="book-meta">
+                                    <div class="book-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span th:text="${progress.book.averageRating != null ? #numbers.formatDecimal(progress.book.averageRating, 1, 1) : '0.0'}">0.0</span>
+                                    </div>
+                                    <span class="text-primary fw-bold ms-auto"
+                                          th:if="${progress.book.price > 0}"
+                                          th:text="${#numbers.formatDecimal(progress.book.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                                        </span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <div th:if="${#lists.isEmpty(favoriteBooks)}" class="empty-state text-center py-5">
+                    <div class="mb-3">
+                        <i class="fas fa-heart-broken fa-4x text-muted opacity-50"></i>
+                    </div>
+                    <h4 class="text-muted">Chưa có sách yêu thích</h4>
+                    <p class="text-secondary">Hãy thả tim <i class="fas fa-heart text-danger"></i> những cuốn sách bạn thích để lưu vào đây nhé!</p>
+                    <a th:href="@{/books}" class="btn btn-primary mt-3 px-4 rounded-pill">
+                        <i class="fas fa-search me-2"></i>Khám phá sách mới
+                    </a>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{user/layout/footer :: footer}"></div>
+
+<th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
+<script th:src="@{/user_template/js/user-main.js}"></script>
+<script th:src="@{/user_template/js/library.js}"></script>
+</body>
+</html>

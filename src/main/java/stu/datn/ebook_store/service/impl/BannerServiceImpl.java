@@ -1,6 +1,7 @@
 package stu.datn.ebook_store.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import stu.datn.ebook_store.entity.Banner;
@@ -9,6 +10,7 @@ import stu.datn.ebook_store.entity.User;
 import stu.datn.ebook_store.repository.BannerRepository;
 import stu.datn.ebook_store.service.BannerService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -84,6 +86,19 @@ public class BannerServiceImpl implements BannerService {
             banner.setIsActive(false);
             bannerRepository.save(banner);
         }
+    }
+
+    @Override
+    public List<Banner> getActiveBannersForDisplay(BannerPosition position) {
+        // Apply business rules from banner.md:
+        // 1. Only active banners
+        // 2. For specific position (e.g., HOME)
+        // 3. Check date range (start_date and end_date)
+        // 4. Order by display_order ASC, created_at DESC
+        // 5. Limit to 7 results max
+        LocalDateTime now = LocalDateTime.now();
+        PageRequest pageRequest = PageRequest.of(0, 7);
+        return bannerRepository.findActiveBannersForDisplay(position, now, pageRequest);
     }
 
     private String generateBannerId() {

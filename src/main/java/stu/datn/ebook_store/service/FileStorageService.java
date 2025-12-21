@@ -37,6 +37,15 @@ public interface FileStorageService {
     String storeBookAsset(MultipartFile file) throws IOException;
 
     /**
+     * Store a book source file (PDF or EPUB) in category-specific directory
+     * @param file The book file
+     * @param categorySlug The category slug (e.g., "khoahoc-vientuong")
+     * @return The relative path to the stored file
+     * @throws IOException if file storage fails
+     */
+    String storeBookSource(MultipartFile file, String categorySlug) throws IOException;
+
+    /**
      * Store an author avatar image
      * @param file The avatar image
      * @return The relative path to the stored image

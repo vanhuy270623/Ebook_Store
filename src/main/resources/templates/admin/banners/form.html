@@ -32,7 +32,7 @@
 			</div>
 
 			<form th:action="@{${isEdit ? '/admin/banners/update' : '/admin/banners/create'}}" th:object="${bannerRequest}" method="post" enctype="multipart/form-data">
-				<input type="hidden" th:if="${isEdit}" th:field="*{bannerId}"/>
+				<input type="hidden" th:if="${isEdit}" name="bannerId" th:value="${bannerRequest.bannerId}"/>
 				<div class="row">
 					<div class="col-md-8">
 						<div class="box box-primary">
@@ -57,6 +57,30 @@
 								</div>
 
 								<div class="form-group">
+									<label for="displayOrder">Thứ tự hiển thị</label>
+									<input type="number" class="form-control" id="displayOrder" th:field="*{displayOrder}"
+									       min="0" max="999" value="0" placeholder="0">
+									<small class="text-muted">Số nhỏ hơn sẽ hiển thị trước (1, 2, 3...)</small>
+								</div>
+
+								<div class="row">
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="startDate">Ngày bắt đầu</label>
+											<input type="datetime-local" class="form-control" id="startDate" th:field="*{startDate}">
+											<small class="text-muted">Để trống = hiển thị ngay</small>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<label for="endDate">Ngày kết thúc</label>
+											<input type="datetime-local" class="form-control" id="endDate" th:field="*{endDate}">
+											<small class="text-muted">Để trống = không giới hạn</small>
+										</div>
+									</div>
+								</div>
+
+								<div class="form-group">
 									<label>
 										<input type="checkbox" th:field="*{isActive}" />
 										Kích hoạt
@@ -72,20 +96,20 @@
 								<h3 class="box-title">Hình ảnh</h3>
 							</div>
 							<div class="box-body">
-								<div th:if="${isEdit && banner != null && banner.imageUrl}">
-									<img th:src="${banner.imageUrl}" style="max-width: 100%;">
+								<div th:if="${isEdit && bannerRequest != null && bannerRequest.imageUrl != null && !#strings.isEmpty(bannerRequest.imageUrl)}">
+									<img th:src="@{${bannerRequest.imageUrl}}" style="max-width: 100%; margin-bottom: 10px;" alt="Current banner">
 									<p class="text-muted text-center">Hình ảnh hiện tại</p>
 								</div>
 
 								<div class="form-group">
 									<label for="imageFile">Tải lên hình ảnh</label>
-									<input type="file" id="imageFile" class="form-control" accept="image/*" onchange="previewImage(this)">
-									<img id="imagePreview" class="image-preview" alt="Preview">
+									<input type="file" id="imageFile" name="bannerImage" class="form-control" accept="image/*" onchange="previewImage(this)">									<img id="imagePreview" class="image-preview" alt="Preview">
 								</div>
 
 								<div class="form-group">
 									<label for="imageUrl">Hoặc nhập URL</label>
-									<input type="text" class="form-control" id="imageUrl" th:field="*{imageUrl}" maxlength="500">
+									<input type="text" class="form-control" id="imageUrl" th:field="*{imageUrl}" maxlength="500" placeholder="/book_asset/image/banners/...">
+									<small class="text-muted">Ví dụ: /book_asset/image/banners/banner.jpg</small>
 								</div>
 							</div>
 						</div>

@@ -258,6 +258,67 @@
 							</div>
 						</div>
 
+						<!-- Book Source Files (PDF/EPUB) -->
+						<div class="box box-warning">
+							<div class="box-header with-border">
+								<h3 class="box-title"><i class="fa fa-file-pdf-o"></i> File nguồn sách (PDF/EPUB)</h3>
+							</div>
+							<div class="box-body">
+								<!-- Current files (Edit mode) -->
+								<div th:if="${isEdit && bookEntity != null && bookEntity.bookAssets != null && !bookEntity.bookAssets.isEmpty()}" class="mb-3">
+									<label>File hiện tại:</label>
+									<div class="list-group" style="margin-bottom: 15px;">
+										<div class="list-group-item" th:each="asset : ${bookEntity.bookAssets}">
+											<h4 class="list-group-item-heading">
+												<i class="fa" th:classappend="${asset.fileType == T(stu.datn.ebook_store.entity.BookAsset.FileType).PDF} ? 'fa-file-pdf-o text-red' : 'fa-book text-blue'"></i>
+												<span th:text="${asset.fileType}">PDF</span>
+											</h4>
+											<p class="list-group-item-text">
+												<small class="text-muted">
+													Kích thước: <span th:text="${#numbers.formatDecimal(asset.fileSize / 1024.0 / 1024.0, 1, 2)}">0</span> MB<br>
+													Ngày upload: <span th:text="${#temporals.format(asset.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+												</small>
+											</p>
+										</div>
+									</div>
+								</div>
+
+								<!-- Upload new source files -->
+								<div class="form-group">
+									<label for="sourceFilePdf">
+										<i class="fa fa-file-pdf-o"></i> Upload file PDF
+									</label>
+									<input type="file" name="sourceFilePdf" id="sourceFilePdf"
+										   accept=".pdf,application/pdf" class="form-control">
+									<small class="text-muted">
+										<i class="fa fa-info-circle"></i> File PDF tối đa 100MB.
+										File sẽ được lưu vào thư mục bảo mật.
+									</small>
+								</div>
+
+								<div class="form-group">
+									<label for="sourceFileEpub">
+										<i class="fa fa-book"></i> Upload file EPUB
+									</label>
+									<input type="file" name="sourceFileEpub" id="sourceFileEpub"
+										   accept=".epub,application/epub+zip" class="form-control">
+									<small class="text-muted">
+										<i class="fa fa-info-circle"></i> File EPUB tối đa 100MB.
+										File sẽ được lưu vào thư mục bảo mật.
+									</small>
+								</div>
+
+								<!-- Security note -->
+								<div class="alert alert-info" style="margin-top: 10px;">
+									<i class="fa fa-shield"></i> <strong>Bảo mật:</strong>
+									<p style="margin: 5px 0 0 0; font-size: 12px;">
+										File nguồn sẽ được lưu vào thư mục <code>/book_asset/source/{category}/</code>
+										và chỉ người dùng đã đăng nhập mới có thể truy cập theo quyền của họ.
+									</p>
+								</div>
+							</div>
+						</div>
+
 						<!-- Action Buttons -->
 						<div class="box box-solid">
 							<div class="box-body">

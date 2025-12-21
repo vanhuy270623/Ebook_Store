@@ -18,5 +18,6 @@ public interface BannerService {
     List<Banner> getBannersByUserSortedByDate(User user);
     void activateBanner(String bannerId);
     void deactivateBanner(String bannerId);
+    List<Banner> getActiveBannersForDisplay(BannerPosition position);
 }
 

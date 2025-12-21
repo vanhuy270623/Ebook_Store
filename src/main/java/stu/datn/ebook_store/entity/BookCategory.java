@@ -18,6 +18,9 @@ public class BookCategory {
     @Column(name = "category_name", nullable = false, length = 255)
     private String categoryName;
 
+    @Column(name = "category_slug", nullable = false, length = 255)
+    private String categorySlug;
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 

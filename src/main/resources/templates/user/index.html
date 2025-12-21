@@ -14,8 +14,65 @@
     <div th:if="${info}" th:attr="data-flash-info=${info}" style="display:none;"></div>
 
 
-    <!-- Hero Banner Section -->
-    <section class="hero-banner">
+    <!-- Dynamic Banner Carousel Section -->
+    <section class="banner-carousel-section" th:if="${banners != null and #lists.size(banners) > 0}">
+        <div id="bannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+            <!-- Carousel Indicators -->
+            <div class="carousel-indicators">
+                <button th:each="banner, iterStat : ${banners}"
+                        type="button"
+                        data-bs-target="#bannerCarousel"
+                        th:data-bs-slide-to="${iterStat.index}"
+                        th:class="${iterStat.first ? 'active' : ''}"
+                        th:aria-current="${iterStat.first ? 'true' : 'false'}"
+                        th:aria-label="'Slide ' + ${iterStat.count}">
+                </button>
+            </div>
+
+            <!-- Carousel Inner -->
+            <div class="carousel-inner">
+                <div th:each="banner, iterStat : ${banners}"
+                     class="carousel-item"
+                     th:classappend="${iterStat.first ? 'active' : ''}">
+
+                    <!-- Banner with link if targetUrl exists -->
+                    <a th:if="${banner.targetUrl != null and !#strings.isEmpty(banner.targetUrl)}"
+                       th:href="@{${banner.targetUrl}}"
+                       class="d-block">
+                        <img th:src="@{${banner.imageUrl}}"
+                             class="d-block w-100 banner-image">
+                    </a>
+
+                    <!-- Banner without link -->
+                    <img th:if="${banner.targetUrl == null or #strings.isEmpty(banner.targetUrl)}"
+                         th:src="@{${banner.imageUrl}}"
+                         class="d-block w-100 banner-image"
+                         th:alt="${banner.title != null ? banner.title : 'Banner'}">
+
+                    <!-- Caption (optional) -->
+                    <div class="carousel-caption d-none d-md-block"
+                         th:if="${banner.title != null and !#strings.isEmpty(banner.title)}">
+                        <h5 class="banner-caption-title" th:text="${banner.title}">Banner Title</h5>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carousel Controls -->
+            <button class="carousel-control-prev" type="button"
+                    data-bs-target="#bannerCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button"
+                    data-bs-target="#bannerCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- Hero Banner Section (Fallback when no banners) -->
+    <section class="hero-banner" th:if="${banners == null or #lists.isEmpty(banners)}">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-7">

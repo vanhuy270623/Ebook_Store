@@ -32,15 +32,33 @@ public class Banner {
     @Column(name = "position")
     private BannerPosition position = BannerPosition.HOME;
 
+    @Column(name = "display_order")
+    private Integer displayOrder = 0;
+
     @Column(name = "is_active")
     private Boolean isActive = true;
+
+    @Column(name = "start_date")
+    private LocalDateTime startDate;
+
+    @Column(name = "end_date")
+    private LocalDateTime endDate;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     public enum BannerPosition {

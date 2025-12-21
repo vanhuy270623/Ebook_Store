@@ -31,14 +31,20 @@ public class BookController extends BaseController {
     private final BookService bookService;
     private final BookCategoryRepository bookCategoryRepository;
     private final AuthorService authorService;
+    private final stu.datn.ebook_store.service.FileStorageService fileStorageService;
+    private final stu.datn.ebook_store.repository.BookAssetRepository bookAssetRepository;
 
     @Autowired
     public BookController(BookService bookService,
                           BookCategoryRepository bookCategoryRepository,
-                          AuthorService authorService) {
+                          AuthorService authorService,
+                          stu.datn.ebook_store.service.FileStorageService fileStorageService,
+                          stu.datn.ebook_store.repository.BookAssetRepository bookAssetRepository) {
         this.bookService = bookService;
         this.bookCategoryRepository = bookCategoryRepository;
         this.authorService = authorService;
+        this.fileStorageService = fileStorageService;
+        this.bookAssetRepository = bookAssetRepository;
     }
 
     @GetMapping
@@ -63,6 +69,8 @@ public class BookController extends BaseController {
     public String addBook(@Valid @ModelAttribute("bookRequest") BookCreateRequest request,
                           BindingResult bindingResult,
                           @RequestParam(value = "coverImage", required = false) MultipartFile coverImage,
+                          @RequestParam(value = "sourceFilePdf", required = false) MultipartFile sourceFilePdf,
+                          @RequestParam(value = "sourceFileEpub", required = false) MultipartFile sourceFileEpub,
                           Model model,
                           RedirectAttributes redirectAttributes) {
         // Kiểm tra validation errors
@@ -85,13 +93,69 @@ public class BookController extends BaseController {
                 request.setCoverImageUrl(imageUrl);
             }
 
-            bookService.createBook(request);
+            // Create book
+            Book book = bookService.createBook(request);
+
+            // Get category slug for file storage
+            String categorySlug = book.getBookCategory() != null ?
+                                  book.getBookCategory().getCategorySlug() : "uncategorized";
+
+            // Upload PDF file if provided
+            if (sourceFilePdf != null && !sourceFilePdf.isEmpty()) {
+                String pdfUrl = fileStorageService.storeBookSource(sourceFilePdf, categorySlug);
+                createBookAsset(book, pdfUrl, stu.datn.ebook_store.entity.BookAsset.FileType.PDF, sourceFilePdf.getSize());
+            }
+
+            // Upload EPUB file if provided
+            if (sourceFileEpub != null && !sourceFileEpub.isEmpty()) {
+                String epubUrl = fileStorageService.storeBookSource(sourceFileEpub, categorySlug);
+                createBookAsset(book, epubUrl, stu.datn.ebook_store.entity.BookAsset.FileType.EPUB, sourceFileEpub.getSize());
+            }
+
             redirectAttributes.addFlashAttribute("success", "Thêm sách mới thành công!");
             return "redirect:/admin/books";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
             return "redirect:/admin/books/add";
         }
+    }
+
+    /**
+     * Helper method to create BookAsset entity
+     */
+    private void createBookAsset(Book book, String fileUrl, stu.datn.ebook_store.entity.BookAsset.FileType fileType, long fileSize) {
+        stu.datn.ebook_store.entity.BookAsset asset = new stu.datn.ebook_store.entity.BookAsset();
+        asset.setBookAssetId(java.util.UUID.randomUUID().toString());
+        asset.setBook(book);
+        asset.setFileUrl(fileUrl);
+        asset.setFileType(fileType);
+        asset.setFileSize(fileSize);
+        bookAssetRepository.save(asset);
+    }
+
+    /**
+     * Helper method to create slug from category name
+     */
+    private String createSlug(String text) {
+        if (text == null || text.isEmpty()) {
+            return "uncategorized";
+        }
+
+        // Convert Vietnamese characters to ASCII
+        String slug = text.toLowerCase()
+            .replaceAll("à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ", "a")
+            .replaceAll("è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ", "e")
+            .replaceAll("ì|í|ị|ỉ|ĩ", "i")
+            .replaceAll("ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ", "o")
+            .replaceAll("ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ", "u")
+            .replaceAll("ỳ|ý|ỵ|ỷ|ỹ", "y")
+            .replaceAll("đ", "d")
+            .replaceAll("[^a-z0-9\\s-]", "")
+            .replaceAll("\\s+", "-")
+            .replaceAll("-+", "-")
+            .replaceAll("^-|-$", "");
+
+        return slug.isEmpty() ? "uncategorized" : slug;
     }
 
     @GetMapping("/edit/{id}")
@@ -157,6 +221,8 @@ public class BookController extends BaseController {
     public String editBook(@Valid @ModelAttribute("bookRequest") BookUpdateRequest request,
                            BindingResult bindingResult,
                            @RequestParam(value = "coverImage", required = false) MultipartFile coverImage,
+                           @RequestParam(value = "sourceFilePdf", required = false) MultipartFile sourceFilePdf,
+                           @RequestParam(value = "sourceFileEpub", required = false) MultipartFile sourceFileEpub,
                            Model model,
                            RedirectAttributes redirectAttributes) {
         // Kiểm tra validation errors
@@ -183,7 +249,45 @@ public class BookController extends BaseController {
                 request.setCoverImageUrl(imageUrl);
             }
 
-            bookService.updateBook(request);
+            // Update book
+            Book book = bookService.updateBook(request);
+
+            // Get category slug for file storage
+            String categorySlug = book.getBookCategory() != null && book.getBookCategory().getCategorySlug() != null ?
+                                  book.getBookCategory().getCategorySlug() : "uncategorized";
+
+            // Upload PDF file if provided
+            if (sourceFilePdf != null && !sourceFilePdf.isEmpty()) {
+                // Delete old PDF asset if exists
+                book.getBookAssets().stream()
+                    .filter(asset -> asset.getFileType() == stu.datn.ebook_store.entity.BookAsset.FileType.PDF)
+                    .findFirst()
+                    .ifPresent(asset -> {
+                        fileStorageService.deleteFile(asset.getFileUrl());
+                        bookAssetRepository.delete(asset);
+                    });
+
+                // Upload new PDF
+                String pdfUrl = fileStorageService.storeBookSource(sourceFilePdf, categorySlug);
+                createBookAsset(book, pdfUrl, stu.datn.ebook_store.entity.BookAsset.FileType.PDF, sourceFilePdf.getSize());
+            }
+
+            // Upload EPUB file if provided
+            if (sourceFileEpub != null && !sourceFileEpub.isEmpty()) {
+                // Delete old EPUB asset if exists
+                book.getBookAssets().stream()
+                    .filter(asset -> asset.getFileType() == stu.datn.ebook_store.entity.BookAsset.FileType.EPUB)
+                    .findFirst()
+                    .ifPresent(asset -> {
+                        fileStorageService.deleteFile(asset.getFileUrl());
+                        bookAssetRepository.delete(asset);
+                    });
+
+                // Upload new EPUB
+                String epubUrl = fileStorageService.storeBookSource(sourceFileEpub, categorySlug);
+                createBookAsset(book, epubUrl, stu.datn.ebook_store.entity.BookAsset.FileType.EPUB, sourceFileEpub.getSize());
+            }
+
             redirectAttributes.addFlashAttribute("success", "Cập nhật sách thành công!");
             return "redirect:/admin/books";
         } catch (Exception e) {

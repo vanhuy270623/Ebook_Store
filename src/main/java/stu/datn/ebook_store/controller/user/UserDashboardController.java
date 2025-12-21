@@ -5,10 +5,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import stu.datn.ebook_store.entity.Banner; // Import Banner
 import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.ReadingProgress;
 import stu.datn.ebook_store.entity.User;
+import stu.datn.ebook_store.service.BannerService; // Import Service
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.OrderService;
 import stu.datn.ebook_store.service.OrderItemService;
@@ -17,14 +19,6 @@ import stu.datn.ebook_store.service.ReadingProgressService;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * UserDashboardController - Trang chủ & Tổng quan
- * Chịu trách nhiệm hiển thị trang landing cho user đã login và dashboard thống kê.
- *
- * Endpoints:
- * - GET /user/index      : Trang chủ (landing page sau khi login)
- * - GET /user/dashboard  : Dashboard tổng quan
- */
 @Controller
 @RequestMapping("/user")
 public class UserDashboardController {
@@ -34,32 +28,30 @@ public class UserDashboardController {
     private static final Set<Book.AccessType> RETAIL_ACCESS_TYPES =
             EnumSet.of(Book.AccessType.PURCHASE, Book.AccessType.BOTH);
 
+    // 1. Khai báo BannerService
     private final BookService bookService;
     private final OrderService orderService;
     private final OrderItemService orderItemService;
     private final ReadingProgressService readingProgressService;
+    private final BannerService bannerService;
 
     @Autowired
     public UserDashboardController(BookService bookService,
-                                  OrderService orderService,
-                                  OrderItemService orderItemService,
-                                  ReadingProgressService readingProgressService) {
+                                   OrderService orderService,
+                                   OrderItemService orderItemService,
+                                   ReadingProgressService readingProgressService,
+                                   BannerService bannerService) { // 2. Inject vào Constructor
         this.bookService = bookService;
         this.orderService = orderService;
         this.orderItemService = orderItemService;
         this.readingProgressService = readingProgressService;
+        this.bannerService = bannerService;
     }
 
-    /**
-     * Lấy user hiện tại từ authentication
-     */
     private User getCurrentUser(Authentication authentication) {
         return (User) authentication.getPrincipal();
     }
 
-    /**
-     * Lấy danh sách ID các sách user đã mua
-     */
     private Set<String> getPurchasedBookIds(Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
         if (currentUser == null) {
@@ -69,24 +61,23 @@ public class UserDashboardController {
                 currentUser.getUserId(), Order.OrderType.BOOK, PAID_STATUSES, RETAIL_ACCESS_TYPES));
     }
 
-    /**
-     * Trang chủ cho user đã đăng nhập
-     */
     @GetMapping("/index")
     public String index(Authentication authentication, Model model) {
         User currentUser = getCurrentUser(authentication);
 
         try {
-            // Get free books (ACCESS_TYPE = 'FREE')
+            // 3. LẤY DANH SÁCH BANNER VÀ ĐƯA VÀO MODEL
+            // Lưu ý: Đảm bảo BannerPosition khớp với DB (HOME hoặc HOME_MAIN)
+            List<Banner> banners = bannerService.getActiveBannersForDisplay(Banner.BannerPosition.HOME);
+            model.addAttribute("banners", banners);
+
+            // Get free books
             List<Book> freeBooks = bookService.getBooksByAccessType(Book.AccessType.FREE);
-
-            // Get trending books (top viewed)
+            // Get trending books
             List<Book> trendingBooks = bookService.getTopViewedBooks();
-
             // Get new releases
             List<Book> newBooks = bookService.getNewestBooks();
 
-            // Add to model
             model.addAttribute("freeBooks", freeBooks);
             model.addAttribute("trendingBooks", trendingBooks);
             model.addAttribute("newBooks", newBooks);
@@ -94,21 +85,18 @@ public class UserDashboardController {
             model.addAttribute("currentUser", currentUser);
             model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));
 
-            // Layout variables
             model.addAttribute("pageTitle", "Trang chủ");
             model.addAttribute("currentPage", "index");
 
         } catch (Exception e) {
-            // Log error but still show the page
-            System.err.println("Error loading books: " + e.getMessage());
+            System.err.println("Error loading dashboard: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return "user/index";
     }
 
-    /**
-     * Dashboard người dùng
-     */
+    // ... (Phần code dashboard giữ nguyên) ...
     @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model) {
         User currentUser = getCurrentUser(authentication);
@@ -144,5 +132,30 @@ public class UserDashboardController {
 
         return "user/dashboard";
     }
-}
+    @GetMapping("/favorites")
+    public String favorites(Authentication authentication, Model model) {
+        User currentUser = getCurrentUser(authentication);
 
+        // 1. Lấy thông tin User để hiển thị layout
+        model.addAttribute("user", currentUser);
+        model.addAttribute("currentUser", currentUser);
+
+        // 2. Lấy danh sách sách yêu thích từ Service
+        // Lưu ý: Hàm này trả về List<ReadingProgress> chứ không phải List<Book>
+        List<ReadingProgress> favoriteProgresses = readingProgressService.getFavoriteBooksByUser(currentUser);
+
+        // Lọc những bản ghi có Book != null để tránh lỗi NullPointerException
+        List<ReadingProgress> safeFavorites = favoriteProgresses.stream()
+                .filter(rp -> rp.getBook() != null)
+                .collect(Collectors.toList());
+
+        model.addAttribute("favoriteBooks", safeFavorites);
+        model.addAttribute("totalFavorites", safeFavorites.size());
+
+        // 3. Thiết lập biến cho Layout (Active menu, Title)
+        model.addAttribute("pageTitle", "Sách yêu thích");
+        model.addAttribute("currentPage", "favorites"); // Dùng để highlight menu bên trái nếu có
+
+        return "user/favorites"; // Trả về file view: templates/user/favorites.html
+    }
+}

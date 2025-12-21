@@ -25,6 +25,7 @@ public class UserServiceImpl implements UserService {
     // Device Management - CHỈ dùng bảng có sẵn
     private final UserDeviceRepository deviceRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final OrderRepository orderRepository;
 
     // Configuration
     private static final int DEFAULT_MAX_DEVICES = 1; // FREE users
@@ -34,19 +35,27 @@ public class UserServiceImpl implements UserService {
                            RoleRepository roleRepository,
                            PasswordEncoder passwordEncoder,
                            UserDeviceRepository deviceRepository,
-                           SubscriptionRepository subscriptionRepository) {
+                           SubscriptionRepository subscriptionRepository,
+                           OrderRepository orderRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.deviceRepository = deviceRepository;
         this.subscriptionRepository = subscriptionRepository;
+        this.orderRepository = orderRepository;
     }
 
     /**
      * Lấy giới hạn thiết bị cho user dựa trên subscription
+     * ADMIN: Không giới hạn (999 devices)
      * FREE: 1 device, BASIC: 2 devices, PREMIUM/VIP: 3 devices
      */
     private int getMaxDevicesForUser(User user) {
+        // ADMIN không giới hạn thiết bị
+        if (user.getRole() != null && user.getRole().getRoleName() == Role.RoleName.ADMIN) {
+            return 999; // Không giới hạn
+        }
+
         try {
             Optional<Subscription> activeSubscription = subscriptionRepository
                     .findActiveSubscriptionByUserId(user.getUserId(), LocalDateTime.now());
@@ -261,6 +270,7 @@ public class UserServiceImpl implements UserService {
     public User saveUser(User user) {
         // Logic to differentiate between create and update
         boolean isNew = user.getUserId() == null || user.getUserId().isEmpty();
+        boolean isAdmin = user.getRole() != null && user.getRole().getRoleName() == Role.RoleName.ADMIN;
 
         if (isNew) {
             // For new users created from admin panel
@@ -276,7 +286,44 @@ public class UserServiceImpl implements UserService {
         }
 
         user.setUpdatedAt(LocalDateTime.now());
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        // Tự động tạo VIP subscription cho admin mới
+        if (isNew && isAdmin) {
+            createVipSubscriptionForAdmin(savedUser);
+        }
+
+        return savedUser;
+    }
+
+    /**
+     * Tạo VIP subscription vĩnh viễn cho admin
+     */
+    private void createVipSubscriptionForAdmin(User admin) {
+        try {
+            // Tìm gói VIP
+            Optional<Subscription> vipSubscription = subscriptionRepository.findByPackageName(Subscription.PackageName.VIP);
+
+            if (vipSubscription.isPresent()) {
+                // Tạo order subscription cho admin với thời hạn 100 năm
+                Order order = new Order();
+                order.setOrderId("SUB_ADMIN_" + admin.getUserId() + "_" + System.currentTimeMillis());
+                order.setUser(admin);
+                order.setSubscription(vipSubscription.get());
+                order.setOrderType(Order.OrderType.SUBSCRIPTION);
+                order.setTotalAmount(java.math.BigDecimal.ZERO); // Miễn phí cho admin
+                order.setPaymentStatus(Order.PaymentStatus.COMPLETED);
+                order.setPaymentMethod(Order.PaymentMethod.BANK_TRANSFER);
+                order.setStartDate(LocalDateTime.now());
+                order.setEndDate(LocalDateTime.now().plusYears(100)); // 100 năm
+                order.setCreatedAt(LocalDateTime.now());
+
+                orderRepository.save(order);
+            }
+        } catch (Exception e) {
+            // Log error nhưng không throw exception để không ảnh hưởng việc tạo user
+            System.err.println("Không thể tạo VIP subscription cho admin: " + e.getMessage());
+        }
     }
 
     @Override
@@ -347,6 +394,7 @@ public class UserServiceImpl implements UserService {
 
     /**
      * Xác thực login với kiểm tra device (Logic chính của hệ thống)
+     * ADMIN: Không kiểm tra giới hạn thiết bị
      */
     @Override
     @Transactional
@@ -390,23 +438,28 @@ public class UserServiceImpl implements UserService {
             return result;
         }
 
-        // 5. Device mới -> Kiểm tra giới hạn (dựa trên subscription)
-        int maxDevicesAllowed = getMaxDevicesForUser(user);
-        int activeDeviceCount = deviceRepository.countByUser_UserIdAndIsActiveTrue(user.getUserId());
+        // 5. Device mới -> Kiểm tra giới hạn (ADMIN ĐƯỢC BỎ QUA)
+        boolean isAdmin = user.getRole() != null && user.getRole().getRoleName() == Role.RoleName.ADMIN;
 
-        if (activeDeviceCount >= maxDevicesAllowed) {
-            // VƯỢT QUÁ GIỚI HẠN
-            handleDeviceLimitExceeded(user, deviceFingerprint, clientIp, request, maxDevicesAllowed);
+        if (!isAdmin) {
+            // Chỉ kiểm tra giới hạn cho user thường
+            int maxDevicesAllowed = getMaxDevicesForUser(user);
+            int activeDeviceCount = deviceRepository.countByUser_UserIdAndIsActiveTrue(user.getUserId());
 
-            result.put("status", "DEVICE_LIMIT_EXCEEDED");
-            result.put("activeDeviceCount", activeDeviceCount);
-            result.put("maxDevices", maxDevicesAllowed);
-            result.put("violationCount", user.getDeviceViolationCount());
+            if (activeDeviceCount >= maxDevicesAllowed) {
+                // VƯỢT QUÁ GIỚI HẠN
+                handleDeviceLimitExceeded(user, deviceFingerprint, clientIp, request, maxDevicesAllowed);
 
-            return result;
+                result.put("status", "DEVICE_LIMIT_EXCEEDED");
+                result.put("activeDeviceCount", activeDeviceCount);
+                result.put("maxDevices", maxDevicesAllowed);
+                result.put("violationCount", user.getDeviceViolationCount());
+
+                return result;
+            }
         }
 
-        // 6. Đăng ký device mới (còn slot)
+        // 6. Đăng ký device mới (ADMIN hoặc user còn slot)
         UserDevice newDevice = registerNewDevice(user, deviceInfo, deviceFingerprint, clientIp, request);
 
         result.put("status", "SUCCESS");
@@ -592,11 +645,19 @@ public class UserServiceImpl implements UserService {
 
     /**
      * Lấy thông tin subscription hiện tại
+     * ADMIN: Hiển thị "VIP (Không giới hạn thiết bị)"
      */
     @Override
     @Transactional(readOnly = true)
     public String getUserSubscriptionInfo(String userId) {
         try {
+            User user = userRepository.findById(userId).orElse(null);
+
+            // ADMIN hiển thị thông tin đặc biệt
+            if (user != null && user.getRole() != null && user.getRole().getRoleName() == Role.RoleName.ADMIN) {
+                return "Gói VIP (Không giới hạn thiết bị)";
+            }
+
             Optional<Subscription> activeSubscription = subscriptionRepository
                     .findActiveSubscriptionByUserId(userId, LocalDateTime.now());
 

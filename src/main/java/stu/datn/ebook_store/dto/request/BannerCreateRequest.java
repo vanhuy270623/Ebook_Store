@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 /**
  * DTO for creating a new banner (Admin only)
  * Mapped to table: banner
@@ -21,7 +23,7 @@ public class BannerCreateRequest {
     @Size(max = 255, message = "Tiêu đề không được vượt quá 255 ký tự")
     private String title;
 
-    @NotBlank(message = "URL hình ảnh không được để trống")
+
     @Size(max = 500, message = "URL hình ảnh không được vượt quá 500 ký tự")
     private String imageUrl;
 
@@ -31,6 +33,12 @@ public class BannerCreateRequest {
     @NotBlank(message = "Vị trí banner không được để trống")
     private String position; // HOME, CATEGORY, DETAIL
 
+    private Integer displayOrder = 0;
+
     private Boolean isActive = true;
+
+    private LocalDateTime startDate;
+
+    private LocalDateTime endDate;
 }
 

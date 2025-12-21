@@ -65,6 +65,41 @@ public class FileStorageServiceImpl implements FileStorageService {
     }
 
     @Override
+    public String storeBookSource(MultipartFile file, String categorySlug) throws IOException {
+        validateBookAsset(file);
+
+        // Lưu vào thư mục: book_asset/source/{categorySlug}/
+        String subdirectory = "book_asset/source/" + categorySlug;
+
+        if (file.isEmpty()) {
+            throw new IOException("Cannot store empty file");
+        }
+
+        // Create directory if it doesn't exist
+        Path uploadPath = Paths.get(baseUploadDir, subdirectory);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        // Preserve original filename for better organization
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isEmpty()) {
+            throw new IOException("Invalid filename");
+        }
+
+        // Sanitize filename (remove special characters, keep Vietnamese)
+        String sanitizedFilename = originalFilename
+                .replaceAll("[^a-zA-Z0-9.\\-_ àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]", "_");
+
+        // Store file with original name (will overwrite if exists)
+        Path filePath = uploadPath.resolve(sanitizedFilename);
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+        // Return relative path from baseUploadDir
+        return subdirectory + "/" + sanitizedFilename;
+    }
+
+    @Override
     public String storeAuthorAvatar(MultipartFile file) throws IOException {
         validateImage(file);
         return storeFile(file, "authors/avatars");

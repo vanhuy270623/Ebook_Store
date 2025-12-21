@@ -21,6 +21,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .ignoringRequestMatchers("/admin/books/delete/**") // Ignore CSRF for delete endpoint
+                        .ignoringRequestMatchers("/admin/books/assets/delete") // Ignore CSRF for file asset delete
                         .ignoringRequestMatchers("/reading/api/**") // Ignore CSRF for reading API (progress, bookmarks)
                         .ignoringRequestMatchers("/api/favorites/**") // Ignore CSRF for favorites API
                 )

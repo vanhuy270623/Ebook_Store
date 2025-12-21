@@ -51,27 +51,41 @@
                                         Giới hạn thiết bị
                                         <span class="badge bg-primary ms-2" th:text="${subscriptionInfo}">Gói FREE</span>
                                     </h5>
-                                    <p class="text-muted mb-0">
+                                    <p class="text-muted mb-0" th:if="${!isAdmin}">
                                         Bạn có thể đăng nhập trên tối đa <strong th:text="${maxDevices}">3</strong> thiết bị
                                     </p>
-                                    <small class="text-info">
+                                    <p class="text-success mb-0" th:if="${isAdmin}">
+                                        <i class="fas fa-infinity me-1"></i>
+                                        <strong>Không giới hạn thiết bị</strong> (Tài khoản Admin)
+                                    </p>
+                                    <small class="text-info" th:if="${!isAdmin}">
                                         <i class="fas fa-info-circle me-1"></i>
                                         Nâng cấp gói để tăng số thiết bị:
                                         <a th:href="@{/subscribe}" class="text-decoration-none">BASIC (2), PREMIUM/VIP (3)</a>
                                     </small>
                                 </div>
                                 <div class="text-end">
-                                    <h3 class="mb-0">
+                                    <h3 class="mb-0" th:if="${!isAdmin}">
                                         <span th:text="${currentCount}">0</span>/<span th:text="${maxDevices}">3</span>
                                     </h3>
-                                    <small class="text-muted">Đã sử dụng</small>
+                                    <h3 class="mb-0 text-success" th:if="${isAdmin}">
+                                        <i class="fas fa-infinity"></i>
+                                    </h3>
+                                    <small class="text-muted" th:if="${!isAdmin}">Đã sử dụng</small>
+                                    <small class="text-success" th:if="${isAdmin}">Không giới hạn</small>
                                 </div>
                             </div>
-                            <div class="progress progress-thin">
+                            <div class="progress progress-thin" th:if="${!isAdmin}">
                                 <div class="progress-bar"
                                      th:classappend="${currentCount >= maxDevices ? 'bg-danger' : (currentCount >= maxDevices * 0.8 ? 'bg-warning' : 'bg-success')}"
                                      role="progressbar"
                                      th:style="'width: ' + (${currentCount} * 100.0 / ${maxDevices}) + '%'">
+                                </div>
+                            </div>
+                            <div class="progress progress-thin" th:if="${isAdmin}">
+                                <div class="progress-bar bg-success"
+                                     role="progressbar"
+                                     style="width: 100%">
                                 </div>
                             </div>
                         </div>

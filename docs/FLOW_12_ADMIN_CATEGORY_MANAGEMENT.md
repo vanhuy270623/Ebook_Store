@@ -71,7 +71,7 @@ Admin → Browser → AdminCategoryController → CategoryService → CategoryRe
 ```java
 @GetMapping
 public String categoriesList(Model model) {
-    List<Category> categories = categoryService.getAllCategories();
+    List<Category> categories = bookCategoryService.getAllCategories();
     model.addAttribute("categories", categories);
     model.addAttribute("totalCategories", categories.size());
     return "admin/categories/list";
@@ -208,7 +208,7 @@ public String createCategory(@Valid @ModelAttribute("category") CategoryCreateRe
         category.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
         category.setCreatedAt(LocalDateTime.now());
         
-        categoryService.saveCategory(category);
+        bookCategoryService.saveCategory(category);
         
         redirectAttributes.addFlashAttribute("successMessage", "Tạo danh mục thành công!");
         return REDIRECT_CATEGORIES;
@@ -223,13 +223,13 @@ public String createCategory(@Valid @ModelAttribute("category") CategoryCreateRe
 **Helper Method**:
 ```java
 private String generateNextCategoryId() {
-    List<Category> allCategories = categoryService.getAllCategories();
+    List<Category> allCategories = bookCategoryService.getAllCategories();
     int nextNumber = allCategories.size() + 1;
     return String.format("category_%02d", nextNumber);
 }
 
 private boolean isCategoryNameDuplicate(String categoryName, String currentCategoryId) {
-    Category existingCategory = categoryService.getCategoryByName(categoryName).orElse(null);
+    Category existingCategory = bookCategoryService.getCategoryByName(categoryName).orElse(null);
     if (existingCategory == null) {
         return false;
     }
@@ -299,7 +299,7 @@ Admin → Browser → AdminCategoryController → CategoryService → CategoryRe
 @GetMapping("/view/{id}")
 public String viewCategory(@PathVariable String id, Model model, 
                           RedirectAttributes redirectAttributes) {
-    Category category = categoryService.getCategoryById(id).orElse(null);
+    Category category = bookCategoryService.getCategoryById(id).orElse(null);
     
     if (category == null) {
         redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy danh mục!");
@@ -367,7 +367,7 @@ Admin → Browser → AdminCategoryController → CategoryService → CategoryRe
 @GetMapping("/edit/{id}")
 public String showEditForm(@PathVariable String id, Model model, 
                           RedirectAttributes redirectAttributes) {
-    Category category = categoryService.getCategoryById(id).orElse(null);
+    Category category = bookCategoryService.getCategoryById(id).orElse(null);
     
     if (category == null) {
         redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy danh mục!");
@@ -393,7 +393,7 @@ public String updateCategory(@PathVariable String id,
         return "admin/categories/form";
     }
     
-    Category category = categoryService.getCategoryById(id).orElse(null);
+    Category category = bookCategoryService.getCategoryById(id).orElse(null);
     if (category == null) {
         redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy danh mục!");
         return REDIRECT_CATEGORIES;
@@ -419,7 +419,7 @@ public String updateCategory(@PathVariable String id,
         category.setDisplayOrder(request.getDisplayOrder());
         category.setIsActive(request.getIsActive());
         
-        categoryService.saveCategory(category);
+        bookCategoryService.saveCategory(category);
         
         redirectAttributes.addFlashAttribute("successMessage", "Cập nhật danh mục thành công!");
         return REDIRECT_CATEGORIES;
@@ -471,7 +471,7 @@ Admin → Browser → AdminCategoryController → CategoryService → CategoryRe
 public String deleteCategory(@PathVariable String id, 
                             RedirectAttributes redirectAttributes) {
     try {
-        Category category = categoryService.getCategoryById(id).orElse(null);
+        Category category = bookCategoryService.getCategoryById(id).orElse(null);
         if (category == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy danh mục!");
             return REDIRECT_CATEGORIES;
@@ -485,7 +485,7 @@ public String deleteCategory(@PathVariable String id,
             return REDIRECT_CATEGORIES;
         }
         
-        categoryService.deleteCategory(id);
+        bookCategoryService.deleteCategory(id);
         redirectAttributes.addFlashAttribute("successMessage", "Xóa danh mục thành công!");
         
     } catch (Exception e) {

@@ -25,7 +25,7 @@
 						<div class="box-body">
 							<div class="form-group">
 								<label>ID</label>
-								<p class="form-control-static" th:text="${category.categoryId}">ID</p>
+								<p class="form-control-static" th:text="${category.bookCategoryId}">ID</p>
 							</div>
 							<div class="form-group">
 								<label>Tên danh mục</label>
@@ -60,8 +60,8 @@
 							</div>
 						</div>
 						<div class="box-footer">
-							<a th:href="@{/admin/categories/edit/{id}(id=${category.categoryId})}" class="btn btn-warning"><i class="fa fa-pencil"></i> Sửa</a>
-							<form th:action="@{/admin/categories/delete/{id}(id=${category.categoryId})}" method="post" style="display:inline;" onsubmit="return confirm('Xóa?');">
+							<a th:href="@{/admin/categories/edit/{id}(id=${category.bookCategoryId})}" class="btn btn-warning"><i class="fa fa-pencil"></i> Sửa</a>
+							<form th:action="@{/admin/categories/delete/{id}(id=${category.bookCategoryId})}" method="post" style="display:inline;" onsubmit="return confirm('Xóa?');">
 								<button type="submit" class="btn btn-danger"><i class="fa fa-trash"></i> Xóa</button>
 							</form>
 							<a th:href="@{/admin/categories}" class="btn btn-secondary"><i class="fa fa-arrow-left"></i> Quay lại</a>

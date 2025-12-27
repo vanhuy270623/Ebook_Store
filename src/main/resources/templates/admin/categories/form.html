@@ -38,9 +38,9 @@
 				</div>
 			</div>
 
-			<form th:action="@{${isEdit ? '/admin/categories/update' : '/admin/categories/create'}}" th:object="${categoryRequest}" method="post">
-				<input type="hidden" th:if="${isEdit}" th:field="*{categoryId}"/>
-				<div class="box box-primary">
+		<form th:action="@{${isEdit ? '/admin/categories/update' : '/admin/categories/create'}}" th:object="${categoryRequest}" method="post">
+			<input type="hidden" th:if="${isEdit}" th:field="*{categoryId}"/>
+			<div class="box box-primary">
 					<div class="box-body">
 						<div class="form-group" th:classappend="${#fields.hasErrors('categoryName')} ? 'has-error'">
 							<label for="categoryName" class="required-field">Tên danh mục</label>

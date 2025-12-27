@@ -10,8 +10,8 @@ import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.User;
 import stu.datn.ebook_store.entity.Review;
+import stu.datn.ebook_store.service.BookCategoryService;
 import stu.datn.ebook_store.service.BookService;
-import stu.datn.ebook_store.service.CategoryService;
 import stu.datn.ebook_store.service.OrderItemService;
 import stu.datn.ebook_store.service.ReviewService;
 
@@ -35,15 +35,15 @@ public class UserBookController extends BaseController {
             EnumSet.of(Book.AccessType.PURCHASE, Book.AccessType.BOTH);
 
     private final BookService bookService;
-    private final CategoryService categoryService;
+    private final BookCategoryService bookCategoryService;
     private final OrderItemService orderItemService;
     private final ReviewService reviewService;
 
     @Autowired
-    public UserBookController(BookService bookService, CategoryService categoryService,
+    public UserBookController(BookService bookService, BookCategoryService bookCategoryService,
                               OrderItemService orderItemService, ReviewService reviewService) {
         this.bookService = bookService;
-        this.categoryService = categoryService;
+        this.bookCategoryService = bookCategoryService;
         this.orderItemService = orderItemService;
         this.reviewService = reviewService;
     }
@@ -125,7 +125,7 @@ public class UserBookController extends BaseController {
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("totalBooks", totalBooks);
-        model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("categories", bookCategoryService.getAllCategories());
         model.addAttribute("accessTypes", Book.AccessType.values());
         model.addAttribute("sortOptions", new String[]{"newest", "popular", "rating"});
         model.addAttribute("sort", sort);
@@ -168,7 +168,7 @@ public class UserBookController extends BaseController {
 
                     model.addAttribute("book", book);
                     model.addAttribute("relatedBooks", relatedBooks);
-                    model.addAttribute("categories", categoryService.getAllCategories());
+                    model.addAttribute("categories", bookCategoryService.getAllCategories());
                     model.addAttribute("purchasedBookIds", getPurchasedBookIds());
                     model.addAttribute("currentUser", getCurrentUser());
                     model.addAttribute("reviews", reviews);
@@ -226,7 +226,7 @@ public class UserBookController extends BaseController {
             @RequestParam(defaultValue = "0") int page,
             Model model) {
 
-        // CategoryService trả về Category, nhưng BookService cần BookCategory
+        // BookCategoryService trả về Category, nhưng BookService cần BookCategory
         // Sử dụng getBooksByCategory với lọc theo category ID
         List<Book> books = bookService.getAllBooks().stream()
                 .filter(b -> b.getBookCategory() != null &&
@@ -249,7 +249,7 @@ public class UserBookController extends BaseController {
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("totalBooks", totalBooks);
-        model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("categories", bookCategoryService.getAllCategories());
         model.addAttribute("purchasedBookIds", getPurchasedBookIds());
 
         return "user/books/category";
@@ -299,7 +299,7 @@ public class UserBookController extends BaseController {
     public String trendingBooks(Model model) {
         List<Book> books = bookService.getTopViewedBooks();
         model.addAttribute("books", books);
-        model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("categories", bookCategoryService.getAllCategories());
         model.addAttribute("purchasedBookIds", getPurchasedBookIds());
 
         return "user/books/trending";
@@ -312,7 +312,7 @@ public class UserBookController extends BaseController {
     public String newestBooks(Model model) {
         List<Book> books = bookService.getNewestBooks();
         model.addAttribute("books", books);
-        model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("categories", bookCategoryService.getAllCategories());
         model.addAttribute("purchasedBookIds", getPurchasedBookIds());
 
         return "user/books/newest";
@@ -325,7 +325,7 @@ public class UserBookController extends BaseController {
     public String topRatedBooks(Model model) {
         List<Book> books = bookService.getTopRatedBooks(20);
         model.addAttribute("books", books);
-        model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("categories", bookCategoryService.getAllCategories());
         model.addAttribute("purchasedBookIds", getPurchasedBookIds());
 
         return "user/books/top-rated";

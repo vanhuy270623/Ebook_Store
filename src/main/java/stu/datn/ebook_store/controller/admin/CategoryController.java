@@ -9,14 +9,16 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import stu.datn.ebook_store.controller.BaseController;
-import stu.datn.ebook_store.dto.request.CategoryCreateRequest;
-import stu.datn.ebook_store.dto.request.CategoryUpdateRequest;
-import stu.datn.ebook_store.entity.Category;
-import stu.datn.ebook_store.service.CategoryService;
+import stu.datn.ebook_store.dto.request.BookCategoryCreateRequest;
+import stu.datn.ebook_store.dto.request.BookCategoryUpdateRequest;
+import stu.datn.ebook_store.entity.BookCategory;
+import stu.datn.ebook_store.service.BookCategoryService;
 
+import java.text.Normalizer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -29,11 +31,11 @@ public class CategoryController extends BaseController {
 
     private static final String REDIRECT_CATEGORIES = "redirect:/admin/categories";
 
-    private final CategoryService categoryService;
+    private final BookCategoryService bookCategoryService;
 
     @Autowired
-    public CategoryController(CategoryService categoryService) {
-        this.categoryService = categoryService;
+    public CategoryController(BookCategoryService bookCategoryService) {
+        this.bookCategoryService = bookCategoryService;
     }
 
     // ============================= HELPER METHODS =============================
@@ -42,7 +44,7 @@ public class CategoryController extends BaseController {
      * Sinh Category ID tự động theo format: "category_XX"
      */
     private String generateNextCategoryId() {
-        List<Category> allCategories = categoryService.getAllCategories();
+        List<BookCategory> allCategories = bookCategoryService.getAllCategories();
         int nextNumber = allCategories.size() + 1;
         return String.format("category_%02d", nextNumber);
     }
@@ -51,17 +53,17 @@ public class CategoryController extends BaseController {
      * Kiểm tra tên danh mục đã tồn tại (trừ danh mục đang sửa)
      */
     private boolean isCategoryNameDuplicate(String categoryName, String currentCategoryId) {
-        return categoryService.getCategoryByName(categoryName)
-                .map(existingCategory -> !existingCategory.getCategoryId().equals(currentCategoryId))
+        return bookCategoryService.getCategoryByName(categoryName)
+                .map(existingCategory -> !existingCategory.getBookCategoryId().equals(currentCategoryId))
                 .orElse(false);
     }
 
     /**
-     * Map Category entity sang CategoryUpdateRequest DTO
+     * Map Category entity sang BookCategoryUpdateRequest DTO
      */
-    private CategoryUpdateRequest mapToUpdateRequest(Category category) {
-        CategoryUpdateRequest dto = new CategoryUpdateRequest();
-        dto.setCategoryId(category.getCategoryId());
+    private BookCategoryUpdateRequest mapToUpdateRequest(BookCategory category) {
+        BookCategoryUpdateRequest dto = new BookCategoryUpdateRequest();
+        dto.setCategoryId(category.getBookCategoryId());
         dto.setCategoryName(category.getCategoryName());
         dto.setDescription(category.getDescription());
         dto.setIconUrl(category.getIconUrl());
@@ -77,6 +79,23 @@ public class CategoryController extends BaseController {
         model.addAttribute("isEdit", isEdit);
     }
 
+    /**
+     * Tạo slug từ tên danh mục (VD: "Khoa Học - Viễn Tưởng" -> "khoa-hoc-vien-tuong")
+     */
+    private String createSlug(String input) {
+        if (input == null || input.isEmpty()) return "uncategorized";
+
+        String temp = Normalizer.normalize(input, Normalizer.Form.NFD);
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+
+        return pattern.matcher(temp).replaceAll("")
+                .toLowerCase()
+                .replaceAll("đ", "d")
+                .replaceAll("[^a-z0-9\\s-]", "")
+                .replaceAll("\\s+", "-")
+                .replaceAll("-+", "-");
+    }
+
     // ============================= CRUD OPERATIONS =============================
 
     /**
@@ -84,7 +103,7 @@ public class CategoryController extends BaseController {
      */
     @GetMapping
     public String categoriesList(Model model) {
-        List<Category> categories = categoryService.getAllCategories();
+        List<BookCategory> categories = bookCategoryService.getAllCategories();
         model.addAttribute("categories", categories);
         model.addAttribute("totalCategories", categories.size());
         return "admin/categories/list";
@@ -95,7 +114,7 @@ public class CategoryController extends BaseController {
      */
     @GetMapping("/view/{id}")
     public String viewCategory(@PathVariable String id, Model model, RedirectAttributes redirectAttributes) {
-        Category category = categoryService.getCategoryById(id).orElse(null);
+        BookCategory category = bookCategoryService.getCategoryById(id).orElse(null);
 
         if (category == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy danh mục với ID: " + id);
@@ -111,7 +130,7 @@ public class CategoryController extends BaseController {
      */
     @GetMapping("/add")
     public String showAddForm(Model model) {
-        model.addAttribute("categoryRequest", new CategoryCreateRequest());
+        model.addAttribute("categoryRequest", new BookCategoryCreateRequest());
         addCommonFormAttributes(model, false);
         return "admin/categories/form";
     }
@@ -121,7 +140,7 @@ public class CategoryController extends BaseController {
      */
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable String id, Model model, RedirectAttributes redirectAttributes) {
-        Category category = categoryService.getCategoryById(id).orElse(null);
+        BookCategory category = bookCategoryService.getCategoryById(id).orElse(null);
 
         if (category == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy danh mục!");
@@ -129,9 +148,9 @@ public class CategoryController extends BaseController {
         }
 
         // Chuyển đổi Category entity sang DTO
-        CategoryUpdateRequest categoryUpdateRequest = mapToUpdateRequest(category);
+        BookCategoryUpdateRequest bookCategoryUpdateRequest = mapToUpdateRequest(category);
 
-        model.addAttribute("categoryRequest", categoryUpdateRequest);
+        model.addAttribute("categoryRequest", bookCategoryUpdateRequest);
         model.addAttribute("category", category);
         addCommonFormAttributes(model, true);
 
@@ -142,7 +161,7 @@ public class CategoryController extends BaseController {
      * Tạo danh mục mới
      */
     @PostMapping("/create")
-    public String createCategory(@Valid @ModelAttribute("categoryRequest") CategoryCreateRequest request,
+    public String createCategory(@Valid @ModelAttribute("categoryRequest") BookCategoryCreateRequest request,
                                 BindingResult bindingResult,
                                 Model model,
                                 RedirectAttributes redirectAttributes) {
@@ -157,7 +176,7 @@ public class CategoryController extends BaseController {
         }
 
         // Kiểm tra tên danh mục trùng
-        if (categoryService.getCategoryByName(request.getCategoryName()).isPresent()) {
+        if (bookCategoryService.getCategoryByName(request.getCategoryName()).isPresent()) {
             redirectAttributes.addFlashAttribute("error", "Tên danh mục đã tồn tại!");
             return "redirect:/admin/categories/add";
         }
@@ -165,15 +184,16 @@ public class CategoryController extends BaseController {
         try {
             // Tạo Category entity
             String newCategoryId = generateNextCategoryId();
-            Category newCategory = new Category();
-            newCategory.setCategoryId(newCategoryId);
+            BookCategory newCategory = new BookCategory();
+            newCategory.setBookCategoryId(newCategoryId);
             newCategory.setCategoryName(request.getCategoryName());
+            newCategory.setCategorySlug(createSlug(request.getCategoryName()));
             newCategory.setDescription(request.getDescription());
             newCategory.setIconUrl(request.getIconUrl());
             newCategory.setDisplayOrder(request.getDisplayOrder());
             newCategory.setIsActive(request.getIsActive());
 
-            categoryService.saveCategory(newCategory);
+            bookCategoryService.saveCategory(newCategory);
             redirectAttributes.addFlashAttribute("success",
                     "Thêm danh mục thành công! ID: " + newCategoryId + ", Tên: " + request.getCategoryName());
 
@@ -188,7 +208,7 @@ public class CategoryController extends BaseController {
      * Cập nhật danh mục
      */
     @PostMapping("/update")
-    public String updateCategory(@Valid @ModelAttribute("categoryRequest") CategoryUpdateRequest request,
+    public String updateCategory(@Valid @ModelAttribute("categoryRequest") BookCategoryUpdateRequest request,
                                 BindingResult bindingResult,
                                 Model model,
                                 RedirectAttributes redirectAttributes) {
@@ -199,14 +219,14 @@ public class CategoryController extends BaseController {
                     .collect(Collectors.joining("; "));
             model.addAttribute("error", errors);
 
-            Category category = categoryService.getCategoryById(request.getCategoryId()).orElse(null);
+            BookCategory category = bookCategoryService.getCategoryById(request.getCategoryId()).orElse(null);
             model.addAttribute("category", category);
             addCommonFormAttributes(model, true);
 
             return "admin/categories/form";
         }
 
-        Category existingCategory = categoryService.getCategoryById(request.getCategoryId())
+        BookCategory existingCategory = bookCategoryService.getCategoryById(request.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
 
         // Kiểm tra tên danh mục trùng (trừ chính nó)
@@ -218,12 +238,13 @@ public class CategoryController extends BaseController {
         try {
             // Cập nhật thông tin
             existingCategory.setCategoryName(request.getCategoryName());
+            existingCategory.setCategorySlug(createSlug(request.getCategoryName()));
             existingCategory.setDescription(request.getDescription());
             existingCategory.setIconUrl(request.getIconUrl());
             existingCategory.setDisplayOrder(request.getDisplayOrder());
             existingCategory.setIsActive(request.getIsActive());
 
-            categoryService.saveCategory(existingCategory);
+            bookCategoryService.saveCategory(existingCategory);
             redirectAttributes.addFlashAttribute("success", "Cập nhật danh mục thành công!");
 
             return REDIRECT_CATEGORIES;
@@ -241,7 +262,7 @@ public class CategoryController extends BaseController {
     public ResponseEntity<Map<String, Object>> deleteCategory(@PathVariable String id) {
         Map<String, Object> response = new HashMap<>();
         try {
-            categoryService.deleteCategory(id);
+            bookCategoryService.deleteCategory(id);
             response.put("success", true);
             response.put("message", "Xóa danh mục thành công!");
             return ResponseEntity.ok(response);
@@ -258,7 +279,7 @@ public class CategoryController extends BaseController {
      */
     @GetMapping("/statistics")
     public String categoriesStatistics(Model model) {
-        List<Category> allCategories = categoryService.getAllCategories();
+        List<BookCategory> allCategories = bookCategoryService.getAllCategories();
         model.addAttribute("totalCategories", allCategories.size());
         model.addAttribute("categories", allCategories);
         return "admin/categories/statistics";

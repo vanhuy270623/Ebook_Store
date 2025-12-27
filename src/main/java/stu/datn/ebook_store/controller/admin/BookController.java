@@ -14,9 +14,12 @@ import stu.datn.ebook_store.dto.request.BookCreateRequest;
 import stu.datn.ebook_store.dto.request.BookUpdateRequest;
 import stu.datn.ebook_store.entity.Author;
 import stu.datn.ebook_store.entity.Book;
+import stu.datn.ebook_store.entity.BookCategory;
+import stu.datn.ebook_store.repository.BookAssetRepository;
 import stu.datn.ebook_store.repository.BookCategoryRepository;
-import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.AuthorService;
+import stu.datn.ebook_store.service.BookService;
+import stu.datn.ebook_store.service.FileStorageService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,15 +34,15 @@ public class BookController extends BaseController {
     private final BookService bookService;
     private final BookCategoryRepository bookCategoryRepository;
     private final AuthorService authorService;
-    private final stu.datn.ebook_store.service.FileStorageService fileStorageService;
-    private final stu.datn.ebook_store.repository.BookAssetRepository bookAssetRepository;
+    private final FileStorageService fileStorageService;
+    private final BookAssetRepository bookAssetRepository;
 
     @Autowired
     public BookController(BookService bookService,
                           BookCategoryRepository bookCategoryRepository,
                           AuthorService authorService,
-                          stu.datn.ebook_store.service.FileStorageService fileStorageService,
-                          stu.datn.ebook_store.repository.BookAssetRepository bookAssetRepository) {
+                          FileStorageService fileStorageService,
+                          BookAssetRepository bookAssetRepository) {
         this.bookService = bookService;
         this.bookCategoryRepository = bookCategoryRepository;
         this.authorService = authorService;
@@ -73,6 +76,7 @@ public class BookController extends BaseController {
                           @RequestParam(value = "sourceFileEpub", required = false) MultipartFile sourceFileEpub,
                           Model model,
                           RedirectAttributes redirectAttributes) {
+
         // Kiểm tra validation errors
         if (bindingResult.hasErrors()) {
             String errors = bindingResult.getAllErrors().stream()
@@ -87,18 +91,28 @@ public class BookController extends BaseController {
         }
 
         try {
-            // Upload cover image if provided
+            // --- CẬP NHẬT LOGIC LƯU ẢNH BÌA ---
             if (coverImage != null && !coverImage.isEmpty()) {
-                String imageUrl = bookService.uploadCoverImage(coverImage);
-                request.setCoverImageUrl(imageUrl);
+                // Lấy tên danh mục để tạo đường dẫn thư mục
+                String categoryName = "uncategorized";
+                if (request.getBookCategoryId() != null) {
+                    categoryName = bookCategoryRepository.findById(request.getBookCategoryId())
+                            .map(BookCategory::getCategoryName)
+                            .orElse("uncategorized");
+                }
+
+                // Gọi hàm lưu bìa sách mới: storeBookCover(file, categoryName, bookTitle)
+                // Path: book_asset/image/covers/{categorySlug}/{bookSlug}.jpg
+                String imageUrl = fileStorageService.storeBookCover(coverImage, categoryName, request.getTitle());
+                request.setCoverImageUrl("/" + imageUrl);
             }
 
             // Create book
             Book book = bookService.createBook(request);
 
-            // Get category slug for file storage
+            // Get category slug for file storage (PDF/EPUB)
             String categorySlug = book.getBookCategory() != null ?
-                                  book.getBookCategory().getCategorySlug() : "uncategorized";
+                    book.getBookCategory().getCategorySlug() : "uncategorized";
 
             // Upload PDF file if provided
             if (sourceFilePdf != null && !sourceFilePdf.isEmpty()) {
@@ -133,30 +147,11 @@ public class BookController extends BaseController {
         bookAssetRepository.save(asset);
     }
 
-    /**
-     * Helper method to create slug from category name
-     */
-    private String createSlug(String text) {
-        if (text == null || text.isEmpty()) {
-            return "uncategorized";
-        }
-
-        // Convert Vietnamese characters to ASCII
-        String slug = text.toLowerCase()
-            .replaceAll("à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ", "a")
-            .replaceAll("è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ", "e")
-            .replaceAll("ì|í|ị|ỉ|ĩ", "i")
-            .replaceAll("ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ", "o")
-            .replaceAll("ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ", "u")
-            .replaceAll("ỳ|ý|ỵ|ỷ|ỹ", "y")
-            .replaceAll("đ", "d")
-            .replaceAll("[^a-z0-9\\s-]", "")
-            .replaceAll("\\s+", "-")
-            .replaceAll("-+", "-")
-            .replaceAll("^-|-$", "");
-
-        return slug.isEmpty() ? "uncategorized" : slug;
-    }
+    // Hàm createSlug cũ không còn cần thiết ở Controller vì logic đã chuyển sang Service
+    // Nhưng nếu bạn dùng nó cho mục đích khác thì giữ lại, ở đây tôi comment out để code gọn
+    /*
+    private String createSlug(String text) { ... }
+    */
 
     @GetMapping("/edit/{id}")
     public String editBookForm(@PathVariable String id, Model model, RedirectAttributes redirectAttributes) {
@@ -178,16 +173,13 @@ public class BookController extends BaseController {
 
         // Get current author IDs
         Set<String> currentAuthorIds = book.getAuthors().stream()
-            .map(Author::getAuthorId)
-            .collect(Collectors.toSet());
+                .map(Author::getAuthorId)
+                .collect(Collectors.toSet());
         model.addAttribute("currentAuthorIds", currentAuthorIds);
 
         return "admin/books/form";
     }
 
-    /**
-     * Map Book entity to BookUpdateRequest DTO
-     */
     private BookUpdateRequest mapToUpdateRequest(Book book) {
         BookUpdateRequest dto = new BookUpdateRequest();
         dto.setBookId(book.getBookId());
@@ -209,8 +201,8 @@ public class BookController extends BaseController {
 
         if (book.getAuthors() != null && !book.getAuthors().isEmpty()) {
             Set<String> authorIds = book.getAuthors().stream()
-                .map(Author::getAuthorId)
-                .collect(Collectors.toSet());
+                    .map(Author::getAuthorId)
+                    .collect(Collectors.toSet());
             dto.setAuthorIds(authorIds);
         }
 
@@ -225,7 +217,7 @@ public class BookController extends BaseController {
                            @RequestParam(value = "sourceFileEpub", required = false) MultipartFile sourceFileEpub,
                            Model model,
                            RedirectAttributes redirectAttributes) {
-        // Kiểm tra validation errors
+
         if (bindingResult.hasErrors()) {
             String errors = bindingResult.getAllErrors().stream()
                     .map(org.springframework.validation.ObjectError::getDefaultMessage)
@@ -243,29 +235,34 @@ public class BookController extends BaseController {
         }
 
         try {
-            // Upload cover image if provided
+            // --- CẬP NHẬT LOGIC LƯU ẢNH BÌA KHI EDIT ---
             if (coverImage != null && !coverImage.isEmpty()) {
-                String imageUrl = bookService.uploadCoverImage(coverImage);
-                request.setCoverImageUrl(imageUrl);
+                String categoryName = "uncategorized";
+                if (request.getBookCategoryId() != null) {
+                    categoryName = bookCategoryRepository.findById(request.getBookCategoryId())
+                            .map(BookCategory::getCategoryName)
+                            .orElse("uncategorized");
+                }
+
+                String imageUrl = fileStorageService.storeBookCover(coverImage, categoryName, request.getTitle());
+                request.setCoverImageUrl("/" + imageUrl);
             }
 
             // Update book
             Book book = bookService.updateBook(request);
-
-            // Get category slug for file storage
             String categorySlug = book.getBookCategory() != null && book.getBookCategory().getCategorySlug() != null ?
-                                  book.getBookCategory().getCategorySlug() : "uncategorized";
+                    book.getBookCategory().getCategorySlug() : "uncategorized";
 
             // Upload PDF file if provided
             if (sourceFilePdf != null && !sourceFilePdf.isEmpty()) {
                 // Delete old PDF asset if exists
                 book.getBookAssets().stream()
-                    .filter(asset -> asset.getFileType() == stu.datn.ebook_store.entity.BookAsset.FileType.PDF)
-                    .findFirst()
-                    .ifPresent(asset -> {
-                        fileStorageService.deleteFile(asset.getFileUrl());
-                        bookAssetRepository.delete(asset);
-                    });
+                        .filter(asset -> asset.getFileType() == stu.datn.ebook_store.entity.BookAsset.FileType.PDF)
+                        .findFirst()
+                        .ifPresent(asset -> {
+                            fileStorageService.deleteFile(asset.getFileUrl());
+                            bookAssetRepository.delete(asset);
+                        });
 
                 // Upload new PDF
                 String pdfUrl = fileStorageService.storeBookSource(sourceFilePdf, categorySlug);
@@ -276,12 +273,12 @@ public class BookController extends BaseController {
             if (sourceFileEpub != null && !sourceFileEpub.isEmpty()) {
                 // Delete old EPUB asset if exists
                 book.getBookAssets().stream()
-                    .filter(asset -> asset.getFileType() == stu.datn.ebook_store.entity.BookAsset.FileType.EPUB)
-                    .findFirst()
-                    .ifPresent(asset -> {
-                        fileStorageService.deleteFile(asset.getFileUrl());
-                        bookAssetRepository.delete(asset);
-                    });
+                        .filter(asset -> asset.getFileType() == stu.datn.ebook_store.entity.BookAsset.FileType.EPUB)
+                        .findFirst()
+                        .ifPresent(asset -> {
+                            fileStorageService.deleteFile(asset.getFileUrl());
+                            bookAssetRepository.delete(asset);
+                        });
 
                 // Upload new EPUB
                 String epubUrl = fileStorageService.storeBookSource(sourceFileEpub, categorySlug);
@@ -323,14 +320,22 @@ public class BookController extends BaseController {
         }
     }
 
+    /**
+     * API Upload nhanh (cho Ajax)
+     * Vì API này thường gửi lên trước khi có thông tin sách đầy đủ,
+     * nên ta lưu tạm vào thư mục covers chung hoặc dùng tên ngẫu nhiên.
+     */
     @PostMapping("/upload-cover")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> uploadCoverImage(@RequestParam("file") MultipartFile file) {
         Map<String, Object> response = new HashMap<>();
         try {
-            String imageUrl = bookService.uploadCoverImage(file);
+            // Lưu vào thư mục covers với tên ngẫu nhiên (hoặc temp)
+            // book_asset/image/covers/temp_uuid.jpg
+            String imageUrl = fileStorageService.storeFile(file, "book_asset/image/covers");
+
             response.put("success", true);
-            response.put("url", imageUrl);
+            response.put("url", "/" + imageUrl);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("success", false);

@@ -73,7 +73,7 @@
 								</thead>
 								<tbody>
 									<tr th:each="category : ${categories}">
-										<td th:text="${category.categoryId}">ID</td>
+										<td th:text="${category.bookCategoryId}">ID</td>
 										<td th:text="${category.categoryName}">Tên</td>
 										<td th:text="${category.displayOrder}">0</td>
 										<td>
@@ -83,9 +83,9 @@
 										<td th:text="${#temporals.format(category.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024</td>
 										<td>
 											<div class="btn-group">
-												<a th:href="@{/admin/categories/view/{id}(id=${category.categoryId})}" class="btn btn-sm btn-info"><i class="fa fa-search"></i></a>
-												<a th:href="@{/admin/categories/edit/{id}(id=${category.categoryId})}" class="btn btn-sm btn-warning"><i class="fa fa-pencil"></i></a>
-												<form th:action="@{/admin/categories/delete/{id}(id=${category.categoryId})}" method="post" style="display:inline;" onsubmit="return confirm('Xóa?');">
+												<a th:href="@{/admin/categories/view/{id}(id=${category.bookCategoryId})}" class="btn btn-sm btn-info"><i class="fa fa-search"></i></a>
+												<a th:href="@{/admin/categories/edit/{id}(id=${category.bookCategoryId})}" class="btn btn-sm btn-warning"><i class="fa fa-pencil"></i></a>
+												<form th:action="@{/admin/categories/delete/{id}(id=${category.bookCategoryId})}" method="post" style="display:inline;" onsubmit="return confirm('Xóa?');">
 													<button type="submit" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
 												</form>
 											</div>

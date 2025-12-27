@@ -137,7 +137,7 @@ public String browseBooks(
     }
     
     model.addAttribute("books", books);
-    model.addAttribute("categories", categoryService.getAllCategories());
+    model.addAttribute("categories", bookCategoryService.getAllCategories());
     return "user/books/list";
 }
 ```

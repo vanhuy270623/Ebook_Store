@@ -243,7 +243,7 @@ public class UserBookController {
     private BookService bookService;
     
     @Autowired
-    private CategoryService categoryService;
+    private CategoryService bookCategoryService;
     
     @GetMapping
     public String browseBooks(@RequestParam(defaultValue = "0") int page,
@@ -265,7 +265,7 @@ public class UserBookController {
         }
         
         // Get all categories for filter
-        List<Category> categories = categoryService.getActiveCategories();
+        List<Category> categories = bookCategoryService.getActiveCategories();
         
         model.addAttribute("bookPage", bookPage);
         model.addAttribute("books", bookPage.getContent());
@@ -429,7 +429,7 @@ public String booksByCategory(@PathVariable String slug,
                              @RequestParam(defaultValue = "12") int size,
                              Model model) {
     // Find category by slug
-    Category category = categoryService.getCategoryBySlug(slug)
+    Category category = bookCategoryService.getCategoryBySlug(slug)
         .orElseThrow(() -> new RuntimeException("Category not found"));
     
     Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));

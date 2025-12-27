@@ -90,7 +90,7 @@ public class AdminDashboardController extends BaseController {
         model.addAttribute("premiumUsers", 0L); // TODO: Implement in SubscriptionService
         model.addAttribute("topBooks", bookService.getRecentBooks(5)); // Using recent books as placeholder
         model.addAttribute("newUsers", userService.getRecentUsers(5)); // Using recent users
-        model.addAttribute("topCategories", java.util.Collections.emptyList()); // TODO: Implement in CategoryService
+        model.addAttribute("topCategories", java.util.Collections.emptyList()); // TODO: Implement in BookCategoryService
         model.addAttribute("recentActivities", java.util.Collections.emptyList()); // TODO: Implement activity tracking
 
         return "admin/dashboard";

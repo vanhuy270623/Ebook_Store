@@ -15,9 +15,9 @@ import stu.datn.ebook_store.dto.request.PostCreateRequest;
 import stu.datn.ebook_store.dto.request.PostUpdateRequest;
 import stu.datn.ebook_store.entity.Post;
 import stu.datn.ebook_store.entity.User;
+import stu.datn.ebook_store.service.BookCategoryService;
 import stu.datn.ebook_store.service.PostService;
 import stu.datn.ebook_store.service.FileStorageService;
-import stu.datn.ebook_store.service.CategoryService;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -37,14 +37,14 @@ public class PostController extends BaseController {
 
     private final PostService postService;
     private final FileStorageService fileStorageService;
-    private final CategoryService categoryService;
+    private final BookCategoryService bookCategoryService;
 
     @Autowired
     public PostController(PostService postService, FileStorageService fileStorageService,
-                          CategoryService categoryService) {
+                          BookCategoryService bookCategoryService) {
         this.postService = postService;
         this.fileStorageService = fileStorageService;
-        this.categoryService = categoryService;
+        this.bookCategoryService = bookCategoryService;
     }
 
     // ============================= HELPER METHODS =============================
@@ -96,7 +96,7 @@ public class PostController extends BaseController {
      */
     private void addCommonFormAttributes(Model model, boolean isEdit) {
         model.addAttribute("isEdit", isEdit);
-        model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("categories", bookCategoryService.getAllCategories());
     }
 
     // ============================= CRUD OPERATIONS =============================

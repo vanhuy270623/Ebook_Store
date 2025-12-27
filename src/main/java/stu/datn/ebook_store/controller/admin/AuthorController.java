@@ -154,10 +154,10 @@ public class AuthorController extends BaseController {
      */
     @PostMapping("/create")
     public String createAuthor(@Valid @ModelAttribute("authorRequest") AuthorCreateRequest request,
-                              BindingResult bindingResult,
-                              @RequestParam(value = "avatarImage", required = false) MultipartFile avatarImage,
-                              Model model,
-                              RedirectAttributes redirectAttributes) {
+                               BindingResult bindingResult,
+                               @RequestParam(value = "avatarImage", required = false) MultipartFile avatarImage,
+                               Model model,
+                               RedirectAttributes redirectAttributes) {
         // Kiểm tra validation errors
         if (bindingResult.hasErrors()) {
             String errors = bindingResult.getAllErrors().stream()
@@ -175,14 +175,17 @@ public class AuthorController extends BaseController {
         }
 
         try {
-            // Upload avatar nếu có
+            // 1. Sinh ID trước để dùng làm tên file ảnh
+            String newAuthorId = generateNextAuthorId();
+
+            // 2. Upload avatar nếu có (Sử dụng storeEntityImage)
             if (avatarImage != null && !avatarImage.isEmpty()) {
-                String avatarUrl = fileStorageService.storeAuthorAvatar(avatarImage);
-                request.setAvatarUrl(avatarUrl);
+                // Lưu vào: book_asset/image/authors/{newAuthorId}.jpg
+                String avatarUrl = fileStorageService.storeEntityImage(avatarImage, "authors", newAuthorId);
+                request.setAvatarUrl("/" + avatarUrl);
             }
 
             // Tạo Author entity
-            String newAuthorId = generateNextAuthorId();
             Author newAuthor = new Author();
             newAuthor.setAuthorId(newAuthorId);
             newAuthor.setName(request.getName());
@@ -206,10 +209,10 @@ public class AuthorController extends BaseController {
      */
     @PostMapping("/update")
     public String updateAuthor(@Valid @ModelAttribute("authorRequest") AuthorUpdateRequest request,
-                              BindingResult bindingResult,
-                              @RequestParam(value = "avatarImage", required = false) MultipartFile avatarImage,
-                              Model model,
-                              RedirectAttributes redirectAttributes) {
+                               BindingResult bindingResult,
+                               @RequestParam(value = "avatarImage", required = false) MultipartFile avatarImage,
+                               Model model,
+                               RedirectAttributes redirectAttributes) {
         // Kiểm tra validation errors
         if (bindingResult.hasErrors()) {
             String errors = bindingResult.getAllErrors().stream()
@@ -234,10 +237,10 @@ public class AuthorController extends BaseController {
         }
 
         try {
-            // Upload avatar nếu có
+            // Upload avatar nếu có (Sử dụng ID hiện tại để ghi đè)
             if (avatarImage != null && !avatarImage.isEmpty()) {
-                String avatarUrl = fileStorageService.storeAuthorAvatar(avatarImage);
-                request.setAvatarUrl(avatarUrl);
+                String avatarUrl = fileStorageService.storeEntityImage(avatarImage, "authors", existingAuthor.getAuthorId());
+                request.setAvatarUrl("/" + avatarUrl);
             }
 
             // Cập nhật thông tin
@@ -278,16 +281,19 @@ public class AuthorController extends BaseController {
     }
 
     /**
-     * Upload avatar tác giả
+     * Upload avatar tác giả (Ajax Quick Upload)
      */
     @PostMapping("/upload-avatar")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> uploadAuthorAvatar(@RequestParam("file") MultipartFile file) {
         Map<String, Object> response = new HashMap<>();
         try {
-            String avatarUrl = fileStorageService.storeAuthorAvatar(file);
+            // Dùng ID tạm thời vì chưa tạo author
+            String tempId = "temp_" + System.currentTimeMillis();
+            String avatarUrl = fileStorageService.storeEntityImage(file, "authors", tempId);
+
             response.put("success", true);
-            response.put("url", avatarUrl);
+            response.put("url", "/" + avatarUrl);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("success", false);
@@ -310,4 +316,3 @@ public class AuthorController extends BaseController {
         return "admin/authors/statistics";
     }
 }
-

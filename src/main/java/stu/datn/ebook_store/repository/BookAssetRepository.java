@@ -19,5 +19,7 @@ public interface BookAssetRepository extends JpaRepository<BookAsset, String> {
     Optional<BookAsset> findByBook_BookIdAndFileType(String bookId, BookAsset.FileType fileType);
 
     boolean existsByBook_BookId(String bookId);
+
+    Optional<BookAsset> findByFileUrl(String fileUrl);
 }
 

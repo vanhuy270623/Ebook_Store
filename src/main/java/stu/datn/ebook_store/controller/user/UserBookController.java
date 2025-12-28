@@ -1,15 +1,13 @@
 package stu.datn.ebook_store.controller.user;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import stu.datn.ebook_store.controller.BaseController;
-import stu.datn.ebook_store.entity.Book;
-import stu.datn.ebook_store.entity.Order;
-import stu.datn.ebook_store.entity.User;
-import stu.datn.ebook_store.entity.Review;
+import stu.datn.ebook_store.entity.*;
 import stu.datn.ebook_store.service.BookCategoryService;
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.OrderItemService;
@@ -19,7 +17,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
+@Slf4j
 /**
  * AdminDashboardController xử lý trang user - duyệt sách, tìm kiếm, xem chi tiết
  * Endpoints: /books/*
@@ -68,17 +66,37 @@ public class UserBookController extends BaseController {
             @RequestParam(required = false) String access,
             Model model) {
 
-        // Lấy danh sách sách
-        List<Book> books = bookService.getAllBooks();
-
-        // Lọc theo category
+        // REDIRECT sang /categories/{slug} nếu user filter by category
+        // URL thân thiện: /categories/van-hoc-trong-va-ngoai-nuoc thay vì /books?category=bcat_5
         if (category != null && !category.isEmpty()) {
-            books = books.stream()
-                    .filter(b -> b.getBookCategory() != null &&
-                            b.getBookCategory().getBookCategoryId().equals(category))
-                    .toList();
-            model.addAttribute("selectedCategory", category);
+            // Tìm category để lấy slug
+            BookCategory bookCategory = bookCategoryService.getAllCategories().stream()
+                    .filter(cat -> cat.getBookCategoryId().equals(category))
+                    .findFirst()
+                    .orElse(null);
+
+            if (bookCategory != null && bookCategory.getCategorySlug() != null) {
+                // Xây dựng redirect URL với slug
+                StringBuilder redirectUrl = new StringBuilder("/categories/");
+                redirectUrl.append(bookCategory.getCategorySlug());
+
+                // Giữ nguyên các parameters khác
+                boolean hasParams = false;
+                if (sort != null && !sort.isEmpty()) {
+                    redirectUrl.append("?sort=").append(sort);
+                    hasParams = true;
+                }
+                if (page > 0) {
+                    redirectUrl.append(hasParams ? "&" : "?").append("page=").append(page);
+                }
+
+                log.info("Redirecting /books?category={} to {}", category, redirectUrl);
+                return "redirect:" + redirectUrl.toString();
+            }
         }
+
+        // Lấy danh sách sách (không filter by category ở đây nữa)
+        List<Book> books = bookService.getAllBooks();
 
         // Lọc theo access type
         if (access != null && !access.isEmpty()) {

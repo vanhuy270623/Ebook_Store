@@ -74,5 +74,12 @@ public interface BookAssetService {
      * @return Total file size in bytes
      */
     long getTotalAssetSize(String bookId);
+
+    /**
+     * Find a book asset by file URL
+     * @param fileUrl The file URL (e.g., /book_asset/source/category/filename.pdf)
+     * @return The book asset if found, null otherwise
+     */
+    BookAsset findByFileUrl(String fileUrl);
 }
 

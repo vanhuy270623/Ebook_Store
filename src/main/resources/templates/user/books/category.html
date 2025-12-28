@@ -43,9 +43,9 @@
                         <div class="card-body">
                             <div class="list-group">
                                 <a th:each="cat : ${categories}"
-                                   th:href="@{/books/category/{id}(id=${cat.categoryId})}"
+                                   th:href="@{/books/category/{id}(id=${cat.bookCategoryId})}"
                                    class="list-group-item list-group-item-action"
-                                   th:classappend="${categoryId == cat.categoryId} ? 'active'"
+                                   th:classappend="${categoryId == cat.bookCategoryId} ? 'active'"
                                    th:text="${cat.categoryName}">
                                     Danh mục
                                 </a>

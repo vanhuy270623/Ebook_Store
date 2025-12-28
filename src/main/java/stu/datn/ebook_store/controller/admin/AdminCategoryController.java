@@ -27,14 +27,14 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/admin/categories")
-public class CategoryController extends BaseController {
+public class AdminCategoryController extends BaseController {
 
     private static final String REDIRECT_CATEGORIES = "redirect:/admin/categories";
 
     private final BookCategoryService bookCategoryService;
 
     @Autowired
-    public CategoryController(BookCategoryService bookCategoryService) {
+    public AdminCategoryController(BookCategoryService bookCategoryService) {
         this.bookCategoryService = bookCategoryService;
     }
 

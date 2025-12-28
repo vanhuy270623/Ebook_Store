@@ -144,6 +144,12 @@ public class BookAssetServiceImpl implements BookAssetService {
                 .sum();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public BookAsset findByFileUrl(String fileUrl) {
+        return bookAssetRepository.findByFileUrl(fileUrl).orElse(null);
+    }
+
     // Private helper methods
 
     private String generateAssetId() {

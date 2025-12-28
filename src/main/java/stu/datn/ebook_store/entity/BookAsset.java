@@ -40,6 +40,32 @@ public class BookAsset {
         this.createdAt = LocalDateTime.now();
     }
 
+    /**
+     * Get the reading URL for this asset in the format:
+     * /reading/pdf/{category}/{fileName} or /reading/epub/{category}/{fileName}
+     *
+     * Example: /reading/pdf/tamly-kynangsong/Cac_The_Gioi_Song_Song_-_Michio_Kaku.pdf
+     */
+    public String getReadingUrl() {
+        if (this.fileUrl == null || this.fileUrl.isEmpty()) {
+            return null;
+        }
+
+        // fileUrl format: /book_asset/source/category/fileName
+        // Extract category and fileName from fileUrl
+        String prefix = "/book_asset/source/";
+        if (!this.fileUrl.startsWith(prefix)) {
+            return null;
+        }
+
+        String pathAfterPrefix = this.fileUrl.substring(prefix.length());
+
+        // Determine reader type based on file type
+        String readerType = this.fileType == FileType.PDF ? "pdf" : "epub";
+
+        return "/reading/" + readerType + "/" + pathAfterPrefix;
+    }
+
     public enum FileType {
         PDF, EPUB
     }

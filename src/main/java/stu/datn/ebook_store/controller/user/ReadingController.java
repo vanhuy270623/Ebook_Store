@@ -7,11 +7,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import stu.datn.ebook_store.controller.BaseController;
+import stu.datn.ebook_store.dto.BookAssetDTO;
 import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.entity.BookAsset;
 import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.ReadingProgress;
 import stu.datn.ebook_store.entity.User;
+import stu.datn.ebook_store.repository.BookRepository;
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.BookAssetService;
 import stu.datn.ebook_store.service.OrderItemService;
@@ -20,6 +22,7 @@ import stu.datn.ebook_store.service.ReadingProgressService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * AdminDashboardController xử lý chức năng đọc sách
@@ -36,18 +39,21 @@ public class ReadingController extends BaseController {
     private final ReadingProgressService readingProgressService;
     private final OrderService orderService;
     private final OrderItemService orderItemService;
+    private final BookRepository bookRepository;
 
     @Autowired
     public ReadingController(BookService bookService,
                              BookAssetService bookAssetService,
                              ReadingProgressService readingProgressService,
                              OrderService orderService,
-                             OrderItemService orderItemService) {
+                             OrderItemService orderItemService,
+                             BookRepository bookRepository) {
         this.bookService = bookService;
         this.bookAssetService = bookAssetService;
         this.readingProgressService = readingProgressService;
         this.orderService = orderService;
         this.orderItemService = orderItemService;
+        this.bookRepository = bookRepository;
     }
 
     /**
@@ -173,7 +179,7 @@ public class ReadingController extends BaseController {
 
 
     /**
-     * PDF Viewer - sử dụng PDF.js
+     * PDF Viewer - sử dụng PDF.js (route theo bookId)
      */
     @GetMapping("/pdf/{bookId}")
     public String pdfViewer(@PathVariable String bookId,
@@ -183,13 +189,191 @@ public class ReadingController extends BaseController {
     }
 
     /**
-     * EPUB Reader - sử dụng ePub.js
+     * PDF Viewer - sử dụng PDF.js (route theo category/fileName)
+     * URL format: /reading/pdf/tamly-kynangsong/Cac_The_Gioi_Song_Song_-_Michio_Kaku.pdf
+     */
+    @GetMapping("/pdf/{category}/{fileName:.+}")
+    public String pdfViewerByPath(@PathVariable String category,
+                                   @PathVariable String fileName,
+                                   Model model,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            log.info("Opening PDF by path - category: {}, fileName: {}", category, fileName);
+            User currentUser = getCurrentUser();
+
+            // Kiểm tra user đã đăng nhập
+            if (currentUser == null) {
+                log.warn("User not authenticated, redirecting to login");
+                redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để đọc sách");
+                return "redirect:/auth/login";
+            }
+
+            // Tìm book theo file path
+            String fileUrl = "/book_asset/source/" + category + "/" + fileName;
+            BookAsset asset = bookAssetService.findByFileUrl(fileUrl);
+
+            if (asset == null) {
+                log.error("Asset not found for fileUrl: {}", fileUrl);
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy file sách");
+                return "redirect:/books";
+            }
+
+            Book book = asset.getBook();
+            if (book == null) {
+                log.error("Book not found for asset: {}", asset.getBookAssetId());
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy thông tin sách");
+                return "redirect:/books";
+            }
+
+            // Kiểm tra quyền truy cập
+            if (!canUserAccessBook(currentUser, book)) {
+                log.warn("User {} does not have access to book {}", currentUser.getUserId(), book.getBookId());
+                redirectAttributes.addFlashAttribute("error", "Bạn không có quyền đọc cuốn sách này");
+                return "redirect:/books/view/" + book.getBookId();
+            }
+
+            // Lấy hoặc tạo mới reading progress
+            ReadingProgress progress = readingProgressService
+                    .getReadingProgressByUserAndBook(currentUser, book)
+                    .orElseGet(() -> {
+                        ReadingProgress newProgress = new ReadingProgress();
+                        newProgress.setUser(currentUser);
+                        newProgress.setBook(book);
+                        newProgress.setBookAsset(asset);
+                        newProgress.setProgressPercentage(0.0f);
+                        newProgress.setIsCompleted(false);
+                        newProgress.setIsFavorite(false);
+                        newProgress.setAccessType(determineAccessType(book, currentUser));
+                        newProgress.setCreatedAt(LocalDateTime.now());
+                        newProgress.setLastReadAt(LocalDateTime.now());
+                        return readingProgressService.saveReadingProgress(newProgress);
+                    });
+
+            model.addAttribute("book", book);
+            model.addAttribute("asset", asset);
+            model.addAttribute("progress", progress);
+            model.addAttribute("user", currentUser);
+
+            // Encode lastReadLocation
+            if (progress != null && progress.getLastReadLocation() != null) {
+                try {
+                    String encodedLocation = java.util.Base64.getEncoder()
+                            .encodeToString(progress.getLastReadLocation().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    model.addAttribute("encodedLocation", encodedLocation);
+                } catch (Exception e) {
+                    log.warn("Could not encode location: {}", e.getMessage());
+                    model.addAttribute("encodedLocation", null);
+                }
+            } else {
+                model.addAttribute("encodedLocation", null);
+            }
+
+            return "user/reading/pdf-viewer";
+
+        } catch (Exception e) {
+            log.error("Error opening PDF by path: {}", e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi mở sách");
+            return "redirect:/books";
+        }
+    }
+
+    /**
+     * EPUB Reader - sử dụng ePub.js (route theo bookId)
      */
     @GetMapping("/epub/{bookId}")
     public String epubReader(@PathVariable String bookId,
                              Model model,
                              RedirectAttributes redirectAttributes) {
         return prepareReaderView(bookId, "EPUB", model, redirectAttributes, "user/reading/epub-viewer");
+    }
+
+    /**
+     * EPUB Reader - sử dụng ePub.js (route theo category/fileName)
+     * URL format: /reading/epub/tamly-kynangsong/Cac_The_Gioi_Song_Song_-_Michio_Kaku.epub
+     */
+    @GetMapping("/epub/{category}/{fileName:.+}")
+    public String epubReaderByPath(@PathVariable String category,
+                                    @PathVariable String fileName,
+                                    Model model,
+                                    RedirectAttributes redirectAttributes) {
+        try {
+            log.info("Opening EPUB by path - category: {}, fileName: {}", category, fileName);
+            User currentUser = getCurrentUser();
+
+            // Kiểm tra user đã đăng nhập
+            if (currentUser == null) {
+                log.warn("User not authenticated, redirecting to login");
+                redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để đọc sách");
+                return "redirect:/auth/login";
+            }
+
+            // Tìm book theo file path
+            String fileUrl = "/book_asset/source/" + category + "/" + fileName;
+            BookAsset asset = bookAssetService.findByFileUrl(fileUrl);
+
+            if (asset == null) {
+                log.error("Asset not found for fileUrl: {}", fileUrl);
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy file sách");
+                return "redirect:/books";
+            }
+
+            Book book = asset.getBook();
+            if (book == null) {
+                log.error("Book not found for asset: {}", asset.getBookAssetId());
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy thông tin sách");
+                return "redirect:/books";
+            }
+
+            // Kiểm tra quyền truy cập
+            if (!canUserAccessBook(currentUser, book)) {
+                log.warn("User {} does not have access to book {}", currentUser.getUserId(), book.getBookId());
+                redirectAttributes.addFlashAttribute("error", "Bạn không có quyền đọc cuốn sách này");
+                return "redirect:/books/view/" + book.getBookId();
+            }
+
+            // Lấy hoặc tạo mới reading progress
+            ReadingProgress progress = readingProgressService
+                    .getReadingProgressByUserAndBook(currentUser, book)
+                    .orElseGet(() -> {
+                        ReadingProgress newProgress = new ReadingProgress();
+                        newProgress.setUser(currentUser);
+                        newProgress.setBook(book);
+                        newProgress.setBookAsset(asset);
+                        newProgress.setProgressPercentage(0.0f);
+                        newProgress.setIsCompleted(false);
+                        newProgress.setIsFavorite(false);
+                        newProgress.setAccessType(determineAccessType(book, currentUser));
+                        newProgress.setCreatedAt(LocalDateTime.now());
+                        newProgress.setLastReadAt(LocalDateTime.now());
+                        return readingProgressService.saveReadingProgress(newProgress);
+                    });
+
+            model.addAttribute("book", book);
+            model.addAttribute("asset", asset);
+            model.addAttribute("progress", progress);
+            model.addAttribute("user", currentUser);
+
+            // Encode lastReadLocation
+            if (progress != null && progress.getLastReadLocation() != null) {
+                try {
+                    String encodedLocation = java.util.Base64.getEncoder()
+                            .encodeToString(progress.getLastReadLocation().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    model.addAttribute("encodedLocation", encodedLocation);
+                } catch (Exception e) {
+                    log.warn("Could not encode location: {}", e.getMessage());
+                    model.addAttribute("encodedLocation", null);
+                }
+            } else {
+                model.addAttribute("encodedLocation", null);
+            }
+
+            return "user/reading/epub-viewer";
+
+        } catch (Exception e) {
+            log.error("Error opening EPUB by path: {}", e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi mở sách");
+            return "redirect:/books";
+        }
     }
 
     /**
@@ -219,7 +403,7 @@ public class ReadingController extends BaseController {
                 return "redirect:/auth/login";
             }
 
-            Book book = bookService.getBookById(bookId)
+            Book book = bookRepository.findByIdWithAuthors(bookId)
                     .orElseThrow(() -> new RuntimeException("Book not found"));
 
             if (!canUserAccessBook(user, book)) {
@@ -280,7 +464,11 @@ public class ReadingController extends BaseController {
 
             model.addAttribute("book", book);
             model.addAttribute("asset", firstAsset);
-            model.addAttribute("assets", readableAssets); // Truyền tất cả assets
+            // Convert assets to DTO for JavaScript serialization
+            List<BookAssetDTO> assetDTOs = readableAssets.stream()
+                    .map(BookAssetDTO::fromEntity)
+                    .collect(Collectors.toList());
+            model.addAttribute("assets", assetDTOs);
             model.addAttribute("hasPDF", hasPDF);
             model.addAttribute("hasEPUB", hasEPUB);
             model.addAttribute("progress", progress);

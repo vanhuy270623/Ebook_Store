@@ -39,8 +39,9 @@
 							<div class="form-group">
 								<label>URL hình ảnh</label>
 								<p class="form-control-static">
-									<a th:href="${banner.imageUrl}" target="_blank"
-									   th:text="${#strings.abbreviate(banner.imageUrl ?: 'N/A', 60)}">URL</a>
+									<a th:if="${banner.imageUrl != null}" th:href="${banner.imageUrl}" target="_blank"
+									   th:text="${#strings.abbreviate(banner.imageUrl, 60)}">URL</a>
+									<span th:unless="${banner.imageUrl != null}">N/A</span>
 								</p>
 							</div>
 							<div class="form-group">
@@ -55,7 +56,7 @@
 							</div>
 							<div class="form-group">
 								<label>Vị trí</label>
-								<p class="form-control-static" th:text="${banner.position ?: 'N/A'}">Vị trí</p>
+								<p class="form-control-static" th:text="${banner.position != null ? banner.position : 'N/A'}">Vị trí</p>
 							</div>
 							<div class="form-group">
 								<label>Trạng thái</label>

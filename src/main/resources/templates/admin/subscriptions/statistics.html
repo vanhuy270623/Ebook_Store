@@ -97,11 +97,11 @@
 										<td><strong th:text="${subscription.packageName}">BASIC</strong></td>
 										<td th:text="${#numbers.formatDecimal(subscription.price, 0, 'COMMA', 0, 'POINT') + ' đ'}">99,000 đ</td>
 										<td th:text="${subscription.durationDays + ' ngày'}">30 ngày</td>
-										<td>
-											<span class="badge bg-blue" th:text="${orderCountPerSubscription.get(subscription.packageName.name()) ?: 0}">0</span>
+										<td class="text-center">
+											<span class="badge bg-blue" th:text="${orderCountPerSubscription.get(subscription.packageName.name()) != null ? orderCountPerSubscription.get(subscription.packageName.name()) : 0}">0</span>
 										</td>
-										<td>
-											<strong th:text="${#numbers.formatDecimal(revenuePerSubscription.get(subscription.packageName.name()) ?: 0, 0, 'COMMA', 0, 'POINT') + ' đ'}">0 đ</strong>
+										<td class="text-right">
+											<strong th:text="${#numbers.formatDecimal(revenuePerSubscription.get(subscription.packageName.name()) != null ? revenuePerSubscription.get(subscription.packageName.name()) : 0, 0, 'COMMA', 0, 'POINT') + ' đ'}">0 đ</strong>
 										</td>
 										<td>
 											<span class="label label-success" th:if="${subscription.isActive}">Hoạt động</span>

@@ -61,7 +61,7 @@
                         </div>
                         <div class="book-info">
                             <h3 class="book-title" th:text="${book.title}">Tên sách</h3>
-                            <p class="book-author" th:text="${book.firstAuthorName ?: 'Tác giả'}">Tác giả</p>
+                            <p class="book-author" th:text="${book.firstAuthorName != null ? book.firstAuthorName : 'Tác giả'}">Tác giả</p>
                             <div class="book-meta">
                                 <div class="book-rating">
                                     <!-- Display stars based on rating -->

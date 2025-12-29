@@ -118,7 +118,7 @@
                                     style="overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; min-height: 2.4em;">
                                     Tên sách
                                 </h3>
-                                <p class="book-author text-muted small mb-2" th:text="${book.firstAuthorName ?: 'Tác giả'}">Tác giả</p>
+                                <p class="book-author text-muted small mb-2" th:text="${book.firstAuthorName != null ? book.firstAuthorName : 'Tác giả'}">Tác giả</p>
 
                                 <div class="mt-auto"> <div class="book-meta d-flex justify-content-between align-items-center">
                                     <div class="book-rating text-warning small">

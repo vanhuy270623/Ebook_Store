@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -23,7 +23,7 @@
                  onerror="this.src='/images/default-cover.jpg'">
             <div class="book-details">
                 <h3 th:text="${book.title}">Tên Sách</h3>
-                <p th:text="${book.authorNames ?: 'Unknown Author'}">Tác Giả</p>
+                <p th:text="${book.authorNames != null ? book.authorNames : 'Unknown Author'}">Tác Giả</p>
             </div>
         </div>
 

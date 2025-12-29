@@ -68,14 +68,14 @@
 						<div class="box-body">
 							<div class="row">
 								<div class="col-sm-6">
-									<div class="description-block border-right">
-										<h5 class="description-header" th:text="${#numbers.formatDecimal(totalRevenue ?: 0, 0, 'COMMA', 0, 'POINT') + ' đ'}">0 đ</h5>
-										<span class="description-text">Tổng doanh thu (kỳ)</span>
+									<div class="description-block">
+										<h5 class="description-header" th:text="${#numbers.formatDecimal(totalRevenue != null ? totalRevenue : 0, 0, 'COMMA', 0, 'POINT') + ' đ'}">0 đ</h5>
+										<span class="description-text">TỔNG DOANH THU</span>
 									</div>
 								</div>
-								<div class="col-sm-6">
+								<div class="col-sm-4 border-right">
 									<div class="description-block">
-										<h5 class="description-header" th:text="${#numbers.formatDecimal(completedRevenue ?: 0, 0, 'COMMA', 0, 'POINT') + ' đ'}">0 đ</h5>
+										<h5 class="description-header" th:text="${#numbers.formatDecimal(completedRevenue != null ? completedRevenue : 0, 0, 'COMMA', 0, 'POINT') + ' đ'}">0 đ</h5>
 										<span class="description-text">Doanh thu đã hoàn thành</span>
 									</div>
 								</div>

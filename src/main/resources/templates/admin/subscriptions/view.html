@@ -96,7 +96,7 @@
 
 					<div class="box box-info">
 						<div class="box-header with-border">
-							<h3 class="box-title">Đơn hàng liên quan (<span th:text="${totalOrders ?: 0}">0</span>)</h3>
+							<h3 class="box-title">Đơn hàng liên quan (<span th:text="${totalOrders != null ? totalOrders : 0}">0</span>)</h3>
 						</div>
 						<div class="box-body">
 							<table class="table table-striped" th:if="${orders != null && !#lists.isEmpty(orders)}">

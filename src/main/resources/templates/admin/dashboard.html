@@ -35,8 +35,8 @@
 					<div class="info-box">
 						<span class="info-box-icon bg-aqua"><i class="fa fa-book"></i></span>
 						<div class="info-box-content">
-							<span class="info-box-text">Tổng sách</span>
-							<span class="info-box-number" th:text="${totalBooks ?: 0}">0</span>
+							<span class="info-box-text">Tổng số sách</span>
+							<span class="info-box-number" th:text="${totalBooks != null ? totalBooks : 0}">0</span>
 						</div>
 					</div>
 				</div>
@@ -57,8 +57,8 @@
 					<div class="info-box">
 						<span class="info-box-icon bg-yellow"><i class="fa fa-user-plus"></i></span>
 						<div class="info-box-content">
-							<span class="info-box-text">Hoạt động</span>
-							<span class="info-box-number" th:text="${activeUsers ?: 0}">0</span>
+							<span class="info-box-text">Người dùng đang hoạt động</span>
+							<span class="info-box-number" th:text="${activeUsers != null ? activeUsers : 0}">0</span>
 						</div>
 					</div>
 				</div>
@@ -66,10 +66,10 @@
 				<!-- Verified Users -->
 				<div class="col-md-3 col-sm-6 col-xs-12">
 					<div class="info-box">
-						<span class="info-box-icon bg-red"><i class="fa fa-certificate"></i></span>
+						<span class="info-box-icon bg-red"><i class="fa fa-shield"></i></span>
 						<div class="info-box-content">
-							<span class="info-box-text">Đã xác thực</span>
-							<span class="info-box-number" th:text="${verifiedUsers ?: 0}">0</span>
+							<span class="info-box-text">Người dùng đã xác thực</span>
+							<span class="info-box-number" th:text="${verifiedUsers != null ? verifiedUsers : 0}">0</span>
 						</div>
 					</div>
 				</div>
@@ -81,14 +81,14 @@
 				<div class="col-md-3 col-sm-6 col-xs-12">
 					<div class="small-box bg-green">
 						<div class="inner">
-							<h3 th:text="${#numbers.formatDecimal(todayRevenue ?: 0, 0, 'COMMA', 0, 'POINT')}">0</h3>
+							<h3 th:text="${#numbers.formatDecimal(todayRevenue, 0, 'COMMA', 0, 'POINT')}">0</h3>
 							<p>Doanh thu hôm nay (đ)</p>
 						</div>
 						<div class="icon">
 							<i class="fa fa-calendar-check-o"></i>
 						</div>
 						<a href="#" class="small-box-footer">
-							<span th:text="${todayOrders ?: 0}">0</span> đơn hàng
+							<span th:text="${todayOrders != null ? todayOrders : 0}">0</span> đơn hàng
 						</a>
 					</div>
 				</div>
@@ -97,7 +97,7 @@
 				<div class="col-md-3 col-sm-6 col-xs-12">
 					<div class="small-box bg-blue">
 						<div class="inner">
-							<h3 th:text="${#numbers.formatDecimal(thisMonthRevenue ?: 0, 0, 'COMMA', 0, 'POINT')}">0</h3>
+							<h3 th:text="${#numbers.formatDecimal(thisMonthRevenue, 0, 'COMMA', 0, 'POINT')}">0</h3>
 							<p>Doanh thu tháng này (đ)</p>
 						</div>
 						<div class="icon">
@@ -113,14 +113,14 @@
 				<div class="col-md-3 col-sm-6 col-xs-12">
 					<div class="small-box bg-yellow">
 						<div class="inner">
-							<h3 th:text="${#numbers.formatDecimal(totalRevenue ?: 0, 0, 'COMMA', 0, 'POINT')}">0</h3>
+							<h3 th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')}">0</h3>
 							<p>Tổng doanh thu (đ)</p>
 						</div>
 						<div class="icon">
 							<i class="fa fa-money"></i>
 						</div>
 						<a th:href="@{/admin/orders}" class="small-box-footer">
-							<span th:text="${totalOrders ?: 0}">0</span> đơn hàng
+							<span th:text="${totalOrders != null ? totalOrders : 0}">0</span> đơn hàng
 						</a>
 					</div>
 				</div>
@@ -129,7 +129,7 @@
 				<div class="col-md-3 col-sm-6 col-xs-12">
 					<div class="small-box bg-aqua">
 						<div class="inner">
-							<h3 th:text="${completedOrders ?: 0}">0</h3>
+							<h3 th:text="${completedOrders != null ? completedOrders : 0}">0</h3>
 							<p>Đơn hàng hoàn thành</p>
 						</div>
 						<div class="icon">
@@ -156,7 +156,7 @@
 										<span class="info-box-icon"><i class="fa fa-book"></i></span>
 										<div class="info-box-content">
 											<span class="info-box-text">Mua sách lẻ</span>
-											<span class="info-box-number" th:text="${#numbers.formatDecimal(bookRevenue ?: 0, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
+											<span class="info-box-number" th:text="${#numbers.formatDecimal(bookRevenue, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
 										</div>
 									</div>
 								</div>
@@ -165,7 +165,7 @@
 										<span class="info-box-icon"><i class="fa fa-star"></i></span>
 										<div class="info-box-content">
 											<span class="info-box-text">Gói đăng ký</span>
-											<span class="info-box-number" th:text="${#numbers.formatDecimal(subscriptionRevenue ?: 0, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
+											<span class="info-box-number" th:text="${#numbers.formatDecimal(subscriptionRevenue, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
 										</div>
 									</div>
 								</div>
@@ -199,7 +199,7 @@
 										</span>
 									</div>
 									<small class="text-muted">
-										<i class="fa fa-user"></i> <span th:text="${order.user?.fullName ?: order.user?.username}">User</span> |
+										<i class="fa fa-user"></i> <span th:text="${order.user != null ? (order.user.fullName != null ? order.user.fullName : order.user.username) : 'User'}">User</span> |
 										<i class="fa fa-money"></i> <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span> |
 										<i class="fa fa-clock-o"></i> <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">Date</span>
 									</small>
@@ -227,7 +227,7 @@
 										<span class="info-box-icon"><i class="fa fa-heart"></i></span>
 										<div class="info-box-content">
 											<span class="info-box-text">Sách miễn phí</span>
-											<span class="info-box-number" th:text="${freeBooks ?: 0}">0</span>
+											<span class="info-box-number" th:text="${freeBooks != null ? freeBooks : 0}">0</span>
 										</div>
 									</div>
 								</div>
@@ -236,7 +236,7 @@
 										<span class="info-box-icon"><i class="fa fa-credit-card"></i></span>
 										<div class="info-box-content">
 											<span class="info-box-text">Sách trả phí</span>
-											<span class="info-box-number" th:text="${paidBooks ?: 0}">0</span>
+											<span class="info-box-number" th:text="${paidBooks != null ? paidBooks : 0}">0</span>
 										</div>
 									</div>
 								</div>
@@ -247,7 +247,7 @@
 										<span class="info-box-icon"><i class="fa fa-diamond"></i></span>
 										<div class="info-box-content">
 											<span class="info-box-text">Sách theo gói</span>
-											<span class="info-box-number" th:text="${subscriptionBooks ?: 0}">0</span>
+											<span class="info-box-number" th:text="${subscriptionBooks != null ? subscriptionBooks : 0}">0</span>
 										</div>
 									</div>
 								</div>
@@ -271,7 +271,7 @@
 									<img th:src="${book.coverImageUrl}" th:alt="${book.title}" class="img-thumbnail" style="width: 40px; height: 40px; float: left; margin-right: 10px;">
 									<strong th:text="${book.title}">Tên sách</strong><br>
 									<small class="text-muted">
-										<i class="fa fa-tag"></i> <span th:text="${book.bookCategory?.categoryName ?: 'Chưa phân loại'}">Thể loại</span> |
+										<i class="fa fa-tag"></i> <span th:text="${book.bookCategory != null ? book.bookCategory.categoryName : 'Chưa phân loại'}">Thể loại</span> |
 										<i class="fa fa-money"></i> <span th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
 									</small>
 								</li>
@@ -298,8 +298,8 @@
 						<div class="box-body">
 							<ul class="list-group list-group-unbordered">
 								<li class="list-group-item" th:each="user : ${recentUsers}" th:if="${recentUsers != null}">
-									<img th:src="${user.avatarUrl ?: '/shared/images/avatar.png'}" th:alt="${user.fullName ?: user.username}" class="img-circle" style="width: 30px; height: 30px; float: left; margin-right: 10px;">
-									<strong th:text="${user.fullName ?: user.username}">Tên người dùng</strong>
+									<img th:src="${user.avatarUrl != null ? user.avatarUrl : '/shared/images/avatar.png'}" th:alt="${user.fullName != null ? user.fullName : user.username}" class="img-circle" style="width: 30px; height: 30px; float: left; margin-right: 10px;">
+									<strong th:text="${user.fullName != null ? user.fullName : user.username}">Tên người dùng</strong>
 									<span th:if="${user.role?.roleName?.name() == 'ADMIN'}" class="label label-danger" style="margin-left: 5px;">
 										<i class="fa fa-shield"></i> Admin
 									</span>

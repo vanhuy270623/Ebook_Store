@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
@@ -155,9 +155,10 @@
      th:data-book-id="${book.bookId}"
      th:data-asset-path="${asset.fileUrl}"
      th:data-encoded-location="${encodedLocation}"
-     th:data-progress-percentage="${progress?.progressPercentage ?: 0}"
+     th:data-progress-percentage="${progress != null ? (progress.progressPercentage != null ? progress.progressPercentage : 0) : 0}"
      style="display: none;"></div>
 
 <!-- PDF Reader Script -->
 <script th:src="@{/user_template/js/pdf-reader.js}"></script>
-</body></html>
+</body>
+</html>

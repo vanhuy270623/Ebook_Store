@@ -10,7 +10,7 @@
 
 	<div class="content-wrapper">
 		<section class="content-header">
-			<h1>Chi tiết đánh giá <small th:text="${review.title ?: 'Không có tiêu đề'}">Tiêu đề</small></h1>
+			<h1>Chi tiết đánh giá <small th:text="${review.title != null ? review.title : 'Không có tiêu đề'}">Tiêu đề</small></h1>
 			<ol class="breadcrumb">
 				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
 				<li><a th:href="@{/admin/reviews}">Quản lý đánh giá</a></li>
@@ -31,29 +31,36 @@
 									   th:text="${review.book.title}">Tên sách</a>
 									<span th:unless="${review.book?.bookId}" class="text-muted">N/A</span>
 								</p>
-							</div>
+						</div>
 
-							<div class="form-group">
-								<label>Người dùng</label>
-								<p class="form-control-static" th:text="${review.user?.fullName ?: review.user?.username ?: 'Ẩn danh'}">User</p>
-							</div>
+						<div class="form-group">
+							<label>Người dùng</label>
+							<p class="form-control-static">
+								<span th:if="${review.user != null && review.user.fullName != null}" th:text="${review.user.fullName}">User</span>
+								<span th:if="${review.user != null && review.user.fullName == null}" th:text="${review.user.username}">Username</span>
+								<span th:if="${review.user == null}">Ẩn danh</span>
+							</p>
+						</div>
 
-							<div class="form-group">
-								<label>Đánh giá</label>
-								<p class="form-control-static">
-									<span class="fa fa-star" th:each="i : ${#numbers.sequence(1, review.rating ?: 0)}" style="color: #FFB81C;"></span>
-									<span th:text="'(' + ${review.rating ?: 0} + '/5 sao)'"></span>
-								</p>
-							</div>
+						<div class="form-group">
+							<label>Đánh giá</label>
+							<p class="form-control-static">
+								<th:block th:if="${review.rating != null}">
+									<span class="fa fa-star" th:each="i : ${#numbers.sequence(1, review.rating)}" style="color: #FFB81C;"></span>
+									<span th:text="'(' + ${review.rating} + '/5 sao)'"></span>
+								</th:block>
+								<span th:unless="${review.rating != null}">(0/5 sao)</span>
+							</p>
+						</div>
 
-							<div class="form-group">
-								<label>Tiêu đề</label>
-								<p class="form-control-static" th:text="${review.title ?: 'Không có'}">Tiêu đề</p>
-							</div>
+						<div class="form-group">
+							<label>Tiêu đề</label>
+							<p class="form-control-static" th:text="${review.title != null ? review.title : 'Không có'}">Tiêu đề</p>
+						</div>
 
 							<div class="form-group">
 								<label>Nội dung</label>
-								<p class="form-control-static" th:text="${review.comment ?: 'Chưa có nội dung'}">Nội dung</p>
+								<p class="form-control-static" th:text="${review.comment != null ? review.comment : 'Chưa có nội dung'}">Nội dung</p>
 							</div>
 
 							<div class="form-group">

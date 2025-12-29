@@ -98,7 +98,7 @@
 								<tbody>
 									<tr th:each="review : ${reviews}">
 										<td>
-											<div th:text="${review.book?.title ?: 'N/A'}">Sách</div>
+											<div th:text="${review.book != null ? review.book.title : 'N/A'}">Sách</div>
 											<small class="text-muted" th:text="${review.book?.bookId ?: ''}"></small>
 										</td>
 										<td>
@@ -109,10 +109,10 @@
 											</span>
 										</td>
 										<td>
-											<th:block th:each="i : ${#numbers.sequence(1, review.rating ?: 0)}">
+											<th:block th:if="${review.rating != null}" th:each="i : ${#numbers.sequence(1, review.rating)}">
 												<span class="fa fa-star" style="color: #FFB81C;"></span>
 											</th:block>
-											<span th:text="'(' + ${review.rating ?: 0} + '/5)'"></span>
+											<span th:text="'(' + ${review.rating != null ? review.rating : 0} + '/5)'"></span>
 										</td>
 										<td>
 											<span th:if="${review.comment != null and !#strings.isEmpty(review.comment)}"

@@ -46,10 +46,10 @@
 
 				<div class="col-md-4 col-sm-6 col-xs-12">
 					<div class="info-box">
-						<span class="info-box-icon bg-yellow"><i class="fa fa-certificate"></i></span>
+						<span class="info-box-icon bg-blue"><i class="fa fa-certificate"></i></span>
 						<div class="info-box-content">
-							<span class="info-box-text">Đã xác thực email</span>
-							<span class="info-box-number" th:text="${verifiedUsers ?: 0}">0</span>
+							<span class="info-box-text">Đã xác thực</span>
+							<span class="info-box-number" th:text="${verifiedUsers != null ? verifiedUsers : 0}">0</span>
 						</div>
 					</div>
 				</div>

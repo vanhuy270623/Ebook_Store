@@ -72,12 +72,9 @@
 							<div class="box-header with-border">
 								<h3 class="box-title">Thông tin tác giả</h3>
 							</div>
-							<div class="box-body">
-								<!-- Author ID (hidden for edit) -->
-								<input type="hidden" th:if="${isEdit}" th:field="*{authorId}"/>
-
-								<!-- Author Name -->
-								<div class="form-group" th:classappend="${#fields.hasErrors('name')} ? 'has-error'">
+						<div class="box-body">
+							<!-- Author Name -->
+							<div class="form-group" th:classappend="${#fields.hasErrors('name')} ? 'has-error'">
 									<label for="name" class="required-field">Tên tác giả</label>
 									<input type="text" class="form-control" id="name" th:field="*{name}"
 										   placeholder="Nhập tên tác giả" maxlength="255" required>
@@ -117,7 +114,7 @@
 									<input type="file" id="avatarFile" class="form-control"
 										   accept="image/*" onchange="previewImage(this)">
 									<small class="text-muted">Định dạng: JPG, PNG (tối đa 2MB)</small>
-									<img id="imagePreview" class="image-preview" alt="Preview">
+									<img id="imagePreview" class="image-preview" src="" alt="Preview" style="display: none;">
 								</div>
 
 								<!-- Avatar URL -->

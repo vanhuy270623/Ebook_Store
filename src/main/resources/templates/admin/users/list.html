@@ -186,7 +186,7 @@
 									</td>
 
 									<td>
-										<strong th:text="${user.fullName ?: user.username}">Name</strong>
+										<strong th:text="${user.fullName != null ? user.fullName : user.username}">Name</strong>
 										<span th:if="${user.deletedAt != null}" class="label label-danger" style="margin-left: 5px;">
 											<i class="fa fa-trash"></i> Đã xóa
 										</span>
@@ -299,7 +299,7 @@
 													  method="post" style="display: inline-block;">
 													<button type="submit" class="btn btn-sm btn-danger"
 															title="Xóa (Dữ liệu được bảo toàn và có thể khôi phục)"
-															th:data-confirm-message="|Bạn có chắc muốn xóa user ${user.username}?\n\nLưu ý: Đây là xóa mềm, dữ liệu vẫn được lưu trữ và có thể khôi phục sau này.|"
+															th:attr="data-confirm-message='Bạn có chắc muốn xóa user ' + ${user.username} + '? Lưu ý: Đây là xóa mềm, dữ liệu vẫn được lưu trữ và có thể khôi phục sau này.'"
 															onclick="return confirm(this.getAttribute('data-confirm-message'))">
 														<i class="fa fa-trash-o"></i>
 													</button>
@@ -312,7 +312,7 @@
 													  method="post" style="display: inline-block;">
 													<button type="submit" class="btn btn-sm btn-danger"
 															title="Xóa (Dữ liệu được bảo toàn và có thể khôi phục)"
-															th:data-confirm-message="|Bạn có chắc muốn xóa user ${user.username}?\n\nLưu ý: Đây là xóa mềm, dữ liệu vẫn được lưu trữ và có thể khôi phục sau này.|"
+															th:attr="data-confirm-message='Bạn có chắc muốn xóa user ' + ${user.username} + '? Lưu ý: Đây là xóa mềm, dữ liệu vẫn được lưu trữ và có thể khôi phục sau này.'"
 															onclick="return confirm(this.getAttribute('data-confirm-message'))">
 														<i class="fa fa-trash-o"></i>
 													</button>

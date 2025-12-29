@@ -25,7 +25,7 @@
 						<span class="info-box-icon bg-aqua"><i class="fa fa-star"></i></span>
 						<div class="info-box-content">
 							<span class="info-box-text">Tổng đánh giá</span>
-							<span class="info-box-number" th:text="${totalReviews ?: 0}">0</span>
+							<span class="info-box-number" th:text="${totalReviews != null ? totalReviews : 0}">0</span>
 						</div>
 					</div>
 				</div>
@@ -35,7 +35,7 @@
 						<span class="info-box-icon bg-yellow"><i class="fa fa-hourglass"></i></span>
 						<div class="info-box-content">
 							<span class="info-box-text">Chờ duyệt</span>
-							<span class="info-box-number" th:text="${pendingReviews ?: 0}">0</span>
+							<span class="info-box-number" th:text="${pendingReviews != null ? pendingReviews : 0}">0</span>
 						</div>
 					</div>
 				</div>
@@ -45,7 +45,7 @@
 						<span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
 						<div class="info-box-content">
 							<span class="info-box-text">Đã duyệt</span>
-							<span class="info-box-number" th:text="${approvedReviews ?: 0}">0</span>
+							<span class="info-box-number" th:text="${approvedReviews != null ? approvedReviews : 0}">0</span>
 						</div>
 					</div>
 				</div>
@@ -55,7 +55,7 @@
 						<span class="info-box-icon bg-red"><i class="fa fa-times"></i></span>
 						<div class="info-box-content">
 							<span class="info-box-text">Từ chối</span>
-							<span class="info-box-number" th:text="${rejectedReviews ?: 0}">0</span>
+							<span class="info-box-number" th:text="${rejectedReviews != null ? rejectedReviews : 0}">0</span>
 						</div>
 					</div>
 				</div>
@@ -79,10 +79,16 @@
 								</thead>
 								<tbody>
 									<tr th:each="review : ${pendingReviewsList}">
-										<td th:text="${#strings.abbreviate(review.book?.title ?: 'N/A', 20)}">Sách</td>
-										<td th:text="${review.user?.fullName ?: 'Ẩn danh'}">User</td>
 										<td>
-											<span class="fa fa-star" th:repeat="i : ${#numbers.sequence(1, review.rating ?? 0)}" style="color: #FFB81C;"></span>
+											<span th:if="${review.book != null}" th:text="${#strings.abbreviate(review.book.title, 20)}">Sách</span>
+											<span th:unless="${review.book != null}">N/A</span>
+										</td>
+										<td>
+											<span th:if="${review.user != null}" th:text="${review.user.fullName}">User</span>
+											<span th:unless="${review.user != null}">Ẩn danh</span>
+										</td>
+										<td>
+											<span th:if="${review.rating != null}" class="fa fa-star" th:each="i : ${#numbers.sequence(1, review.rating)}" style="color: #FFB81C;"></span>
 										</td>
 										<td>
 											<a th:href="@{/admin/reviews/view/{id}(id=${review.reviewId})}" class="btn btn-sm btn-info"><i class="fa fa-search"></i></a>
@@ -106,37 +112,37 @@
 							<div class="form-group">
 								<label>5 sao</label>
 								<div class="progress">
-									<div class="progress-bar progress-bar-success" role="progressbar" th:style="'width: ' + ${rating5Percent ?: 0} + '%'" th:attr="aria-valuenow=${rating5Percent ?: 0}"></div>
+									<div class="progress-bar progress-bar-success" role="progressbar" th:style="'width: ' + (${rating5Percent != null ? rating5Percent : 0}) + '%'" th:attr="aria-valuenow=${rating5Percent != null ? rating5Percent : 0}"></div>
 								</div>
-								<small th:text="${rating5Count ?: 0} + ' đánh giá'"></small>
+								<small th:text="${rating5Count != null ? rating5Count : 0} + ' đánh giá'"></small>
 							</div>
 							<div class="form-group">
 								<label>4 sao</label>
 								<div class="progress">
-									<div class="progress-bar progress-bar-success" role="progressbar" th:style="'width: ' + ${rating4Percent ?: 0} + '%'" th:attr="aria-valuenow=${rating4Percent ?: 0}"></div>
+									<div class="progress-bar progress-bar-success" role="progressbar" th:style="'width: ' + (${rating4Percent != null ? rating4Percent : 0}) + '%'" th:attr="aria-valuenow=${rating4Percent != null ? rating4Percent : 0}"></div>
 								</div>
-								<small th:text="${rating4Count ?: 0} + ' đánh giá'"></small>
+								<small th:text="${rating4Count != null ? rating4Count : 0} + ' đánh giá'"></small>
 							</div>
 							<div class="form-group">
 								<label>3 sao</label>
 								<div class="progress">
-									<div class="progress-bar progress-bar-warning" role="progressbar" th:style="'width: ' + ${rating3Percent ?: 0} + '%'" th:attr="aria-valuenow=${rating3Percent ?: 0}"></div>
+									<div class="progress-bar progress-bar-warning" role="progressbar" th:style="'width: ' + (${rating3Percent != null ? rating3Percent : 0}) + '%'" th:attr="aria-valuenow=${rating3Percent != null ? rating3Percent : 0}"></div>
 								</div>
-								<small th:text="${rating3Count ?: 0} + ' đánh giá'"></small>
+								<small th:text="${rating3Count != null ? rating3Count : 0} + ' đánh giá'"></small>
 							</div>
 							<div class="form-group">
 								<label>2 sao</label>
 								<div class="progress">
-									<div class="progress-bar progress-bar-danger" role="progressbar" th:style="'width: ' + ${rating2Percent ?: 0} + '%'" th:attr="aria-valuenow=${rating2Percent ?: 0}"></div>
+									<div class="progress-bar progress-bar-danger" role="progressbar" th:style="'width: ' + (${rating2Percent != null ? rating2Percent : 0}) + '%'" th:attr="aria-valuenow=${rating2Percent != null ? rating2Percent : 0}"></div>
 								</div>
-								<small th:text="${rating2Count ?: 0} + ' đánh giá'"></small>
+								<small th:text="${rating2Count != null ? rating2Count : 0} + ' đánh giá'"></small>
 							</div>
 							<div class="form-group">
 								<label>1 sao</label>
 								<div class="progress">
-									<div class="progress-bar progress-bar-danger" role="progressbar" th:style="'width: ' + ${rating1Percent ?: 0} + '%'" th:attr="aria-valuenow=${rating1Percent ?: 0}"></div>
+									<div class="progress-bar progress-bar-danger" role="progressbar" th:style="'width: ' + (${rating1Percent != null ? rating1Percent : 0}) + '%'" th:attr="aria-valuenow=${rating1Percent != null ? rating1Percent : 0}"></div>
 								</div>
-								<small th:text="${rating1Count ?: 0} + ' đánh giá'"></small>
+								<small th:text="${rating1Count != null ? rating1Count : 0} + ' đánh giá'"></small>
 							</div>
 						</div>
 					</div>

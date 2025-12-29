@@ -64,11 +64,11 @@
 					<form th:action="@{${isEdit ? '/admin/users/update' : '/admin/users/create'}}"
 						  th:object="${userRequest}"
 						  method="post">
-							<div class="box-body">
-								<!-- Hidden userId field for edit mode -->
-								<input type="hidden" th:if="${isEdit != null && isEdit}" name="userId" th:value="${userRequest.userId}"/>
+						<div class="box-body">
+							<!-- Hidden userId field for edit mode -->
+							<input type="hidden" th:if="${isEdit != null && isEdit && user != null}" name="userId" th:value="${user.userId}"/>
 
-								<!-- Username - Only show input for new user, readonly for edit -->
+							<!-- Username - Only show input for new user, readonly for edit -->
 								<div class="form-group" th:if="${isEdit == null || !isEdit}" th:classappend="${#fields.hasErrors('username')} ? 'has-error'">
 									<label for="username">Tên đăng nhập <span class="text-danger">*</span></label>
 									<input type="text" class="form-control" id="username" th:field="*{username}"

@@ -27,7 +27,7 @@
 
             <div class="error-info">
                 <h6><strong><i class="fas fa-exclamation-triangle"></i> Lý do:</strong></h6>
-                <p class="mb-0" th:text="${errorMessage} ?: 'Có lỗi xảy ra trong quá trình thanh toán'">
+                <p class="mb-0" th:text="${errorMessage != null ? errorMessage : 'Có lỗi xảy ra trong quá trình thanh toán'}">
                     Có lỗi xảy ra trong quá trình thanh toán
                 </p>
             </div>

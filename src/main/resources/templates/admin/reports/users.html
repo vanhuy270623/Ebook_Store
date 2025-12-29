@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{admin/layout/head :: head}"></th:block>
+    <title>Báo cáo Người dùng - Admin</title>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+    <!-- Header -->
+    <header th:replace="~{admin/layout/header :: header}"></header>
+
+    <!-- Sidebar -->
+    <aside th:replace="~{admin/layout/sidebar :: sidebar}"></aside>
+
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+        <!-- Content Header -->
+        <section class="content-header">
+            <h1>
+                Báo cáo Người dùng
+                <small>Thống kê chi tiết</small>
+            </h1>
+            <ol class="breadcrumb">
+                <li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+                <li>Báo cáo</li>
+                <li class="active">Người dùng</li>
+            </ol>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+            <!-- Flash Messages -->
+            <div th:if="${error}" class="alert alert-danger alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <i class="icon fa fa-ban"></i> <span th:text="${error}"></span>
+            </div>
+
+            <!-- User Statistics Boxes -->
+            <div class="row">
+                <div class="col-md-3 col-sm-6 col-xs-12">
+                    <div class="info-box bg-aqua">
+                        <span class="info-box-icon"><i class="fa fa-users"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Tổng người dùng</span>
+                            <span class="info-box-number" th:text="${totalUsers}">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 col-sm-6 col-xs-12">
+                    <div class="info-box bg-green">
+                        <span class="info-box-icon"><i class="fa fa-check-circle"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Đang hoạt động</span>
+                            <span class="info-box-number" th:text="${activeUsers}">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 col-sm-6 col-xs-12">
+                    <div class="info-box bg-yellow">
+                        <span class="info-box-icon"><i class="fa fa-user-times"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Không hoạt động</span>
+                            <span class="info-box-number" th:text="${inactiveUsers}">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 col-sm-6 col-xs-12">
+                    <div class="info-box bg-blue">
+                        <span class="info-box-icon"><i class="fa fa-certificate"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Đã xác thực</span>
+                            <span class="info-box-number" th:text="${verifiedUsers}">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- New Users by Month Chart -->
+                <div class="col-md-8">
+                    <div class="box box-info">
+                        <div class="box-header with-border">
+                            <h3 class="box-title"><i class="fa fa-bar-chart"></i> Người dùng mới theo tháng</h3>
+                        </div>
+                        <div class="box-body">
+                            <canvas id="usersChart" style="height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Status Pie Chart -->
+                <div class="col-md-4">
+                    <div class="box box-success">
+                        <div class="box-header with-border">
+                            <h3 class="box-title"><i class="fa fa-pie-chart"></i> Tỷ lệ người dùng</h3>
+                        </div>
+                        <div class="box-body">
+                            <canvas id="statusChart" style="height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Users -->
+            <div class="box box-primary">
+                <div class="box-header with-border">
+                    <h3 class="box-title"><i class="fa fa-users"></i> Người dùng mới nhất</h3>
+                </div>
+                <div class="box-body">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                        <tr>
+                            <th width="10%">Avatar</th>
+                            <th width="20%">Tên</th>
+                            <th width="20%">Email</th>
+                            <th width="15%">Username</th>
+                            <th width="15%">Ngày đăng ký</th>
+                            <th width="10%">Trạng thái</th>
+                            <th width="10%">Hành động</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="user : ${recentUsers}" th:if="${recentUsers != null && !recentUsers.isEmpty()}">
+                            <td>
+                                <img th:src="${user.avatarUrl != null ? user.avatarUrl : '/admin_template/images/user.png'}"
+                                     alt="Avatar" class="img-circle" style="width: 40px; height: 40px;">
+                            </td>
+                            <td th:text="${user.fullName}">Full Name</td>
+                            <td th:text="${user.email}">Email</td>
+                            <td th:text="${user.username}">Username</td>
+                            <td th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm')}">Date</td>
+                            <td>
+                                <span th:if="${user.isActive}" class="label label-success">Hoạt động</span>
+                                <span th:unless="${user.isActive}" class="label label-danger">Không hoạt động</span>
+                            </td>
+                            <td>
+                                <a th:href="@{/admin/users/view/{id}(id=${user.userId})}"
+                                   class="btn btn-sm btn-primary" title="Xem chi tiết">
+                                    <i class="fa fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${recentUsers == null || recentUsers.isEmpty()}">
+                            <td colspan="7" class="text-center text-muted">Không có dữ liệu</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="~{admin/layout/footer :: footer}"></footer>
+</div>
+
+<script th:src="@{/admin_template/js/jquery.min.js}"></script>
+<script th:src="@{/admin_template/js/bootstrap.min.js}"></script>
+<script th:src="@{/admin_template/js/adminlte.min.js}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    $(document).ready(function() {
+        // Users by Month Chart
+        var monthsData = /*[[${newUsersByMonth}]]*/ [];
+        var months = monthsData.map(function(item) { return item.month; });
+        var counts = monthsData.map(function(item) { return item.count; });
+
+        var ctx1 = document.getElementById('usersChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Người dùng mới',
+                    data: counts,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Status Pie Chart
+        var ctx2 = document.getElementById('statusChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'pie',
+            data: {
+                labels: ['Hoạt động', 'Không hoạt động', 'Đã xác thực'],
+                datasets: [{
+                    data: [
+                        /*[[${activeUsers}]]*/ 0,
+                        /*[[${inactiveUsers}]]*/ 0,
+                        /*[[${verifiedUsers}]]*/ 0
+                    ],
+                    backgroundColor: [
+                        'rgba(0, 166, 90, 0.8)',
+                        'rgba(243, 156, 18, 0.8)',
+                        'rgba(60, 141, 188, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    });
+    /*]]>*/
+</script>
+</body>
+</html>
+

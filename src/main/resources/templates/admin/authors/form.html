@@ -32,7 +32,7 @@
 			<h1>
 				<span th:if="${isEdit}">Chỉnh sửa tác giả</span>
 				<span th:unless="${isEdit}">Thêm tác giả mới</span>
-				<small th:if="${isEdit && author != null}" th:text="${author.authorName}">Tên tác giả</small>
+				<small th:if="${isEdit && author != null}" th:text="${author.name}">Tên tác giả</small>
 			</h1>
 			<ol class="breadcrumb">
 				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>

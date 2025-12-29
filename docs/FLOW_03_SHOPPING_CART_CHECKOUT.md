@@ -179,8 +179,11 @@ User → Browser → CartController → CartService → CartItemRepository → D
   │──────────────────────►│                                             │
   │       │               │ addToCart()                                 │
   │       │               ├─────────────►│                              │
+  │       │               │               │ getCartByUser()             │
+  │       │               │               │ (create if not exists)      │
+  │       │               │               │                             │
   │       │               │               │ Check if exists             │
-  │       │               │               │ (cart_id, book_id)          │
+  │       │               │               │ CartItemId(cart_id, book_id)│
   │       │               │               ├────────────────►│           │
   │       │               │               │                 │ SELECT *  │
   │       │               │               │                 │ WHERE     │
@@ -189,16 +192,226 @@ User → Browser → CartController → CartService → CartItemRepository → D
   │       │               │               │                 ├──────────►│
   │       │               │               │                 │◄──────────┤
   │       │               │               │◄────────────────┤           │
+  │       │               │               │                             │
   │       │               │               │ if exists:                  │
-  │       │               │               │   return error (already in cart)
+  │       │               │               │   return error              │
+  │       │               │               │   "Sách đã có trong giỏ"   │
+  │       │               │               │                             │
   │       │               │               │ else:                       │
   │       │               │               │   create new CartItem       │
+  │       │               │               │   (no quantity field)       │
   │       │               │               │ save()                      │
   │       │               │               ├────────────────►│           │
   │       │               │               │                 │ INSERT    │
+  │       │               │               │                 │ INTO      │
+  │       │               │               │                 │ cart_items│
   │       │               │               │                 ├──────────►│
   │       │               │               │                 │◄──────────┤
   │       │               │               │◄────────────────┤           │
+  │       │               │◄─────────────┤                              │
+  │◄──────────────────────┤ Flash: "Đã thêm vào giỏ hàng"              │
+```
+
+### Implementation Details
+
+**Controller**: `CartController.java`
+
+**Endpoint**: `POST /cart/add/{bookId}`
+
+**Request Parameters**:
+```
+bookId: string (path variable)
+redirect: string (optional, query parameter for redirect URL)
+```
+
+**Code Implementation**:
+```java
+@PostMapping("/add/{bookId}")
+public String addToCart(
+        @PathVariable String bookId,
+        @RequestParam(value = "redirect", required = false) String redirectUrl,
+        RedirectAttributes redirectAttributes) {
+
+    try {
+        User currentUser = getCurrentUser();
+
+        // Kiểm tra sách tồn tại
+        Book book = bookService.getBookById(bookId)
+                .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+
+        // Kiểm tra sách có thể mua được không
+        if (book.getAccessType() == Book.AccessType.FREE) {
+            redirectAttributes.addFlashAttribute("error", 
+                "Sách này không thể thêm vào giỏ (sách miễn phí)");
+            return getRedirectPath(redirectUrl, bookId);
+        }
+
+        // Lấy hoặc tạo giỏ hàng
+        Cart cart = cartService.getCartByUser(currentUser)
+                .orElseGet(() -> cartService.createCartForUser(currentUser));
+
+        // ⚠️ QUAN TRỌNG: Kiểm tra sách đã có trong giỏ chưa
+        // CartItem sử dụng composite key (cart_id, book_id)
+        CartItemId cartItemId = new CartItemId(cart.getCartId(), bookId);
+
+        if (cartItemService.getCartItemById(cartItemId).isPresent()) {
+            redirectAttributes.addFlashAttribute("info", 
+                "Sách này đã có trong giỏ hàng");
+            return getRedirectPath(redirectUrl, bookId);
+        }
+
+        // Tạo CartItem mới (❌ KHÔNG CÓ quantity field)
+        CartItem newItem = new CartItem();
+        newItem.setCart(cart);
+        newItem.setBook(book);
+        // ❌ REMOVED: newItem.setQuantity(1); 
+        cartItemService.saveCartItem(newItem);
+
+        redirectAttributes.addFlashAttribute("success", 
+            "Đã thêm \"" + book.getTitle() + "\" vào giỏ hàng");
+        redirectAttributes.addFlashAttribute("cartUpdated", true);
+
+        return getRedirectPath(redirectUrl, bookId);
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        return getRedirectPath(redirectUrl, bookId);
+    }
+}
+
+/**
+ * Helper method để xác định trang redirect
+ */
+private String getRedirectPath(String redirectUrl, String bookId) {
+    if (redirectUrl != null && !redirectUrl.isEmpty()) {
+        return "redirect:" + redirectUrl;
+    }
+    return "redirect:/books/view/" + bookId;
+}
+```
+
+**Entity**: `CartItem.java`
+```java
+@Entity
+@Table(name = "cart_items")
+@IdClass(CartItemId.class) // ⚠️ Composite key
+public class CartItem {
+    @Id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cart_id", nullable = false)
+    private Cart cart;
+
+    @Id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "book_id", nullable = false)
+    private Book book;
+
+    // ❌ REMOVED: quantity field (not needed for ebooks)
+    
+    @Column(name = "added_at")
+    private LocalDateTime addedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.addedAt = LocalDateTime.now();
+    }
+}
+```
+
+**Composite Key Class**: `CartItemId.java`
+```java
+@Embeddable
+public class CartItemId implements Serializable {
+    private String cartId;
+    private String bookId;
+    
+    public CartItemId() {}
+    
+    public CartItemId(String cartId, String bookId) {
+        this.cartId = cartId;
+        this.bookId = bookId;
+    }
+    
+    // equals() và hashCode() required for composite key
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CartItemId that = (CartItemId) o;
+        return Objects.equals(cartId, that.cartId) && 
+               Objects.equals(bookId, that.bookId);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(cartId, bookId);
+    }
+}
+```
+
+**SQL Queries**:
+```sql
+-- Check if book already in cart
+SELECT * FROM cart_items
+WHERE cart_id = ? AND book_id = ?;
+
+-- Insert new cart item (NO quantity column)
+INSERT INTO cart_items (cart_id, book_id, added_at)
+VALUES (?, ?, NOW());
+
+-- Create cart if not exists
+INSERT INTO carts (cart_id, user_id, updated_at)
+VALUES (?, ?, NOW());
+```
+
+**Success Response**:
+```
+Redirect to: /books/view/{bookId} (default) or {redirectUrl}
+Flash Message: "Đã thêm \"[Book Title]\" vào giỏ hàng"
+Flash Attribute: cartUpdated = true (for JavaScript to update cart badge)
+```
+
+**Error Responses**:
+```
+Case 1: Book not found
+- "Sách không tồn tại"
+
+Case 2: Free book (cannot add to cart)
+- "Sách này không thể thêm vào giỏ (sách miễn phí)"
+
+Case 3: Book already in cart
+- "Sách này đã có trong giỏ hàng" (info message, not error)
+
+Case 4: User not logged in
+- Redirect to /auth/login
+```
+
+**AJAX Implementation** (Optional - in JavaScript):
+```javascript
+// Add to cart via AJAX
+function addToCart(bookId) {
+    fetch(`/cart/add/${bookId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-TOKEN': getCsrfToken()
+        }
+    })
+    .then(response => {
+        if (response.redirected) {
+            // Check flash messages
+            return fetch('/cart/count').then(r => r.json());
+        }
+    })
+    .then(data => {
+        // Update cart badge
+        updateCartBadge(data.count);
+        showNotification('Đã thêm vào giỏ hàng');
+    })
+    .catch(error => {
+        showNotification('Lỗi: ' + error.message, 'error');
+    });
+}
+```
   │       │               │◄─────────────┤                              │
   │◄──────────────────────┤ redirect:/cart                             │
 ```

@@ -85,7 +85,7 @@ public class UserReviewController extends BaseController {
         Book book = bookOpt.get();
 
         try {
-            // 3. CHECK OWNERSHIP (Điều kiện tiên quyết)
+            // 3. CHECK OWNERSHIP & ACCESS TYPE
             boolean hasAccess = false;
             boolean isVerifiedPurchase = false;
             String accessBadge = "";
@@ -107,13 +107,8 @@ public class UserReviewController extends BaseController {
             }
             // 3c. Check if book is free
             else if (book.getAccessType() == Book.AccessType.FREE) {
-                // Check if user has started reading (added to library)
-                Optional<ReadingProgress> progressOpt = readingProgressService
-                    .getReadingProgressByUserAndBook(currentUser, book);
-                if (progressOpt.isPresent()) {
-                    hasAccess = true;
-                    accessBadge = "Sách miễn phí";
-                }
+                hasAccess = true;
+                accessBadge = "Sách miễn phí";
             }
 
             if (!hasAccess) {
@@ -122,7 +117,7 @@ public class UserReviewController extends BaseController {
                 return ResponseEntity.status(403).body(response);
             }
 
-            // 4. CHECK READING PROGRESS (Quy tắc 20%)
+            // 4. CHECK READING PROGRESS (Quy tắc 20% - áp dụng cho TẤT CẢ loại sách)
             Optional<ReadingProgress> progressOpt = readingProgressService
                 .getReadingProgressByUserAndBook(currentUser, book);
 
@@ -238,12 +233,8 @@ public class UserReviewController extends BaseController {
                 accessBadge = "Thành viên VIP";
             }
         } else if (book.getAccessType() == Book.AccessType.FREE) {
-            Optional<ReadingProgress> progressOpt = readingProgressService
-                .getReadingProgressByUserAndBook(currentUser, book);
-            if (progressOpt.isPresent()) {
-                hasAccess = true;
-                accessBadge = "Sách miễn phí";
-            }
+            hasAccess = true;
+            accessBadge = "Sách miễn phí";
         }
 
         if (!hasAccess) {
@@ -252,7 +243,7 @@ public class UserReviewController extends BaseController {
             return ResponseEntity.ok(response);
         }
 
-        // Check reading progress
+        // Check reading progress (áp dụng cho TẤT CẢ loại sách)
         Optional<ReadingProgress> progressOpt = readingProgressService
             .getReadingProgressByUserAndBook(currentUser, book);
 

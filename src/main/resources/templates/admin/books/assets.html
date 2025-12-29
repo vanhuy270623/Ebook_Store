@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{admin/layout/head :: head}"></th:block>
-    <title>Quản Lý File Assets - Ebook Store</title>
+    <title>Quản Lý File Sách - Ebook Store</title>
     <style>
         .file-thumbnail {
             width: 80px;
@@ -26,22 +26,6 @@
         .file-icon-large.pdf { color: #F44336; }
         .file-icon-large.epub { color: #2196F3; }
         .file-icon-large.image { color: #4CAF50; }
-
-        .info-box-stats {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .badge-file-type {
-            font-size: 11px;
-            padding: 3px 8px;
-        }
-
-        /* Make table more compact */
-        .table-assets > tbody > tr > td {
-            vertical-align: middle;
-        }
     </style>
 </head>
 <body class="hold-transition skin-blue sidebar-mini">
@@ -57,8 +41,8 @@
         <!-- Content Header -->
         <section class="content-header">
             <h1>
-                Quản lý file assets
-                <small>Quản lý tất cả file hình ảnh, PDF và EPUB đã upload</small>
+                Quản lý file sách
+                <small th:text="${book != null ? book.title : ''}">Tên sách</small>
             </h1>
             <ol class="breadcrumb">
                 <li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
@@ -69,30 +53,26 @@
 
         <!-- Main content -->
         <section class="content">
+            <!-- Hidden book ID -->
+            <input type="hidden" id="bookId" th:value="${book != null ? book.bookId : ''}">
+
             <!-- Alert Messages -->
-            <div class="row" th:if="${success} or ${error} or ${warning}">
-                <div class="col-xs-12">
-                    <div class="alert alert-success alert-dismissible" th:if="${success}">
-                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                        <h4><i class="icon fa fa-check"></i> Thành công!</h4>
-                        <span th:text="${success}"></span>
-                    </div>
-                    <div class="alert alert-danger alert-dismissible" th:if="${error}">
-                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                        <h4><i class="icon fa fa-ban"></i> Lỗi!</h4>
-                        <span th:text="${error}"></span>
-                    </div>
-                    <div class="alert alert-warning alert-dismissible" th:if="${warning}">
-                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                        <h4><i class="icon fa fa-warning"></i> Cảnh báo!</h4>
-                        <span th:text="${warning}"></span>
-                    </div>
-                </div>
+            <div th:if="${success}" class="alert alert-success alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert">×</button>
+                <h4><i class="icon fa fa-check"></i> Thành công!</h4>
+                <span th:text="${success}"></span>
             </div>
+
+            <div th:if="${error}" class="alert alert-danger alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert">×</button>
+                <h4><i class="icon fa fa-ban"></i> Lỗi!</h4>
+                <span th:text="${error}"></span>
+            </div>
+
 
             <!-- Statistics Row -->
             <div class="row">
-                <div class="col-md-3 col-sm-6 col-xs-12">
+                <div class="col-md-4 col-sm-6 col-xs-12">
                     <div class="info-box">
                         <span class="info-box-icon bg-aqua"><i class="fa fa-files-o"></i></span>
                         <div class="info-box-content">
@@ -102,155 +82,141 @@
                     </div>
                 </div>
 
-                <div class="col-md-3 col-sm-6 col-xs-12">
+                <div class="col-md-4 col-sm-6 col-xs-12">
                     <div class="info-box">
-                        <span class="info-box-icon bg-green"><i class="fa fa-picture-o"></i></span>
+                        <span class="info-box-icon bg-red"><i class="fa fa-file-pdf-o"></i></span>
                         <div class="info-box-content">
-                            <span class="info-box-text">Bìa sách</span>
-                            <span class="info-box-number" th:text="${typeStats['covers'] ?: 0}">0</span>
+                            <span class="info-box-text">File PDF</span>
+                            <span class="info-box-number" th:text="${pdfCount ?: 0}">0</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-md-3 col-sm-6 col-xs-12">
+                <div class="col-md-4 col-sm-6 col-xs-12">
                     <div class="info-box">
-                        <span class="info-box-icon bg-yellow"><i class="fa fa-file-pdf-o"></i></span>
+                        <span class="info-box-icon bg-blue"><i class="fa fa-book"></i></span>
                         <div class="info-box-content">
-                            <span class="info-box-text">File nguồn</span>
-                            <span class="info-box-number" th:text="${typeStats['source'] ?: 0}">0</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3 col-sm-6 col-xs-12">
-                    <div class="info-box">
-                        <span class="info-box-icon bg-red"><i class="fa fa-hdd-o"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Tổng dung lượng</span>
-                            <span class="info-box-number" th:text="${totalSize ?: '0 B'}">0 B</span>
+                            <span class="info-box-text">File EPUB</span>
+                            <span class="info-box-number" th:text="${epubCount ?: 0}">0</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Filter Box -->
+            <!-- Upload Form -->
             <div class="row">
-                <div class="col-xs-12">
-                    <div class="box box-solid">
-                        <div class="box-body">
-                            <form method="get" th:action="@{/admin/books/assets}" class="form-inline">
-                                <div class="form-group">
-                                    <label><i class="fa fa-filter"></i> Loại file:</label>
-                                    <select name="type" id="typeFilter" class="form-control" style="width: 180px;">
-                                        <option value="all" th:selected="${currentType == 'all'}">Tất cả</option>
-                                        <option value="covers" th:selected="${currentType == 'covers'}">Bìa sách</option>
-                                        <option value="source" th:selected="${currentType == 'source'}">File nguồn</option>
-                                        <option value="preview" th:selected="${currentType == 'preview'}">Preview</option>
-                                        <option value="avatars" th:selected="${currentType == 'avatars'}">Avatar người dùng</option>
-                                        <option value="authors" th:selected="${currentType == 'authors'}">Avatar tác giả</option>
-                                        <option value="banners" th:selected="${currentType == 'banners'}">Banner</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group" style="margin-left: 15px;">
-                                    <label><i class="fa fa-search"></i> Tìm kiếm:</label>
-                                    <input type="text" name="search" id="searchInput" class="form-control"
-                                           placeholder="Nhập tên file..."
-                                           th:value="${searchQuery}"
-                                           style="width: 300px;">
-                                </div>
-
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fa fa-filter"></i> Áp dụng
-                                </button>
-                                <a th:href="@{/admin/books/assets}" class="btn btn-default">
-                                    <i class="fa fa-refresh"></i> Reset
-                                </a>
-                            </form>
+                <div class="col-md-12">
+                    <div class="box box-primary">
+                        <div class="box-header with-border">
+                            <h3 class="box-title"><i class="fa fa-upload"></i> Upload file mới</h3>
                         </div>
+                        <form id="uploadAssetForm">
+                            <div class="box-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Loại file <span class="text-danger">*</span></label>
+                                            <select name="fileType" class="form-control" required>
+                                                <option value="">-- Chọn loại file --</option>
+                                                <option value="PDF">PDF (Sách điện tử)</option>
+                                                <option value="EPUB">EPUB (Sách điện tử)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Chọn file <span class="text-danger">*</span></label>
+                                            <input type="file" id="assetFile" name="file" class="form-control"
+                                                   accept=".pdf,.epub" required>
+                                            <small class="text-muted">
+                                                Chỉ chấp nhận file PDF và EPUB, tối đa 100MB
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="filePreview" style="display: none;"></div>
+                            </div>
+                            <div class="box-footer">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-upload"></i> Upload File
+                                </button>
+                                <a th:href="@{/admin/books}" class="btn btn-default">
+                                    <i class="fa fa-arrow-left"></i> Quay lại danh sách
+                                </a>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
+
 
             <!-- Files Table -->
             <div class="row">
                 <div class="col-xs-12">
                     <div class="box">
                         <div class="box-header">
-                            <h3 class="box-title">Danh sách file (<span th:text="${files != null ? files.size() : 0}">0</span> file)</h3>
+                            <h3 class="box-title">Danh sách file (<span th:text="${assets != null ? assets.size() : 0}">0</span> file)</h3>
                         </div>
 
                         <div class="box-body">
                             <!-- Table -->
-                            <table class="table table-bordered table-striped table-assets" th:if="${files != null and !files.isEmpty()}">
+                            <table class="table table-bordered table-striped table-assets" th:if="${assets != null and !assets.isEmpty()}">
                                 <thead>
                                     <tr>
-                                        <th style="width: 100px;">Preview</th>
-                                        <th>Tên file</th>
+                                        <th style="width: 100px;">Icon</th>
+                                        <th>URL File</th>
                                         <th style="width: 120px;">Loại</th>
-                                        <th style="width: 100px;">Kích thước</th>
-                                        <th style="width: 150px;">Ngày tạo</th>
+                                        <th style="width: 120px;">Kích thước</th>
+                                        <th style="width: 150px;">Ngày upload</th>
                                         <th style="width: 120px;">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr th:each="file : ${files}">
-                                        <!-- Preview/Icon -->
+                                    <tr th:each="asset : ${assets}">
+                                        <!-- Icon -->
                                         <td class="text-center">
-                                            <div th:if="${file.extension == 'jpg' or file.extension == 'jpeg' or file.extension == 'png' or file.extension == 'gif'}"
-                                                 class="file-icon-large image">
-                                                <i class="fa fa-file-image-o"></i>
-                                            </div>
-                                            <div th:if="${file.extension == 'pdf'}"
+                                            <div th:if="${asset.fileType?.name() == 'PDF'}"
                                                  class="file-icon-large pdf">
                                                 <i class="fa fa-file-pdf-o"></i>
                                             </div>
-                                            <div th:if="${file.extension == 'epub'}"
+                                            <div th:if="${asset.fileType?.name() == 'EPUB'}"
                                                  class="file-icon-large epub">
                                                 <i class="fa fa-book"></i>
                                             </div>
-                                            <div th:if="${file.extension != 'jpg' and file.extension != 'jpeg' and file.extension != 'png' and file.extension != 'gif' and file.extension != 'pdf' and file.extension != 'epub'}"
-                                                 class="file-icon-large">
-                                                <i class="fa fa-file-o"></i>
+                                            <div th:if="${asset.fileType?.name() == 'IMAGE'}"
+                                                 class="file-icon-large image">
+                                                <i class="fa fa-file-image-o"></i>
                                             </div>
                                         </td>
 
-                                        <!-- File Name -->
+                                        <!-- File URL -->
                                         <td>
-                                            <strong th:text="${file.name}">filename.pdf</strong><br>
-                                            <small class="text-muted" th:text="${file.path}">path/to/file</small>
+                                            <a th:href="${asset.fileUrl}" target="_blank" th:text="${asset.fileUrl}">file.pdf</a>
                                         </td>
 
-                                        <!-- File Type Badge -->
+                                        <!-- File Type -->
                                         <td>
-                                            <span th:switch="${file.type}" class="label badge-file-type">
-                                                <span th:case="'covers'" class="label label-success">Bìa sách</span>
-                                                <span th:case="'source'" class="label label-warning">File nguồn</span>
-                                                <span th:case="'preview'" class="label label-info">Preview</span>
-                                                <span th:case="'avatars'" class="label label-primary">Avatar</span>
-                                                <span th:case="'authors'" class="label label-danger">Tác giả</span>
-                                                <span th:case="'banners'" class="label label-default">Banner</span>
-                                                <span th:case="*" class="label label-default" th:text="${file.type}">Other</span>
-                                            </span>
+                                            <span th:if="${asset.fileType?.name() == 'PDF'}" class="label label-danger">PDF</span>
+                                            <span th:if="${asset.fileType?.name() == 'EPUB'}" class="label label-info">EPUB</span>
                                         </td>
 
                                         <!-- File Size -->
-                                        <td th:text="${file.formattedSize}">0 KB</td>
+                                        <td th:text="${#numbers.formatDecimal(asset.fileSize / 1024 / 1024, 1, 2)} + ' MB'">0 MB</td>
 
-                                        <!-- Last Modified -->
-                                        <td th:text="${#dates.format(file.lastModified, 'dd/MM/yyyy HH:mm')}">01/01/2024</td>
+                                        <!-- Upload Date -->
+                                        <td th:text="${#temporals.format(asset.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024</td>
 
                                         <!-- Actions -->
                                         <td>
                                             <div class="btn-group">
-                                                <button class="btn btn-sm btn-info btn-view-file"
-                                                        th:data-path="${file.path}"
-                                                        title="Xem thông tin">
-                                                    <i class="fa fa-info-circle"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-danger btn-delete-file"
-                                                        th:data-path="${file.path}"
-                                                        th:data-name="${file.name}"
+                                                <a th:href="${asset.fileUrl}" target="_blank"
+                                                   class="btn btn-sm btn-info" title="Xem/Tải">
+                                                    <i class="fa fa-download"></i>
+                                                </a>
+                                                <button class="btn btn-sm btn-danger btn-delete-asset"
+                                                        th:data-asset-id="${asset.bookAssetId}"
+                                                        th:data-file-name="${asset.fileUrl}"
                                                         title="Xóa file">
                                                     <i class="fa fa-trash"></i>
                                                 </button>
@@ -261,10 +227,10 @@
                             </table>
 
                             <!-- Empty State -->
-                            <div th:if="${files == null or files.isEmpty()}" class="text-center" style="padding: 40px;">
+                            <div th:if="${assets == null or assets.isEmpty()}" class="text-center" style="padding: 40px;">
                                 <i class="fa fa-folder-open" style="font-size: 64px; color: #ccc;"></i>
-                                <h4 style="margin-top: 20px; color: #999;">Không tìm thấy file nào</h4>
-                                <p class="text-muted">Thư mục hiện tại không có file hoặc bộ lọc không khớp với file nào.</p>
+                                <h4 style="margin-top: 20px; color: #999;">Chưa có file nào</h4>
+                                <p class="text-muted">Hãy upload file PDF hoặc EPUB cho sách này.</p>
                             </div>
                         </div>
                     </div>
@@ -277,113 +243,8 @@
     <div th:replace="~{admin/layout/footer :: footer}"></div>
 </div>
 
-
-<!-- File Info Modal -->
-<div class="modal fade" id="fileInfoModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-                <h4 class="modal-title"><i class="fa fa-info-circle"></i> Thông Tin File</h4>
-            </div>
-            <div class="modal-body">
-                <table class="table table-bordered">
-                    <tr>
-                        <th width="40%">Tên file:</th>
-                        <td id="infoName"></td>
-                    </tr>
-                    <tr>
-                        <th>Đường dẫn:</th>
-                        <td id="infoPath" style="word-break: break-all;"></td>
-                    </tr>
-                    <tr>
-                        <th>Kích thước:</th>
-                        <td id="infoSize"></td>
-                    </tr>
-                    <tr>
-                        <th>Ngày tạo:</th>
-                        <td id="infoCreated"></td>
-                    </tr>
-                    <tr>
-                        <th>Ngày sửa:</th>
-                        <td id="infoModified"></td>
-                    </tr>
-                </table>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Đóng</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Scripts -->
 <th:block th:replace="~{admin/layout/scripts :: scripts}"></th:block>
-<script>
-    $(document).ready(function() {
-        // Event delegation for view file info buttons
-        $('.btn-view-file').on('click', function() {
-            const filePath = $(this).data('path');
-            viewFileInfo(filePath);
-        });
-
-        // Event delegation for delete file buttons
-        $('.btn-delete-file').on('click', function() {
-            const filePath = $(this).data('path');
-            const fileName = $(this).data('name');
-            deleteFile(filePath, fileName);
-        });
-    });
-
-    function viewFileInfo(filePath) {
-        $.ajax({
-            url: '/admin/books/assets/info',
-            method: 'GET',
-            data: { path: filePath },
-            success: function(data) {
-                if (data.success) {
-                    $('#infoName').text(data.name);
-                    $('#infoPath').text(data.path);
-                    $('#infoSize').text(data.sizeFormatted);
-                    $('#infoCreated').text(new Date(data.created).toLocaleString('vi-VN'));
-                    $('#infoModified').text(new Date(data.modified).toLocaleString('vi-VN'));
-
-                    $('#fileInfoModal').modal('show');
-                } else {
-                    alert('Lỗi: ' + data.message);
-                }
-            },
-            error: function(xhr, status, error) {
-                alert('Lỗi khi lấy thông tin file: ' + error);
-            }
-        });
-    }
-
-    function deleteFile(filePath, fileName) {
-        if (!confirm('Bạn có chắc chắn muốn xóa file "' + fileName + '"?\n\nCảnh báo: File sẽ bị xóa vĩnh viễn và không thể khôi phục!')) {
-            return;
-        }
-
-        $.ajax({
-            url: '/admin/books/assets/delete',
-            method: 'DELETE',
-            data: { path: filePath },
-            success: function(data) {
-                if (data.success) {
-                    alert(data.message);
-                    window.location.reload();
-                } else {
-                    alert('Lỗi: ' + data.message);
-                }
-            },
-            error: function(xhr, status, error) {
-                alert('Lỗi khi xóa file: ' + error);
-            }
-        });
-    }
-</script>
+<script th:src="@{/admin_template/js/admin-book-assets.js}"></script>
 </body>
 </html>
-

@@ -4,10 +4,9 @@
 1. [Tổng Quan](#tổng-quan)
 2. [Flow 5.1: Khởi Tạo Thanh Toán VNPay](#flow-51-khởi-tạo-thanh-toán-vnpay)
 3. [Flow 5.2: Xử Lý Callback VNPay](#flow-52-xử-lý-callback-vnpay)
-4. [Flow 5.3: IPN (Instant Payment Notification)](#flow-53-ipn-instant-payment-notification)
-5. [Flow 5.4: Tra Cứu Giao Dịch](#flow-54-tra-cứu-giao-dịch)
-6. [Error Handling](#error-handling)
-7. [Security & Validation](#security--validation)
+4. [Flow 5.3: Subscription Payment Activation](#flow-53-subscription-payment-activation)
+5. [Security & Validation](#security--validation)
+6. [Debugging Endpoints](#debugging-endpoints)
 
 ---
 
@@ -24,12 +23,20 @@
 ┌──────────────┐
 │Create Payment│
 │   Request    │
+│(Controller)  │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│VNPayService  │
+│createPayment │
+│    URL()     │
 └──────┬───────┘
        │
        ▼
 ┌──────────────┐
 │Generate HMAC │
-│  Signature   │
+│SHA512 Hash   │
 └──────┬───────┘
        │
        ▼
@@ -42,53 +49,71 @@
 ┌──────────────┐
 │User Complete │
 │   Payment    │
+│  at VNPay    │
 └──────┬───────┘
        │
        ▼
 ┌──────────────┐
 │VNPay Callback│
-│   Return     │
+│   /return    │
 └──────┬───────┘
        │
        ▼
 ┌──────────────┐
-│Verify Secure │
-│     Hash     │
+│VNPayService  │
+│validateCall  │
+│   back()     │
 └──────┬───────┘
        │
        ▼
 ┌──────────────┐
 │Update Order  │
-│    Status    │
+│Status: PAID/ │
+│   FAILED     │
 └──────┬───────┘
        │
        ▼
 ┌──────────────┐
-│ Show Success │
-│Confirmation  │
+│Activate Sub  │
+│(if applicable)│
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Show Success/│
+│Error Page    │
 └──────────────┘
 ```
 
 ### Components
-- **Controller**: `PaymentController.java`
-- **Service**: `OrderService.java`, `OrderItemService.java`
-- **Entity**: `Order.java`, `OrderItem.java`
+- **Controller**: `PaymentController.java` (598 lines)
+- **Service**: `VNPayService.java`, `VNPayServiceImpl.java` (225 lines)
+- **Service**: `OrderService.java`, `OrderItemService.java`, `SubscriptionService.java`
+- **Entity**: `Order.java`, `OrderItem.java`, `Subscription.java`
 - **Config**: `application.properties` (VNPay credentials)
 
-### VNPay Configuration
+### VNPay Configuration (from application.properties)
 ```properties
-# VNPay Settings
+# VNPay Settings (Sandbox)
 vnpay.url=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-vnpay.tmn_code=ICCSTETD
-vnpay.hash_secret=E5DSMU678G8NJL64IO7PD9HUAK52F54P
+vnpay.tmn_code=9CB3LH80
+vnpay.hash_secret=UDN2E28HUBUULOWK5KAGTA3GVU523HPK
 vnpay.return_url=http://localhost:2706/payment/vnpay/return
-vnpay.api_url=https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
 ```
 
 ### URLs
 - `GET /payment/vnpay?orderId={orderId}` - Khởi tạo thanh toán
-- `GET /payment/vnpay/return` - Callback từ VNPay
-- `POST /payment/vnpay/ipn` - IPN endpoint (webhook)
+- `GET /payment/vnpay/return?vnp_*` - Callback từ VNPay (với query parameters)
+- `GET /payment/success?orderId={orderId}` - Trang thanh toán thành công
+- `GET /payment/error?orderId={orderId}` - Trang thanh toán thất bại
+
+### Key Features
+- ✅ **Business Logic in Service Layer**: VNPayService handles all VNPay integration
+- ✅ **HMAC SHA512 Signature**: Secure hash generation và validation
+- ✅ **15-minute Payment Timeout**: Auto-expire payment requests
+- ✅ **Subscription Auto-Activation**: Tự động kích hoạt subscription sau payment
+- ✅ **Transaction Tracking**: Lưu `transaction_id` từ VNPay
+- ✅ **Response Code Handling**: Xử lý 40+ VNPay response codes
 
 ---
 
@@ -96,109 +121,261 @@ vnpay.api_url=https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
 
 ### Sequence Diagram
 ```
-User → Browser → PaymentController → OrderService → VNPay Gateway
+User → Browser → PaymentController → VNPayService → VNPay Gateway
   │       │              │                 │              │
   │ Click "Thanh toán VNPay"                             │
   │───────────────────────►│                              │
   │       │                │ getOrderById()               │
+  │       │                │ validateOrder()              │
+  │       │                │ createPaymentUrl()           │
   │       │                ├────────────────►│            │
+  │       │                │                 │ buildParams()
+  │       │                │                 │ sortParams()
+  │       │                │                 │ hmacSHA512()
+  │       │                │                 │ buildQuery()
   │       │                │◄────────────────┤            │
-  │       │                │ validateOrder()               │
-  │       │                │ buildVNPayParams()           │
-  │       │                │ generateSecureHash()         │
-  │       │                │ buildPaymentUrl()            │
-  │◄───────────────────────┤ (redirect to VNPay)         │
+  │       │                │ paymentUrl                   │
+  │◄───────────────────────┤ (redirect)                  │
   │       │                                               │
   │ Redirect to VNPay Gateway                            │
   │──────────────────────────────────────────────────────►│
   │       │                                               │
-  │ Enter card info & confirm                            │
+  │ User enters card & confirms                          │
   │◄──────────────────────────────────────────────────────┤
 ```
 
 ### Implementation Details
 
-**Controller Method**:
+**Controller**: `PaymentController.initiateVNPayPayment()`
+
 ```java
 @GetMapping("/vnpay")
 public String initiateVNPayPayment(
         @RequestParam String orderId,
-        Authentication authentication,
         HttpServletRequest request,
         RedirectAttributes redirectAttributes) {
-    
+
     try {
-        // 1. Validate user
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = getCurrentUser();
         if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập");
             return "redirect:/auth/login";
         }
 
-        // 2. Get order
-        Order order = orderService.getOrderById(orderId);
-        if (order == null) {
-            redirectAttributes.addFlashAttribute("error", "Đơn hàng không tồn tại");
-            return "redirect:/user/orders";
-        }
+        // Lấy order
+        Order order = orderService.getOrderById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
-        // 3. Validate order ownership
+        // Kiểm tra quyền
         if (!order.getUser().getUserId().equals(currentUser.getUserId())) {
-            redirectAttributes.addFlashAttribute("error", "Không có quyền truy cập");
-            return "redirect:/user/orders";
+            throw new RuntimeException("Bạn không có quyền thanh toán đơn hàng này");
         }
 
-        // 4. Check order status
-        if (!"PENDING".equals(order.getStatus())) {
-            redirectAttributes.addFlashAttribute("error", "Đơn hàng đã được xử lý");
-            return "redirect:/user/orders";
-        }
+        // ⚡ Tạo payment URL qua VNPayService
+        String paymentUrl = vnPayService.createPaymentUrl(order, request);
 
-        // 5. Build VNPay payment parameters
-        Map<String, String> vnpParams = buildVNPayParams(order, request);
-        
-        // 6. Generate secure hash
-        String queryUrl = buildQueryUrl(vnpParams);
-        String secureHash = hmacSHA512(vnpayHashSecret, queryUrl);
-        
-        // 7. Build full payment URL
-        String paymentUrl = vnpayUrl + "?" + queryUrl + "&vnp_SecureHash=" + secureHash;
-        
-        // 8. Redirect to VNPay
         return "redirect:" + paymentUrl;
-        
+
     } catch (Exception e) {
-        redirectAttributes.addFlashAttribute("error", "Lỗi khởi tạo thanh toán");
-        return "redirect:/user/orders";
+        logger.error("Error initiating VNPay payment for order {}: {}", 
+                    orderId, e.getMessage(), e);
+        redirectAttributes.addFlashAttribute("error", 
+            "Lỗi khởi tạo thanh toán: " + e.getMessage());
+        return "redirect:/order/checkout";
     }
 }
 ```
 
-**Build VNPay Parameters**:
+**Service**: `VNPayServiceImpl.createPaymentUrl()`
+
 ```java
-private Map<String, String> buildVNPayParams(Order order, HttpServletRequest request) {
-    Map<String, String> vnpParams = new TreeMap<>();
-    
-    // Basic parameters
+@Override
+public String createPaymentUrl(Order order, HttpServletRequest request) {
+    Map<String, String> vnpParams = new HashMap<>();
+
+    // 1. Thông tin cơ bản
     vnpParams.put("vnp_Version", "2.1.0");
     vnpParams.put("vnp_Command", "pay");
-    vnpParams.put("vnp_TmnCode", vnpayTmnCode);
-    
-    // Amount (VNPay requires amount in VND * 100)
-    long amount = order.getTotalAmount().multiply(new BigDecimal(100)).longValue();
+    vnpParams.put("vnp_TmnCode", vnpayTmnCode); // "9CB3LH80"
+
+    // 2. Số tiền (VNPay yêu cầu nhân 100)
+    long amount = order.getTotalAmount()
+            .multiply(new BigDecimal(100))
+            .longValue();
     vnpParams.put("vnp_Amount", String.valueOf(amount));
-    
-    // Currency
+
+    // 3. Thông tin đơn hàng
     vnpParams.put("vnp_CurrCode", "VND");
-    
-    // Transaction reference (Order ID)
-    vnpParams.put("vnp_TxnRef", order.getOrderId());
-    
-    // Order description
-    String orderInfo = "Thanh toan don hang " + order.getOrderId();
-    vnpParams.put("vnp_OrderInfo", orderInfo);
-    
-    // Order type (bookstore = other)
-    vnpParams.put("vnp_OrderType", "other");
+    vnpParams.put("vnp_TxnRef", order.getOrderId()); // Order ID là transaction reference
+    vnpParams.put("vnp_OrderInfo", "Thanh toan don hang " + order.getOrderId());
+    vnpParams.put("vnp_OrderType", "other"); // Bookstore = "other"
+    vnpParams.put("vnp_Locale", "vn"); // Vietnamese
+    vnpParams.put("vnp_ReturnUrl", vnpayReturnUrl);
+    vnpParams.put("vnp_IpAddr", getClientIp(request));
+
+    // 4. Thời gian
+    Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+    SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+    String vnpCreateDate = formatter.format(cld.getTime());
+    vnpParams.put("vnp_CreateDate", vnpCreateDate);
+
+    // 5. Thời gian hết hạn (15 phút)
+    cld.add(Calendar.MINUTE, 15);
+    String vnpExpireDate = formatter.format(cld.getTime());
+    vnpParams.put("vnp_ExpireDate", vnpExpireDate);
+
+    // 6. Build query string và hash
+    List<String> fieldNames = new ArrayList<>(vnpParams.keySet());
+    Collections.sort(fieldNames); // ⚡ QUAN TRỌNG: Sort alphabetically
+
+    StringBuilder hashData = new StringBuilder();
+    StringBuilder query = new StringBuilder();
+
+    Iterator<String> itr = fieldNames.iterator();
+    while (itr.hasNext()) {
+        String fieldName = itr.next();
+        String fieldValue = vnpParams.get(fieldName);
+
+        if ((fieldValue != null) && (!fieldValue.isEmpty())) {
+            // Build hash data
+            hashData.append(fieldName);
+            hashData.append('=');
+            hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
+
+            // Build query
+            query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII));
+            query.append('=');
+            query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
+
+            if (itr.hasNext()) {
+                query.append('&');
+                hashData.append('&');
+            }
+        }
+    }
+
+    // 7. Generate secure hash
+    String queryUrl = query.toString();
+    String vnpSecureHash = hmacSHA512(vnpayHashSecret, hashData.toString());
+    queryUrl += "&vnp_SecureHash=" + vnpSecureHash;
+
+    // 8. Return full payment URL
+    return vnpayUrl + "?" + queryUrl;
+}
+
+/**
+ * Generate HMAC SHA512 hash
+ */
+private String hmacSHA512(String key, String data) {
+    try {
+        Mac sha512_HMAC = Mac.getInstance("HmacSHA512");
+        SecretKeySpec secret_key = new SecretKeySpec(
+                key.getBytes(StandardCharsets.UTF_8),
+                "HmacSHA512"
+        );
+        sha512_HMAC.init(secret_key);
+        byte[] hash = sha512_HMAC.doFinal(data.getBytes(StandardCharsets.UTF_8));
+
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : hash) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
+        }
+
+        return hexString.toString();
+    } catch (Exception e) {
+        throw new RuntimeException("Error generating HMAC SHA512", e);
+    }
+}
+
+/**
+ * Get client IP address (supports proxy headers)
+ */
+private String getClientIp(HttpServletRequest request) {
+    String ipAddress = request.getHeader("X-Forwarded-For");
+
+    if (ipAddress == null || ipAddress.isEmpty() || 
+        "unknown".equalsIgnoreCase(ipAddress)) {
+        ipAddress = request.getHeader("Proxy-Client-IP");
+    }
+    if (ipAddress == null || ipAddress.isEmpty() || 
+        "unknown".equalsIgnoreCase(ipAddress)) {
+        ipAddress = request.getHeader("WL-Proxy-Client-IP");
+    }
+    if (ipAddress == null || ipAddress.isEmpty() || 
+        "unknown".equalsIgnoreCase(ipAddress)) {
+        ipAddress = request.getRemoteAddr();
+    }
+
+    // Lấy IP đầu tiên nếu có nhiều IP
+    if (ipAddress != null && ipAddress.contains(",")) {
+        ipAddress = ipAddress.split(",")[0].trim();
+    }
+
+    return ipAddress;
+}
+```
+
+### VNPay Parameters Explained
+
+**Required Parameters**:
+```
+vnp_Version: "2.1.0" (VNPay API version)
+vnp_Command: "pay" (Payment command)
+vnp_TmnCode: "9CB3LH80" (Terminal/Merchant code from VNPay)
+vnp_Amount: "5000000" (50,000 VND * 100 = 5,000,000)
+vnp_CurrCode: "VND"
+vnp_TxnRef: "ORD_001" (Order ID - unique transaction reference)
+vnp_OrderInfo: "Thanh toan don hang ORD_001"
+vnp_OrderType: "other" (Product category)
+vnp_Locale: "vn" (Language: vn/en)
+vnp_ReturnUrl: "http://localhost:2706/payment/vnpay/return"
+vnp_IpAddr: "192.168.1.100" (Customer IP)
+vnp_CreateDate: "20251230120000" (yyyyMMddHHmmss)
+vnp_ExpireDate: "20251230121500" (15 minutes from create)
+vnp_SecureHash: "a1b2c3d4e5f6..." (HMAC SHA512 hash)
+```
+
+### Example Payment URL
+```
+https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?
+vnp_Amount=5000000&
+vnp_Command=pay&
+vnp_CreateDate=20251230120000&
+vnp_CurrCode=VND&
+vnp_ExpireDate=20251230121500&
+vnp_IpAddr=192.168.1.100&
+vnp_Locale=vn&
+vnp_OrderInfo=Thanh+toan+don+hang+ORD_001&
+vnp_OrderType=other&
+vnp_ReturnUrl=http%3A%2F%2Flocalhost%3A2706%2Fpayment%2Fvnpay%2Freturn&
+vnp_TmnCode=9CB3LH80&
+vnp_TxnRef=ORD_001&
+vnp_Version=2.1.0&
+vnp_SecureHash=a1b2c3d4e5f6789...
+```
+
+### Hash Generation Process
+
+1. **Collect parameters** into Map
+2. **Remove** `vnp_SecureHash` and `vnp_SecureHashType` if exists
+3. **Sort** parameters alphabetically by key
+4. **Build hash data**: `key1=value1&key2=value2&...`
+5. **URL encode** values
+6. **Generate HMAC SHA512** using secret key
+7. **Convert** to lowercase hex string
+
+**Example Hash Data**:
+```
+vnp_Amount=5000000&vnp_Command=pay&vnp_CreateDate=20251230120000&...
+```
+
+**Secret Key**: `UDN2E28HUBUULOWK5KAGTA3GVU523HPK`
+
+**Generated Hash**: `a1b2c3d4e5f6789abcdef0123456789...` (128 characters)
     
     // Return URL
     vnpParams.put("vnp_ReturnUrl", vnpayReturnUrl);
@@ -279,6 +456,282 @@ https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
 ---
 
 ## Flow 5.2: Xử Lý Callback VNPay
+
+### Sequence Diagram
+```
+VNPay → Browser → PaymentController → VNPayService → OrderService → Database
+  │       │              │                 │              │            │
+  │ Redirect after payment                                            │
+  │──────────────────────►│                                            │
+  │       │               │ validateCallback()                         │
+  │       │               ├────────────────►│                          │
+  │       │               │                 │ getSignature()           │
+  │       │               │                 │ sortParams()             │
+  │       │               │                 │ hmacSHA512()             │
+  │       │               │                 │ compare()                │
+  │       │               │◄────────────────┤ (valid/invalid)          │
+  │       │               │                                            │
+  │       │               │ getResponseCode()                          │
+  │       │               ├────────────────►│                          │
+  │       │               │◄────────────────┤ "00" (success)           │
+  │       │               │                                            │
+  │       │               │ getOrderById()                             │
+  │       │               ├─────────────────────────────►│             │
+  │       │               │                              │ SELECT      │
+  │       │               │                              ├────────────►│
+  │       │               │◄─────────────────────────────┤             │
+  │       │               │                                            │
+  │       │               │ updateOrderStatus()                        │
+  │       │               │ setPaymentStatus(COMPLETED)                │
+  │       │               │ setTransactionId()                         │
+  │       │               ├─────────────────────────────►│             │
+  │       │               │                              │ UPDATE      │
+  │       │               │                              ├────────────►│
+  │       │               │◄─────────────────────────────┤             │
+  │       │               │                                            │
+  │       │               │ [IF SUBSCRIPTION ORDER]                    │
+  │       │               │ activateSubscription()                     │
+  │       │               │ setStartDate(now)                          │
+  │       │               │ setEndDate(now + duration)                 │
+  │       │               ├─────────────────────────────►│             │
+  │       │               │                              │ UPDATE      │
+  │       │               │                              ├────────────►│
+  │       │               │◄─────────────────────────────┤             │
+  │◄──────────────────────┤ redirect:/payment/success                  │
+```
+
+### Implementation Details
+
+**Controller**: `PaymentController.vnpayReturn()`
+
+```java
+@GetMapping("/vnpay/return")
+public String vnpayReturn(
+        @RequestParam Map<String, String> params,
+        RedirectAttributes redirectAttributes) {
+
+    try {
+        // 1. Xác thực chữ ký qua VNPayService
+        if (!vnPayService.validateCallback(params)) {
+            logger.warn("Invalid VNPay callback signature");
+            redirectAttributes.addFlashAttribute("error", "Chữ ký không hợp lệ");
+            return "redirect:/payment/error";
+        }
+
+        // 2. Lấy thông tin từ callback
+        String orderId = vnPayService.getOrderId(params);
+        String responseCode = vnPayService.getResponseCode(params);
+        String transactionNo = vnPayService.getTransactionId(params);
+
+        Order order = orderService.getOrderById(orderId).orElse(null);
+        if (order == null) {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn hàng");
+            return "redirect:/payment/error";
+        }
+
+        // 3. Cập nhật trạng thái theo response code
+        if ("00".equals(responseCode)) {
+            // ✅ Thanh toán thành công
+            order.setPaymentStatus(Order.PaymentStatus.COMPLETED);
+            order.setTransactionId(transactionNo);
+
+            // 4. Nếu là subscription order, kích hoạt subscription
+            if (order.getOrderType() == Order.OrderType.SUBSCRIPTION && 
+                order.getSubscription() != null) {
+                
+                LocalDateTime now = LocalDateTime.now();
+                order.setStartDate(now);
+
+                // Tính end_date dựa trên duration của subscription
+                int durationDays = order.getSubscription().getDurationDays();
+                LocalDateTime endDate = now.plusDays(durationDays);
+                order.setEndDate(endDate);
+
+                logger.info("Subscription activated for order: {}, user: {}, " +
+                           "plan: {}, end_date: {}",
+                           orderId, order.getUser().getUserId(),
+                           order.getSubscription().getPackageName(), endDate);
+            }
+
+            orderService.saveOrder(order);
+
+            redirectAttributes.addFlashAttribute("success", "Thanh toán thành công!");
+            return "redirect:/payment/success?orderId=" + orderId;
+        } else {
+            // ❌ Thanh toán thất bại
+            order.setPaymentStatus(Order.PaymentStatus.FAILED);
+            orderService.saveOrder(order);
+
+            redirectAttributes.addFlashAttribute("error", 
+                "Thanh toán thất bại. Mã lỗi: " + responseCode);
+            return "redirect:/payment/error?orderId=" + orderId;
+        }
+
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("error", 
+            "Lỗi xử lý thanh toán: " + e.getMessage());
+        return "redirect:/payment/error";
+    }
+}
+```
+
+**Service**: `VNPayServiceImpl.validateCallback()`
+
+```java
+@Override
+public boolean validateCallback(Map<String, String> params) {
+    try {
+        // 1. Lấy và remove secure hash
+        String vnpSecureHash = params.get("vnp_SecureHash");
+        if (vnpSecureHash == null || vnpSecureHash.isEmpty()) {
+            return false;
+        }
+
+        // 2. Clone params để không ảnh hưởng map gốc
+        Map<String, String> clonedParams = new HashMap<>(params);
+        clonedParams.remove("vnp_SecureHash");
+        clonedParams.remove("vnp_SecureHashType");
+
+        // 3. Tính toán hash
+        String signValue = getSignatureData(clonedParams);
+        String calculatedHash = hmacSHA512(vnpayHashSecret, signValue);
+
+        // 4. So sánh hash
+        return calculatedHash.equals(vnpSecureHash);
+    } catch (Exception e) {
+        return false;
+    }
+}
+
+/**
+ * Get signature data from params (sorted alphabetically)
+ */
+private String getSignatureData(Map<String, String> params) {
+    List<String> fieldNames = new ArrayList<>(params.keySet());
+    Collections.sort(fieldNames);
+
+    StringBuilder hashData = new StringBuilder();
+    Iterator<String> itr = fieldNames.iterator();
+
+    while (itr.hasNext()) {
+        String fieldName = itr.next();
+        String fieldValue = params.get(fieldName);
+
+        if ((fieldValue != null) && (!fieldValue.isEmpty())) {
+            hashData.append(fieldName);
+            hashData.append('=');
+            hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
+
+            if (itr.hasNext()) {
+                hashData.append('&');
+            }
+        }
+    }
+
+    return hashData.toString();
+}
+
+@Override
+public String getResponseCode(Map<String, String> params) {
+    return params.get("vnp_ResponseCode");
+}
+
+@Override
+public String getTransactionId(Map<String, String> params) {
+    return params.get("vnp_TransactionNo");
+}
+
+@Override
+public String getOrderId(Map<String, String> params) {
+    return params.get("vnp_TxnRef");
+}
+```
+
+### VNPay Callback Parameters
+
+**Success Callback Example**:
+```
+http://localhost:2706/payment/vnpay/return?
+vnp_Amount=5000000&
+vnp_BankCode=NCB&
+vnp_BankTranNo=VNP123456789&
+vnp_CardType=ATM&
+vnp_OrderInfo=Thanh+toan+don+hang+ORD_001&
+vnp_PayDate=20251230120530&
+vnp_ResponseCode=00&
+vnp_TmnCode=9CB3LH80&
+vnp_TransactionNo=14567890&
+vnp_TransactionStatus=00&
+vnp_TxnRef=ORD_001&
+vnp_SecureHash=a1b2c3d4e5f6...
+```
+
+### VNPay Response Codes
+
+| Code | Meaning | Action |
+|------|---------|--------|
+| `00` | Giao dịch thành công | Update order to COMPLETED |
+| `07` | Trừ tiền thành công. Giao dịch bị nghi ngờ | Manual review |
+| `09` | Thẻ chưa đăng ký Internet Banking | Show error |
+| `10` | Thẻ hết hạn | Show error |
+| `11` | Thẻ bị khóa | Show error |
+| `12` | Thẻ chưa đăng ký dịch vụ | Show error |
+| `13` | Sai mật khẩu | Show error |
+| `24` | Khách hàng hủy giao dịch | Set order to CANCELLED |
+| `51` | Tài khoản không đủ số dư | Show error |
+| `65` | Tài khoản vượt quá hạn mức | Show error |
+| `75` | Ngân hàng thanh toán đang bảo trì | Show error, retry later |
+| `79` | Nhập sai mật khẩu quá số lần quy định | Show error |
+| Other | Lỗi không xác định | Log & show generic error |
+
+**Full response code list**: https://sandbox.vnpayment.vn/apis/docs/bang-ma-loi/
+
+### Order Status Updates
+
+**Subscription Order** (order_type = 'SUBSCRIPTION'):
+```sql
+UPDATE orders
+SET payment_status = 'COMPLETED',
+    transaction_id = '14567890',
+    start_date = NOW(),
+    end_date = DATE_ADD(NOW(), INTERVAL 30 DAY)  -- Based on subscription duration
+WHERE order_id = 'ORD_001';
+```
+
+**Book Purchase Order** (order_type = 'BOOK_PURCHASE'):
+```sql
+UPDATE orders
+SET payment_status = 'COMPLETED',
+    transaction_id = '14567890'
+WHERE order_id = 'ORD_001';
+```
+
+### Validation Process
+
+1. **Extract vnp_SecureHash** from callback params
+2. **Remove** `vnp_SecureHash` và `vnp_SecureHashType` from params
+3. **Sort** remaining params alphabetically
+4. **Build signature data**: `field1=value1&field2=value2&...`
+5. **Generate HMAC SHA512** with secret key
+6. **Compare** calculated hash with received hash
+7. **Return** true if match, false otherwise
+
+### Error Handling
+
+```java
+// In PaymentController
+if (!vnPayService.validateCallback(params)) {
+    logger.warn("Invalid signature. Params: {}", params);
+    return "redirect:/payment/error";
+}
+
+if (!"00".equals(responseCode)) {
+    logger.warn("Payment failed. Order: {}, Code: {}", orderId, responseCode);
+    order.setPaymentStatus(Order.PaymentStatus.FAILED);
+    orderService.saveOrder(order);
+    return "redirect:/payment/error?orderId=" + orderId;
+}
+```
 
 ### Sequence Diagram
 ```

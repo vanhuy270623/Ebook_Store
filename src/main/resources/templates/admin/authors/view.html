@@ -17,7 +17,7 @@
 		<section class="content-header">
 			<h1>
 				Chi tiết tác giả
-				<small th:text="${author.authorName}">Tên tác giả</small>
+				<small th:text="${author.name}">Tên tác giả</small>
 			</h1>
 			<ol class="breadcrumb">
 				<li><a th:href="@{/admin/dashboard}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
@@ -36,13 +36,13 @@
 							<img th:if="${author.avatarUrl}"
 								 th:src="${author.avatarUrl}"
 								 class="profile-user-img img-responsive img-circle"
-								 th:alt="${author.authorName}"
+								 th:alt="${author.name}"
 								 style="width: 150px; height: 150px; object-fit: cover;">
 							<i th:unless="${author.avatarUrl}"
 							   class="fas fa-user-circle text-muted"
 							   style="font-size: 150px; display: block; text-align: center;"></i>
 
-							<h3 class="profile-username text-center" th:text="${author.authorName}">Tên tác giả</h3>
+							<h3 class="profile-username text-center" th:text="${author.name}">Tên tác giả</h3>
 							<p class="text-muted text-center" th:text="'ID: ' + ${author.authorId}">ID</p>
 
 							<ul class="list-group list-group-unbordered">
@@ -75,8 +75,11 @@
 							<div class="form-group">
 								<label>Avatar URL</label>
 								<p class="form-control-static">
-									<a th:href="${author.avatarUrl}" target="_blank"
-									   th:text="${#strings.abbreviate(author.avatarUrl ?: 'N/A', 50)}"></a>
+									<a th:if="${author.avatarUrl != null}"
+									   th:href="${author.avatarUrl}"
+									   target="_blank"
+									   th:text="${#strings.abbreviate(author.avatarUrl, 50)}"></a>
+									<span th:unless="${author.avatarUrl != null}">N/A</span>
 								</p>
 							</div>
 						</div>

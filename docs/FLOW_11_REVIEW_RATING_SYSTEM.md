@@ -1,33 +1,12 @@
 # ⭐ FLOW 11: REVIEW & RATING SYSTEM (Hệ Thống Đánh Giá & Xếp Hạng)
 
-## ⚠️ Implementation Status
-
-**Backend:** ✅ 90% Complete
-- ✅ Review entity và repository
-- ✅ ReviewService với CRUD operations
-- ✅ Admin moderation endpoints
-- ⚠️ User review submission endpoint (needs testing)
-
-**Frontend:** ⚠️ 40% Complete
-- ❌ User review submission form (MISSING)
-- ❌ Review display in book detail page (INCOMPLETE)
-- ⚠️ Admin moderation UI (BASIC ONLY)
-- ✅ Review entity structure
-
-**Priority:** MEDIUM  
-**Blocking:** No - System can function without reviews  
-**Recommended:** Complete for better user engagement  
-
----
-
 ## 📋 Mục Lục
 1. [Tổng Quan](#tổng-quan)
-2. [Flow 11.1: User - Submit Review](#flow-111-user---submit-review)
-3. [Flow 11.2: User - View Reviews](#flow-112-user---view-reviews)
-4. [Flow 11.3: User - Edit/Delete Review](#flow-113-user---editdelete-review)
-5. [Flow 11.4: Admin - Review Moderation](#flow-114-admin---review-moderation)
-6. [Flow 11.5: Review Analytics](#flow-115-review-analytics)
-7. [Rating Calculation](#rating-calculation)
+2. [Flow 11.1: User - Submit Review (với 20% Reading Progress Rule)](#flow-111-user---submit-review)
+3. [Flow 11.2: User - Update Review](#flow-112-user---update-review)
+4. [Flow 11.3: Admin - Review Moderation](#flow-113-admin---review-moderation)
+5. [Flow 11.4: Rating Calculation & Book Updates](#flow-114-rating-calculation--book-updates)
+6. [Debugging Endpoints](#debugging-endpoints)
 
 ---
 
@@ -35,60 +14,475 @@
 
 ### Review System Architecture
 ```
-┌────────────────────────────────────────────────────────────┐
-│                   REVIEW SYSTEM                            │
-├────────────────────────────────────────────────────────────┤
-│                                                             │
-│  USER FLOW                  │      ADMIN FLOW              │
-│  ─────────                  │      ──────────              │
-│                             │                              │
-│  ✍️  Submit Review          │   📋 View All Reviews        │
-│  ⭐ Rate 1-5 stars          │   ✅ Approve Review          │
-│  📝 Write comment           │   ❌ Reject Review           │
-│  📸 Upload images           │   🗑️  Delete Review          │
-│  ✏️  Edit review            │   📊 Review Analytics        │
-│  🗑️  Delete review          │   🔍 Filter & Search         │
-│                             │                              │
-└────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                   REVIEW SYSTEM                                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  USER FLOW                           ADMIN FLOW                  │
+│  ─────────                           ──────────                  │
+│                                                                   │
+│  ✅ Check Ownership (Purchase/Sub/Free)    📋 View All Reviews  │
+│  ✅ Check 20% Reading Progress             🔍 Filter by Status   │
+│  ⭐ Rate 1-5 stars                         ✅ Approve Review     │
+│  📝 Write comment (optional)               ❌ Reject Review      │
+│  🔄 Update existing review                 📊 Analytics          │
+│  🏅 Auto "Verified Purchase" badge                               │
+│  ⏳ Wait for admin approval                                      │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Components
 
 **Controllers**:
-- `UserBookController.java` - User submits reviews
-- `AdminReviewController.java` - Admin moderates reviews
+- `UserReviewController.java` (336 lines) - RESTful API cho user reviews
+- `ReviewController.java` (admin, 260 lines) - Admin moderation
 
 **Services**:
-- `ReviewService.java` - Review CRUD operations
-- `BookService.java` - Update book ratings
-- `OrderService.java` - Verify purchase for verified reviews
+- `ReviewService.java`, `ReviewServiceImpl.java` (144 lines)
+- `ReadingProgressService.java` - Kiểm tra tiến độ đọc
+- `OrderItemService.java` - Xác minh mua hàng
+- `SubscriptionService.java` - Kiểm tra subscription
+- `BookService.java` - Cập nhật rating
 
 **Entities**:
-- `Review.java` - Review data
-- `Book.java` - Book with average rating
-- `User.java` - Reviewer information
+- `Review.java` (50 lines)
+- `ReadingProgress.java`
+- `Book.java`
 
 ### URLs
 
-**User Endpoints**:
-- `POST /user/books/{bookId}/review` - Submit review
-- `GET /user/books/{bookId}` - View book with reviews
-- `POST /user/reviews/edit/{reviewId}` - Edit review
-- `POST /user/reviews/delete/{reviewId}` - Delete review
+**User Endpoints** (RESTful API):
+- `POST /api/reviews` - Submit/update review
+- `GET /api/reviews/check-eligibility?bookId={id}` - Kiểm tra quyền review
+- `DELETE /api/reviews/{reviewId}` - Xóa review
 
 **Admin Endpoints**:
-- `GET /admin/reviews` - List all reviews
-- `GET /admin/reviews?filter={status}` - Filter reviews
-- `GET /admin/reviews/view/{id}` - View review details
-- `POST /admin/reviews/approve/{id}` - Approve review
-- `POST /admin/reviews/reject/{id}` - Reject review
-- `POST /admin/reviews/delete/{id}` - Delete review
-- `POST /admin/reviews/bulk-approve` - Bulk approve reviews
-- `POST /admin/reviews/bulk-reject` - Bulk reject reviews
+- `GET /admin/reviews` - Danh sách reviews
+- `GET /admin/reviews?filter={status}` - Filter (unapproved/approved/rejected/verified)
+- `GET /admin/reviews/view/{id}` - Chi tiết review
+- `POST /admin/reviews/approve/{id}` - Duyệt review
+- `POST /admin/reviews/reject/{id}` - Từ chối review
+
+### Key Features
+- ✅ **20% Reading Progress Requirement**: Phải đọc ít nhất 20% sách mới được review
+- ✅ **Ownership Checking**: Purchased / Active Subscription / Free book
+- ✅ **Verified Purchase Badge**: Auto-assign cho users đã mua sách
+- ✅ **Admin Approval Workflow**: Reviews cần được duyệt
+- ✅ **Auto Rating Update**: Book rating tự động cập nhật
+- ✅ **Update Existing Reviews**: Users có thể sửa review
 
 ---
 
 ## Flow 11.1: User - Submit Review
+
+### 🔑 Key Requirements
+
+1. **Ownership Check**: User PHẢI sở hữu sách (Purchased / Active Subscription / Free book)
+2. **20% Reading Progress**: Phải đọc ít nhất 20% nội dung
+3. **Rating Required**: 1-5 sao (bắt buộc)
+4. **Comment Optional**: Không bắt buộc
+5. **Auto Verified Badge**: Tự động gán "Verified Purchase" nếu đã mua
+6. **Approval Status**: Auto-approve (có thể config thành cần duyệt)
+
+### Sequence Diagram
+```
+User → Browser → UserReviewController → Services → Database
+  │       │              │                    │         │
+  │ AJAX POST /api/reviews                              │
+  │───────────────────────►│                             │
+  │       │                │ getCurrentUser()            │
+  │       │                │ getBookById()               │
+  │       │                │                             │
+  │       │                │ Check Ownership:            │
+  │       │                ├─► OrderItemService          │
+  │       │                │   hasUserPurchasedBook()    │
+  │       │                │                             │
+  │       │                ├─► SubscriptionService       │
+  │       │                │   hasActiveSubscription()   │
+  │       │                │                             │
+  │       │                │ Check Reading Progress:     │
+  │       │                ├─► ReadingProgressService    │
+  │       │                │   getReadingProgressByUser  │
+  │       │                │   AndBook()                 │
+  │       │                │                             │
+  │       │                │ [IF progress < 20%]         │
+  │       │                │   return 403 Forbidden      │
+  │       │                │                             │
+  │       │                │ [IF progress >= 20%]        │
+  │       │                │ Check Existing Review:      │
+  │       │                ├─► ReviewService             │
+  │       │                │   getReviewByUserAndBook()  │
+  │       │                │                             │
+  │       │                │ [IF exists: UPDATE]         │
+  │       │                │ [IF not: CREATE]            │
+  │       │                │                             │
+  │       │                │ saveReview()                │
+  │       │                ├─────────────────────────────►│
+  │       │                │                   INSERT/UPDATE
+  │       │                │◄─────────────────────────────┤
+  │       │                │                             │
+  │       │                │ updateBookRating()          │
+  │       │                ├─► BookService               │
+  │       │                │   (recalculate avg)         │
+  │       │                │                             │
+  │◄───────────────────────┤ JSON response               │
+  │ Display success message                              │
+```
+
+### Implementation Details
+
+**Controller**: `UserReviewController.java`
+
+**Endpoint**: `POST /api/reviews`
+
+**Request (Form Data / JSON)**:
+```javascript
+{
+  "bookId": "book_001",
+  "rating": 5,
+  "comment": "Sách rất hay, nội dung dễ hiểu!" // optional
+}
+```
+
+**Code Implementation**:
+```java
+@PostMapping
+@ResponseBody
+public ResponseEntity<Map<String, Object>> submitReview(
+        @RequestParam String bookId,
+        @RequestParam Integer rating,
+        @RequestParam(required = false) String comment) {
+
+    Map<String, Object> response = new HashMap<>();
+    User currentUser = getCurrentUser();
+
+    if (currentUser == null) {
+        response.put("success", false);
+        response.put("message", "Bạn cần đăng nhập để đánh giá sách.");
+        return ResponseEntity.status(401).body(response);
+    }
+
+    // 1. Validate rating
+    if (rating == null || rating < 1 || rating > 5) {
+        response.put("success", false);
+        response.put("message", "Đánh giá phải từ 1 đến 5 sao.");
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    // 2. Get book
+    Optional<Book> bookOpt = bookService.getBookById(bookId);
+    if (bookOpt.isEmpty()) {
+        response.put("success", false);
+        response.put("message", "Không tìm thấy sách.");
+        return ResponseEntity.badRequest().body(response);
+    }
+    Book book = bookOpt.get();
+
+    try {
+        // 3. ✅ CHECK OWNERSHIP & ACCESS TYPE
+        boolean hasAccess = false;
+        boolean isVerifiedPurchase = false;
+        String accessBadge = "";
+
+        // 3a. Check if user purchased the book
+        if (orderItemService.hasUserPurchasedBook(currentUser.getUserId(), bookId)) {
+            hasAccess = true;
+            isVerifiedPurchase = true;
+            accessBadge = "✓ Đã mua sách";
+        }
+        // 3b. Check if user has active subscription
+        else if (subscriptionService.hasActiveSubscription(currentUser.getUserId())) {
+            // Check if book is available for subscription
+            if (book.getAccessType() == Book.AccessType.SUBSCRIPTION ||
+                book.getAccessType() == Book.AccessType.BOTH) {
+                hasAccess = true;
+                accessBadge = "Thành viên VIP";
+            }
+        }
+        // 3c. Check if book is free
+        else if (book.getAccessType() == Book.AccessType.FREE) {
+            hasAccess = true;
+            accessBadge = "Sách miễn phí";
+        }
+
+        if (!hasAccess) {
+            response.put("success", false);
+            response.put("message", 
+                "Bạn chưa sở hữu hoặc không có quyền truy cập sách này để đánh giá.");
+            return ResponseEntity.status(403).body(response);
+        }
+
+        // 4. ✅ CHECK READING PROGRESS (20% RULE - ÁP DỤNG CHO TẤT CẢ)
+        Optional<ReadingProgress> progressOpt = readingProgressService
+            .getReadingProgressByUserAndBook(currentUser, book);
+
+        if (progressOpt.isEmpty()) {
+            response.put("success", false);
+            response.put("message", 
+                "Bạn chưa mở sách này lần nào. " +
+                "Hãy đọc ít nhất 20% nội dung để đánh giá.");
+            response.put("currentProgress", 0.0);
+            response.put("requiredProgress", 20.0);
+            return ResponseEntity.status(403).body(response);
+        }
+
+        ReadingProgress progress = progressOpt.get();
+        double percentRead = progress.getProgressPercentage() != null
+            ? progress.getProgressPercentage().doubleValue()
+            : 0.0;
+
+        if (percentRead < 20.0) {
+            response.put("success", false);
+            response.put("message", String.format(
+                "Bạn mới đọc %.1f%%. " +
+                "Hãy đọc ít nhất 20%% nội dung để có thể đưa ra đánh giá khách quan.",
+                percentRead
+            ));
+            response.put("currentProgress", percentRead);
+            response.put("requiredProgress", 20.0);
+            return ResponseEntity.status(403).body(response);
+        }
+
+        // 5. CHECK DUPLICATE (Update or Create)
+        Optional<Review> existingReview = reviewService
+            .getReviewByUserAndBook(currentUser, book);
+
+        Review review;
+        boolean isUpdate = false;
+
+        if (existingReview.isPresent()) {
+            // Mode: UPDATE existing review
+            review = existingReview.get();
+            review.setRating(rating);
+            review.setComment(comment);
+            isUpdate = true;
+        } else {
+            // Mode: CREATE new review
+            review = new Review();
+            review.setUser(currentUser);
+            review.setBook(book);
+            review.setRating(rating);
+            review.setComment(comment);
+            review.setIsVerifiedPurchase(isVerifiedPurchase);
+            review.setIsApproved(true); // Auto-approve (có thể config)
+        }
+
+        // 6. SAVE & RECALCULATE RATING
+        Review savedReview = reviewService.saveReview(review);
+        // ReviewService tự động gọi bookService.updateBookRating()
+
+        response.put("success", true);
+        response.put("message", isUpdate
+            ? "Cập nhật đánh giá thành công!"
+            : "Cảm ơn bạn đã đánh giá!");
+        response.put("review", Map.of(
+            "reviewId", savedReview.getReviewId(),
+            "rating", savedReview.getRating(),
+            "comment", savedReview.getComment() != null ? savedReview.getComment() : "",
+            "isVerifiedPurchase", savedReview.getIsVerifiedPurchase(),
+            "accessBadge", accessBadge,
+            "isUpdate", isUpdate
+        ));
+
+        return ResponseEntity.ok(response);
+
+    } catch (Exception e) {
+        response.put("success", false);
+        response.put("message", "Có lỗi xảy ra: " + e.getMessage());
+        return ResponseEntity.status(500).body(response);
+    }
+}
+```
+
+### Service Logic
+
+**ReviewServiceImpl.java**:
+```java
+@Override
+public Review saveReview(Review review) {
+    if (review.getReviewId() == null || review.getReviewId().isEmpty()) {
+        review.setReviewId(generateReviewId());
+    }
+    Review savedReview = reviewRepository.save(review);
+    
+    // ⚡ Auto-update book rating
+    if (savedReview.getBook() != null) {
+        bookService.updateBookRating(savedReview.getBook().getBookId());
+    }
+    
+    return savedReview;
+}
+
+private String generateReviewId() {
+    long count = reviewRepository.count();
+    return "review_" + System.currentTimeMillis() + "_" + (count + 1);
+}
+```
+
+### Database Operations
+
+**Insert New Review**:
+```sql
+INSERT INTO reviews (
+    review_id, user_id, book_id, rating, comment,
+    is_verified_purchase, is_approved, created_at
+) VALUES (
+    'review_1735556789_1',
+    'user_normal_01',
+    'book_001',
+    5,
+    'Sách rất hay, nội dung dễ hiểu!',
+    true,   -- Verified purchase
+    true,   -- Auto-approved
+    NOW()
+);
+```
+
+**Update Existing Review**:
+```sql
+UPDATE reviews
+SET rating = 4,
+    comment = 'Nội dung hay nhưng hơi dài',
+    updated_at = NOW()
+WHERE review_id = 'review_1735556789_1';
+```
+
+**Update Book Rating** (triggered automatically):
+```sql
+-- Calculate average rating (only approved reviews)
+UPDATE books b
+SET average_rating = (
+    SELECT AVG(r.rating)
+    FROM reviews r
+    WHERE r.book_id = b.book_id
+      AND r.is_approved = true
+),
+review_count = (
+    SELECT COUNT(*)
+    FROM reviews r
+    WHERE r.book_id = b.book_id
+      AND r.is_approved = true
+)
+WHERE b.book_id = 'book_001';
+```
+
+### Response Examples
+
+**Success - New Review**:
+```json
+{
+  "success": true,
+  "message": "Cảm ơn bạn đã đánh giá!",
+  "review": {
+    "reviewId": "review_1735556789_1",
+    "rating": 5,
+    "comment": "Sách rất hay!",
+    "isVerifiedPurchase": true,
+    "accessBadge": "✓ Đã mua sách",
+    "isUpdate": false
+  }
+}
+```
+
+**Success - Updated Review**:
+```json
+{
+  "success": true,
+  "message": "Cập nhật đánh giá thành công!",
+  "review": {
+    "reviewId": "review_1735556789_1",
+    "rating": 4,
+    "comment": "Cập nhật: Nội dung hay hơn mong đợi",
+    "isVerifiedPurchase": true,
+    "accessBadge": "✓ Đã mua sách",
+    "isUpdate": true
+  }
+}
+```
+
+**Error - Not Logged In** (401):
+```json
+{
+  "success": false,
+  "message": "Bạn cần đăng nhập để đánh giá sách."
+}
+```
+
+**Error - No Access** (403):
+```json
+{
+  "success": false,
+  "message": "Bạn chưa sở hữu hoặc không có quyền truy cập sách này để đánh giá."
+}
+```
+
+**Error - Insufficient Reading Progress** (403):
+```json
+{
+  "success": false,
+  "message": "Bạn mới đọc 12.5%. Hãy đọc ít nhất 20% nội dung để có thể đưa ra đánh giá khách quan.",
+  "currentProgress": 12.5,
+  "requiredProgress": 20.0
+}
+```
+
+**Error - Invalid Rating** (400):
+```json
+{
+  "success": false,
+  "message": "Đánh giá phải từ 1 đến 5 sao."
+}
+```
+
+### Frontend Implementation (AJAX)
+
+```javascript
+// Submit review via AJAX
+function submitReview(bookId) {
+    const rating = document.querySelector('input[name="rating"]:checked').value;
+    const comment = document.getElementById('comment').value;
+
+    fetch('/api/reviews', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-TOKEN': getCsrfToken()
+        },
+        body: new URLSearchParams({
+            bookId: bookId,
+            rating: rating,
+            comment: comment
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            
+            // Update UI
+            if (data.review.isUpdate) {
+                updateReviewDisplay(data.review);
+            } else {
+                addReviewToList(data.review);
+            }
+            
+            // Close modal
+            $('#reviewModal').modal('hide');
+        } else {
+            showNotification(data.message, 'error');
+            
+            // Show progress bar if needed
+            if (data.currentProgress !== undefined) {
+                showProgressWarning(data.currentProgress, data.requiredProgress);
+            }
+        }
+    })
+    .catch(error => {
+        showNotification('Có lỗi xảy ra: ' + error.message, 'error');
+    });
+}
+```
 
 ### Sequence Diagram
 ```
@@ -293,7 +687,413 @@ document.getElementById('comment').addEventListener('input', function() {
 
 ---
 
-## Flow 11.2: User - View Reviews
+## Flow 11.3: Admin - Review Moderation
+
+### Sequence Diagram
+```
+Admin → Browser → ReviewController → ReviewService → BookService → Database
+  │       │              │                 │             │            │
+  │ GET /admin/reviews?filter=unapproved                             │
+  │───────────────────────►│                                          │
+  │       │                │ getUnapprovedReviews()                   │
+  │       │                ├────────────────►│                        │
+  │       │                │                 │ findByIsApprovedFalse()│
+  │       │                │                 ├────────────────────────►│
+  │       │                │◄────────────────┤                        │
+  │◄───────────────────────┤ admin/reviews/list.html                 │
+  │       │                                                           │
+  │ POST /admin/reviews/approve/{id}                                 │
+  │───────────────────────►│                                          │
+  │       │                │ approveReview()                          │
+  │       │                ├────────────────►│                        │
+  │       │                │                 │ setIsApproved(true)    │
+  │       │                │                 │ save()                 │
+  │       │                │                 ├────────────────────────►│
+  │       │                │                 │ updateBookRating()     │
+  │       │                │                 ├────────►│               │
+  │       │                │                 │         │ recalculate  │
+  │       │                │                 │         │ avg rating   │
+  │       │                │                 │◄────────┤               │
+  │       │                │◄────────────────┤                        │
+  │◄───────────────────────┤ redirect + success message              │
+```
+
+### Implementation Details
+
+**Controller**: `ReviewController.java` (admin)
+
+**Endpoints**:
+- `GET /admin/reviews` - Danh sách tất cả reviews
+- `GET /admin/reviews?filter={status}` - Filter by status
+- `GET /admin/reviews/view/{id}` - Chi tiết review
+- `POST /admin/reviews/approve/{id}` - Duyệt review
+- `POST /admin/reviews/reject/{id}` - Từ chối review
+
+**Filter Options**:
+- `unapproved` (default) - Chờ duyệt
+- `approved` - Đã duyệt
+- `rejected` - Đã từ chối
+- `verified` - Verified purchase
+
+**Code Implementation**:
+
+```java
+/**
+ * Hiển thị danh sách đánh giá
+ */
+@GetMapping
+public String reviewsList(
+        @RequestParam(required = false, defaultValue = "unapproved") String filter,
+        Model model) {
+    
+    List<Review> reviews;
+
+    switch (filter.toLowerCase()) {
+        case "approved":
+            // Lấy những reviews đã được duyệt
+            reviews = reviewService.getAllReviews().stream()
+                    .filter(Review::getIsApproved)
+                    .collect(Collectors.toList());
+            break;
+            
+        case "rejected":
+            // Lấy những reviews bị từ chối
+            reviews = reviewService.getAllReviews().stream()
+                    .filter(r -> !r.getIsApproved())
+                    .collect(Collectors.toList());
+            break;
+            
+        case "verified":
+            // Lấy những reviews từ mua hàng đã xác thực
+            reviews = reviewService.getVerifiedPurchaseReviews();
+            break;
+            
+        case "unapproved":
+        default:
+            reviews = reviewService.getUnapprovedReviews();
+            break;
+    }
+
+    model.addAttribute("reviews", reviews);
+    model.addAttribute("totalReviews", reviews.size());
+    model.addAttribute("currentFilter", filter);
+
+    // Thống kê nhanh
+    long totalUnapproved = reviewService.getUnapprovedReviews().size();
+    long totalVerified = reviewService.getVerifiedPurchaseReviews().size();
+    model.addAttribute("totalUnapproved", totalUnapproved);
+    model.addAttribute("totalVerified", totalVerified);
+
+    return "admin/reviews/list";
+}
+
+/**
+ * Duyệt đánh giá
+ */
+@PostMapping("/approve/{id}")
+public String approveReview(@PathVariable String id, 
+                           RedirectAttributes redirectAttributes) {
+    Review review = reviewService.getReviewById(id).orElse(null);
+
+    if (review == null) {
+        redirectAttributes.addFlashAttribute("error", "Không tìm thấy đánh giá!");
+        return "redirect:/admin/reviews";
+    }
+
+    try {
+        reviewService.approveReview(id);
+        redirectAttributes.addFlashAttribute("success", "Duyệt đánh giá thành công!");
+        return "redirect:/admin/reviews";
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        return "redirect:/admin/reviews/view/" + id;
+    }
+}
+
+/**
+ * Từ chối đánh giá
+ */
+@PostMapping("/reject/{id}")
+public String rejectReview(@PathVariable String id,
+                          RedirectAttributes redirectAttributes) {
+    Review review = reviewService.getReviewById(id).orElse(null);
+
+    if (review == null) {
+        redirectAttributes.addFlashAttribute("error", "Không tìm thấy đánh giá!");
+        return "redirect:/admin/reviews";
+    }
+
+    try {
+        reviewService.rejectReview(id);
+        redirectAttributes.addFlashAttribute("success", "Từ chối đánh giá thành công!");
+        return "redirect:/admin/reviews";
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        return "redirect:/admin/reviews/view/" + id;
+    }
+}
+```
+
+**Service Implementation**:
+
+```java
+@Override
+public void approveReview(String reviewId) {
+    Optional<Review> reviewOpt = reviewRepository.findById(reviewId);
+    if (reviewOpt.isPresent()) {
+        Review review = reviewOpt.get();
+        review.setIsApproved(true);
+        reviewRepository.save(review);
+        
+        // ⚡ Auto-update book rating after approval
+        bookService.updateBookRating(review.getBook().getBookId());
+    }
+}
+
+@Override
+public void rejectReview(String reviewId) {
+    Optional<Review> reviewOpt = reviewRepository.findById(reviewId);
+    if (reviewOpt.isPresent()) {
+        Review review = reviewOpt.get();
+        review.setIsApproved(false);
+        reviewRepository.save(review);
+        
+        // ⚡ Auto-update book rating after rejection
+        bookService.updateBookRating(review.getBook().getBookId());
+    }
+}
+```
+
+### SQL Queries
+
+**Get Unapproved Reviews**:
+```sql
+SELECT r.*, u.username, u.full_name, b.title, b.cover_image_url
+FROM reviews r
+JOIN users u ON r.user_id = u.user_id
+JOIN books b ON r.book_id = b.book_id
+WHERE r.is_approved = false
+ORDER BY r.created_at DESC;
+```
+
+**Get Verified Purchase Reviews**:
+```sql
+SELECT r.*, u.username, u.full_name, b.title
+FROM reviews r
+JOIN users u ON r.user_id = u.user_id
+JOIN books b ON r.book_id = b.book_id
+WHERE r.is_verified_purchase = true
+ORDER BY r.created_at DESC;
+```
+
+**Approve Review**:
+```sql
+UPDATE reviews
+SET is_approved = true
+WHERE review_id = ?;
+```
+
+**Recalculate Book Rating** (after approve/reject):
+```sql
+UPDATE books
+SET average_rating = (
+    SELECT AVG(rating)
+    FROM reviews
+    WHERE book_id = ? AND is_approved = true
+),
+review_count = (
+    SELECT COUNT(*)
+    FROM reviews
+    WHERE book_id = ? AND is_approved = true
+)
+WHERE book_id = ?;
+```
+
+---
+
+## Flow 11.4: Rating Calculation & Book Updates
+
+### Auto-Update Mechanism
+
+Mỗi khi có thay đổi về reviews, book rating được tự động cập nhật:
+
+**Trigger Points**:
+1. ✅ User submits new review
+2. ✅ User updates existing review
+3. ✅ Admin approves review
+4. ✅ Admin rejects review
+5. ✅ Admin/User deletes review
+
+**BookService.updateBookRating() Implementation**:
+
+```java
+@Override
+public void updateBookRating(String bookId) {
+    Optional<Book> bookOpt = bookRepository.findById(bookId);
+    if (bookOpt.isEmpty()) return;
+    
+    Book book = bookOpt.get();
+    
+    // Calculate average rating from APPROVED reviews only
+    List<Review> approvedReviews = reviewRepository
+        .findByBookAndIsApprovedTrue(book);
+    
+    if (approvedReviews.isEmpty()) {
+        book.setAverageRating(null);
+        book.setReviewCount(0);
+    } else {
+        double avgRating = approvedReviews.stream()
+            .mapToInt(Review::getRating)
+            .average()
+            .orElse(0.0);
+        
+        // Round to 1 decimal place
+        avgRating = Math.round(avgRating * 10.0) / 10.0;
+        
+        book.setAverageRating(avgRating);
+        book.setReviewCount(approvedReviews.size());
+    }
+    
+    bookRepository.save(book);
+}
+```
+
+### Rating Display
+
+**Book Entity**:
+```java
+@Column(name = "average_rating")
+private Double averageRating; // VD: 4.5
+
+@Column(name = "review_count")
+private Integer reviewCount; // VD: 23
+```
+
+**Display Format**:
+```
+⭐⭐⭐⭐⭐ 4.5 (23 đánh giá)
+```
+
+---
+
+## Debugging Endpoints
+
+### 1. Test Submit Review
+
+**cURL Command**:
+```bash
+curl -X POST http://localhost:2706/api/reviews \
+  -H "Cookie: JSESSIONID=..." \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "bookId=book_001&rating=5&comment=Sách rất hay!"
+```
+
+**Expected Response** (Success):
+```json
+{
+  "success": true,
+  "message": "Cảm ơn bạn đã đánh giá!",
+  "review": {
+    "reviewId": "review_1735556789_1",
+    "rating": 5,
+    "comment": "Sách rất hay!",
+    "isVerifiedPurchase": true,
+    "accessBadge": "✓ Đã mua sách",
+    "isUpdate": false
+  }
+}
+```
+
+### 2. Test Reading Progress Check
+
+**Scenario**: User chưa đọc đủ 20%
+
+**Response**:
+```json
+{
+  "success": false,
+  "message": "Bạn mới đọc 12.5%. Hãy đọc ít nhất 20% nội dung...",
+  "currentProgress": 12.5,
+  "requiredProgress": 20.0
+}
+```
+
+### 3. Database Verification
+
+**Check Review Created**:
+```sql
+SELECT r.*, u.username, b.title,
+       CASE WHEN r.is_verified_purchase THEN 'Verified' ELSE 'Normal' END as badge
+FROM reviews r
+JOIN users u ON r.user_id = u.user_id
+JOIN books b ON r.book_id = b.book_id
+WHERE r.review_id = 'review_1735556789_1';
+```
+
+**Check Book Rating Updated**:
+```sql
+SELECT book_id, title, average_rating, review_count
+FROM books
+WHERE book_id = 'book_001';
+```
+
+**Verify Reading Progress**:
+```sql
+SELECT rp.*, 
+       rp.progress_percentage as percent_read,
+       CASE WHEN rp.progress_percentage >= 20 THEN 'CAN REVIEW' 
+            ELSE 'NEED MORE READ' END as review_status
+FROM reading_progress rp
+WHERE rp.user_id = 'user_normal_01'
+  AND rp.book_id = 'book_001';
+```
+
+---
+
+## Summary
+
+**FLOW_11: REVIEW & RATING SYSTEM** đã được triển khai đầy đủ với:
+
+✅ **User Features**:
+- Submit review with ownership check
+- 20% reading progress requirement
+- Auto verified purchase badge
+- Update existing reviews
+- Optional comments
+
+✅ **Admin Features**:
+- View all reviews with filters
+- Approve/reject reviews
+- View verified purchase reviews
+- Auto rating recalculation
+
+✅ **Business Logic**:
+- Ownership: Purchased / Subscription / Free
+- Progress check: Must read ≥ 20%
+- Verified badge: Auto for purchased books
+- Rating calculation: Average of approved reviews only
+- Auto-update: Triggers on all review changes
+
+✅ **Security**:
+- Login required
+- Ownership verification
+- Reading progress validation
+- CSRF protection
+- Admin-only moderation
+
+---
+
+**Related Flows**:
+- [FLOW_07: Reading Interface](FLOW_07_READING_INTERFACE.md) - Reading progress tracking
+- [FLOW_03: Shopping Cart](FLOW_03_SHOPPING_CART_CHECKOUT.md) - Purchase verification
+- [FLOW_10: Subscription](FLOW_10_SUBSCRIPTION_MANAGEMENT.md) - Subscription access
+- [FLOW_02: Book Management](FLOW_02_ADMIN_BOOK_MANAGEMENT.md) - Book ratings display
+
+---
+
+**Last Updated**: December 30, 2025
+**Version**: 2.0 (Complete rewrite with actual implementation)
+**Status**: ✅ Production Ready
 
 ### Sequence Diagram
 ```

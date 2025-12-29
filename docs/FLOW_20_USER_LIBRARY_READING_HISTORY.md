@@ -111,138 +111,174 @@ GET /user/reading-history  : Lịch sử đọc sách
 ```java
 @GetMapping("/library")
 public String library(
-        @RequestParam(required = false) String filter,
-        @RequestParam(required = false) String sort,
+        @RequestParam(defaultValue = "all") String tab,
+        @RequestParam(defaultValue = "0") int page,
         Authentication authentication,
         Model model) {
 
-    User currentUser = (User) authentication.getPrincipal();
+    User currentUser = getCurrentUser(authentication);
+    model.addAttribute("user", currentUser);
+    model.addAttribute("currentUser", currentUser);
 
-    // 1. Lấy sách đã mua (PAID books)
-    List<Book> purchasedBooks = getPurchasedBooks(currentUser);
+    // Layout variables
+    model.addAttribute("pageTitle", "Thư viện của tôi");
+    model.addAttribute("currentPage", "library");
 
-    // 2. Lấy sách từ subscription (SUBSCRIPTION books)
-    List<Book> subscriptionBooks = getSubscriptionBooks(currentUser);
+    // Lấy danh sách sách đang đọc (Reading History)
+    List<ReadingProgress> readingProgresses = readingProgressService
+        .getReadingProgressByUserWithBookDetails(currentUser).stream()
+        .filter(progress -> progress.getBook() != null)
+        .sorted((a, b) -> b.getLastReadAt() != null ? 
+            b.getLastReadAt().compareTo(a.getLastReadAt()) : 0)
+        .toList();
 
-    // 3. Merge và loại bỏ duplicate
-    Set<Book> allBooks = new HashSet<>();
-    allBooks.addAll(purchasedBooks);
-    allBooks.addAll(subscriptionBooks);
+    // Lấy danh sách sách đã mua
+    List<Order> completedOrders = orderService.getOrdersByUser(currentUser).stream()
+        .filter(order -> order.getPaymentStatus() == Order.PaymentStatus.COMPLETED)
+        .filter(order -> order.getOrderType() == Order.OrderType.BOOK)
+        .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+        .toList();
 
-    // 4. Lấy reading progress
-    Map<String, ReadingProgress> progressMap = 
-        readingProgressService.getProgressMapByUser(currentUser.getUserId());
+    List<Book> purchasedBooks = completedOrders.stream()
+        .flatMap(order -> orderItemService.getOrderItemsByOrderId(order.getOrderId()).stream())
+        .map(OrderItem::getBook)
+        .distinct()
+        .toList();
 
-    // 5. Tạo DTOs với progress info
-    List<LibraryBookDto> libraryBooks = allBooks.stream()
-        .map(book -> {
-            LibraryBookDto dto = new LibraryBookDto();
-            dto.setBook(book);
-            
-            ReadingProgress progress = progressMap.get(book.getBookId());
-            if (progress != null) {
-                dto.setLastReadAt(progress.getLastReadAt());
-                dto.setProgress(progress.getProgressPercentage());
-                dto.setIsFavorite(progress.getIsFavorite());
-            }
-            
-            return dto;
-        })
+    // Lọc sách đã hoàn thành
+    List<ReadingProgress> completedBooks = readingProgresses.stream()
+        .filter(rp -> rp.getProgressPercentage() != null && rp.getProgressPercentage() >= 100)
         .collect(Collectors.toList());
 
-    // 6. Apply filters
-    if (filter != null) {
-        libraryBooks = applyFilter(libraryBooks, filter);
-    }
+    // Kiểm tra subscription
+    List<Order> subscriptionOrders = orderService.getOrdersByUserIdAndType(
+        currentUser.getUserId(), Order.OrderType.SUBSCRIPTION);
 
-    // 7. Apply sorting
-    if (sort != null) {
-        libraryBooks = applySorting(libraryBooks, sort);
-    }
-
-    model.addAttribute("books", libraryBooks);
-    model.addAttribute("currentFilter", filter);
-    model.addAttribute("currentSort", sort);
-    model.addAttribute("totalBooks", libraryBooks.size());
-
-    return "user/library/index";
-}
-```
-
-#### Helper: getPurchasedBooks()
-```java
-private List<Book> getPurchasedBooks(User user) {
-    // Lấy tất cả orders đã thanh toán
-    List<Order> paidOrders = orderService.getOrdersByUser(user.getUserId())
-        .stream()
-        .filter(order -> PAID_STATUSES.contains(order.getPaymentStatus()))
-        .collect(Collectors.toList());
-
-    // Extract books từ order items
-    Set<Book> books = new HashSet<>();
-    for (Order order : paidOrders) {
-        List<OrderItem> items = orderItemService.getOrderItemsByOrder(order.getOrderId());
-        for (OrderItem item : items) {
-            books.add(item.getBook());
+    boolean hasActiveSubscription = false;
+    List<Book> subscriptionBooks = new ArrayList<>();
+    
+    for (Order order : subscriptionOrders) {
+        if ((order.getPaymentStatus() == Order.PaymentStatus.COMPLETED ||
+             order.getPaymentStatus() == Order.PaymentStatus.PAID) &&
+            order.getEndDate() != null &&
+            order.getEndDate().isAfter(LocalDateTime.now())) {
+            
+            hasActiveSubscription = true;
+            subscriptionBooks = bookService.getBooksByAccessType(Book.AccessType.SUBSCRIPTION);
+            List<Book> bothBooks = bookService.getBooksByAccessType(Book.AccessType.BOTH);
+            subscriptionBooks.addAll(bothBooks);
+            subscriptionBooks = subscriptionBooks.stream().distinct().collect(Collectors.toList());
+            break;
         }
     }
 
-    return new ArrayList<>(books);
+    // Lấy sách miễn phí
+    List<Book> freeBooks = bookService.getBooksByAccessType(Book.AccessType.FREE);
+    
+    // Lấy sách yêu thích
+    List<ReadingProgress> favoriteBooks = readingProgressService.getFavoriteBooksByUser(currentUser);
+
+    // Add to model
+    model.addAttribute("readingBooks", readingProgresses);
+    model.addAttribute("purchasedBooks", purchasedBooks);
+    model.addAttribute("subscriptionBooks", subscriptionBooks);
+    model.addAttribute("freeBooks", freeBooks);
+    model.addAttribute("favoriteBooks", favoriteBooks);
+    model.addAttribute("completedBooks", completedBooks);
+    
+    // Statistics
+    model.addAttribute("totalReading", readingProgresses.size());
+    model.addAttribute("totalPurchased", purchasedBooks.size());
+    model.addAttribute("totalSubscription", subscriptionBooks.size());
+    model.addAttribute("totalFavorites", favoriteBooks.size());
+    model.addAttribute("totalCompleted", completedBooks.size());
+    model.addAttribute("activeTab", tab);
+
+    return "user/library";
 }
 ```
 
-#### Helper: getSubscriptionBooks()
+#### Implementation Details
+
+**Thực tế trong UserLibraryController:**
+
 ```java
-private List<Book> getSubscriptionBooks(User user) {
-    // Kiểm tra user có subscription active không
-    boolean hasActiveSubscription = subscriptionService
-        .hasActiveSubscription(user.getUserId());
+// 1. Lấy reading progress với book details
+List<ReadingProgress> readingProgresses = readingProgressService
+    .getReadingProgressByUserWithBookDetails(currentUser).stream()
+    .filter(progress -> progress.getBook() != null) // Filter null books
+    .sorted((a, b) -> b.getLastReadAt() != null ? 
+        b.getLastReadAt().compareTo(a.getLastReadAt()) : 0)
+    .toList();
 
-    if (!hasActiveSubscription) {
-        return Collections.emptyList();
+// 2. Lấy sách đã mua từ orders COMPLETED
+List<Order> completedOrders = orderService.getOrdersByUser(currentUser).stream()
+    .filter(order -> order.getPaymentStatus() == Order.PaymentStatus.COMPLETED)
+    .filter(order -> order.getOrderType() == Order.OrderType.BOOK)
+    .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+    .toList();
+
+List<Book> purchasedBooks = completedOrders.stream()
+    .flatMap(order -> orderItemService.getOrderItemsByOrderId(order.getOrderId()).stream())
+    .map(OrderItem::getBook)
+    .distinct()
+    .toList();
+
+// 3. Lấy sách từ subscription (nếu active)
+List<Order> subscriptionOrders = orderService.getOrdersByUserIdAndType(
+    currentUser.getUserId(), Order.OrderType.SUBSCRIPTION);
+
+List<Book> subscriptionBooks = new ArrayList<>();
+for (Order order : subscriptionOrders) {
+    if ((order.getPaymentStatus() == Order.PaymentStatus.COMPLETED ||
+         order.getPaymentStatus() == Order.PaymentStatus.PAID) &&
+        order.getEndDate() != null &&
+        order.getEndDate().isAfter(LocalDateTime.now())) {
+        
+        subscriptionBooks = bookService.getBooksByAccessType(Book.AccessType.SUBSCRIPTION);
+        List<Book> bothBooks = bookService.getBooksByAccessType(Book.AccessType.BOTH);
+        subscriptionBooks.addAll(bothBooks);
+        subscriptionBooks = subscriptionBooks.stream().distinct().collect(Collectors.toList());
+        break;
     }
-
-    // Lấy tất cả SUBSCRIPTION books
-    return bookService.getBooksByAccessType(Book.AccessType.SUBSCRIPTION);
 }
+
+// 4. Lấy sách miễn phí
+List<Book> freeBooks = bookService.getBooksByAccessType(Book.AccessType.FREE);
+
+// 5. Lấy sách yêu thích
+List<ReadingProgress> favoriteBooks = readingProgressService.getFavoriteBooksByUser(currentUser);
+
+// 6. Lấy sách đã hoàn thành (progress >= 100%)
+List<ReadingProgress> completedBooks = readingProgresses.stream()
+    .filter(rp -> rp.getProgressPercentage() != null && rp.getProgressPercentage() >= 100)
+    .collect(Collectors.toList());
 ```
 
 #### 2. Reading History
 ```java
 @GetMapping("/reading-history")
-public String readingHistory(
-        Authentication authentication,
-        Model model) {
+public String readingHistory(Authentication authentication, Model model) {
 
-    User currentUser = (User) authentication.getPrincipal();
+    User currentUser = getCurrentUser(authentication);
+    model.addAttribute("user", currentUser);
+    
+    // Layout variables
+    model.addAttribute("pageTitle", "Lịch sử đọc");
+    model.addAttribute("currentPage", "reading-history");
 
-    // Lấy reading progress
-    List<ReadingProgress> progressList = readingProgressService
-        .getReadingProgressByUser(currentUser);
+    // Lấy reading progress với book details
+    List<ReadingProgress> readingProgresses = readingProgressService
+        .getReadingProgressByUserWithBookDetails(currentUser).stream()
+        .filter(progress -> progress.getBook() != null)
+        .filter(progress -> progress.getLastReadAt() != null)
+        .sorted((a, b) -> b.getLastReadAt().compareTo(a.getLastReadAt()))
+        .toList();
 
-    // Filter: Chỉ lấy những cuốn đã đọc (lastReadAt != null)
-    List<ReadingProgress> readBooks = progressList.stream()
-        .filter(p -> p.getLastReadAt() != null)
-        .sorted((p1, p2) -> p2.getLastReadAt().compareTo(p1.getLastReadAt()))
-        .collect(Collectors.toList());
+    model.addAttribute("readingProgresses", readingProgresses);
+    model.addAttribute("totalBooks", readingProgresses.size());
 
-    // Tạo DTOs
-    List<ReadingHistoryDto> history = readBooks.stream()
-        .map(progress -> {
-            ReadingHistoryDto dto = new ReadingHistoryDto();
-            dto.setBook(progress.getBook());
-            dto.setLastReadAt(progress.getLastReadAt());
-            dto.setProgress(progress.getProgressPercentage());
-            dto.setLastPageRead(progress.getLastPageRead());
-            dto.setTotalPages(progress.getTotalPages());
-            return dto;
-        })
-        .collect(Collectors.toList());
-
-    model.addAttribute("history", history);
-    model.addAttribute("totalBooks", history.size());
-
-    return "user/library/reading-history";
+    return "user/reading-history";
 }
 ```
 
@@ -252,54 +288,134 @@ public String readingHistory(
 
 **Location:** `src/main/java/stu/datn/ebook_store/service/ReadingProgressService.java`
 
+**Interface Methods:**
+```java
+public interface ReadingProgressService {
+    List<ReadingProgress> getAllReadingProgress();
+    Optional<ReadingProgress> getReadingProgressById(String progressId);
+    Optional<ReadingProgress> getReadingProgressByUserAndBook(User user, Book book);
+    ReadingProgress saveReadingProgress(ReadingProgress readingProgress);
+    void deleteReadingProgress(String progressId);
+    List<ReadingProgress> getReadingProgressByUser(User user);
+    List<ReadingProgress> getReadingProgressByUserWithBookDetails(User user);
+    List<ReadingProgress> getFavoriteBooksByUser(User user);
+    List<ReadingProgress> getRecentReadingByUser(User user);
+    List<ReadingProgress> getCompletedBooksByUser(User user);
+    List<ReadingProgress> getReadingProgressByUserAndAccessType(User user, ReadingProgress.AccessType accessType);
+    List<ReadingProgress> getReadingProgressByBook(Book book);
+    long countCompletedBooksByUser(User user);
+    List<ReadingProgress> getContinueReadingByUser(User user);
+    void markAsFavorite(String progressId);
+    void unmarkAsFavorite(String progressId);
+    boolean toggleFavorite(User user, String bookId);
+    void markAsCompleted(String progressId);
+    void updateProgress(String progressId, Float percentage, String location);
+
+    // Bookmark management methods
+    void addBookmark(String progressId, String location, Integer pageNumber, Float percentage, String note);
+    void removeBookmark(String progressId, String bookmarkId);
+    List<ReadingProgress.BookmarkData> getBookmarks(String progressId);
+}
+```
+
+**Key Implementation Methods:**
+
 #### getReadingProgressByUser()
 ```java
+@Override
 public List<ReadingProgress> getReadingProgressByUser(User user) {
-    return readingProgressRepository.findByUser_UserId(user.getUserId());
+    return readingProgressRepository.findByUser(user);
 }
 ```
 
-#### getProgressMapByUser()
+#### getReadingProgressByUserWithBookDetails()
 ```java
-public Map<String, ReadingProgress> getProgressMapByUser(String userId) {
-    List<ReadingProgress> progressList = 
-        readingProgressRepository.findByUser_UserId(userId);
-    
-    return progressList.stream()
-        .collect(Collectors.toMap(
-            p -> p.getBook().getBookId(),
-            p -> p
-        ));
+@Override
+public List<ReadingProgress> getReadingProgressByUserWithBookDetails(User user) {
+    return readingProgressRepository.findByUserWithBookDetails(user);
 }
 ```
 
-#### getOrCreateProgress()
+#### getFavoriteBooksByUser()
 ```java
-public ReadingProgress getOrCreateProgress(String userId, String bookId) {
-    Optional<ReadingProgress> existing = readingProgressRepository
-        .findByUser_UserIdAndBook_BookId(userId, bookId);
-    
-    if (existing.isPresent()) {
-        return existing.get();
+@Override
+public List<ReadingProgress> getFavoriteBooksByUser(User user) {
+    return readingProgressRepository.findByUserAndIsFavoriteTrue(user);
+}
+```
+
+#### toggleFavorite()
+```java
+@Override
+@Transactional
+public boolean toggleFavorite(User user, String bookId) {
+    // Tìm book từ database
+    Book book = bookRepository.findById(bookId)
+            .orElseThrow(() -> new RuntimeException("Book not found: " + bookId));
+
+    // Tìm hoặc tạo reading progress cho user và book
+    Optional<ReadingProgress> progressOpt = readingProgressRepository.findByUserAndBook(user, book);
+    ReadingProgress progress;
+
+    if (progressOpt.isPresent()) {
+        // Nếu đã có progress, toggle trạng thái favorite
+        progress = progressOpt.get();
+        progress.setIsFavorite(!progress.getIsFavorite());
+    } else {
+        // Nếu chưa có progress, tạo mới với favorite = true
+        progress = new ReadingProgress();
+        progress.setProgressId(generateProgressId());
+        progress.setUser(user);
+        progress.setBook(book);
+        progress.setIsFavorite(true);
+        progress.setProgressPercentage(0.0f);
+        progress.setIsCompleted(false);
+        progress.setCreatedAt(LocalDateTime.now());
+        progress.setLastReadAt(LocalDateTime.now());
     }
-    
-    // Create new
-    User user = userService.getUserById(userId)
-        .orElseThrow(() -> new NotFoundException("User not found"));
-    
-    Book book = bookService.getBookById(bookId)
-        .orElseThrow(() -> new NotFoundException("Book not found"));
-    
-    ReadingProgress progress = new ReadingProgress();
-    progress.setProgressId(generateProgressId());
-    progress.setUser(user);
-    progress.setBook(book);
-    progress.setLastPageRead(0);
-    progress.setIsFavorite(false);
-    progress.setCreatedAt(LocalDateTime.now());
-    
-    return readingProgressRepository.save(progress);
+
+    readingProgressRepository.save(progress);
+    return progress.getIsFavorite();
 }
+```
+
+#### addBookmark()
+```java
+@Override
+@Transactional
+public void addBookmark(String progressId, String location, Integer pageNumber, Float percentage, String note) {
+    ReadingProgress progress = readingProgressRepository.findById(progressId)
+            .orElseThrow(() -> new RuntimeException("Reading progress not found: " + progressId));
+
+    // Parse existing bookmarks
+    List<ReadingProgress.BookmarkData> bookmarks = new ArrayList<>();
+    String existingJson = progress.getBookmarksData();
+
+    if (existingJson != null && !existingJson.trim().isEmpty()) {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(existingJson);
+        JsonNode bookmarksNode = root.get("bookmarks");
+        if (bookmarksNode != null && bookmarksNode.isArray()) {
+            bookmarks = mapper.convertValue(bookmarksNode,
+                mapper.getTypeFactory().constructCollectionType(List.class, ReadingProgress.BookmarkData.class));
+        }
+    }
+
+    // Add new bookmark
+    ReadingProgress.BookmarkData newBookmark = new ReadingProgress.BookmarkData(
+        location, pageNumber, percentage, note);
+    bookmarks.add(newBookmark);
+
+    // Save as JSON
+    ObjectMapper mapper = new ObjectMapper();
+    Map<String, Object> data = new HashMap<>();
+    data.put("bookmarks", bookmarks);
+    String jsonData = mapper.writeValueAsString(data);
+    progress.setBookmarksData(jsonData);
+    
+    readingProgressRepository.saveAndFlush(progress);
+}
+```
 ```
 
 ---

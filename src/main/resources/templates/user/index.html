@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"></html>
 <head>
     <th:block th:replace="~{user/layout/head :: head}"></th:block>
 </head>
@@ -114,55 +113,56 @@
         <div class="container">
             <ul class="category-list">
                 <li class="category-item">
-                    <a href="/category/all" class="active">
+                    <a href="/books" class="active">
                         <i class="fas fa-th-large"></i>
                         <span>Tất cả</span>
                     </a>
                 </li>
                 <li class="category-item">
-                    <a href="/category/bcat_1">
+                    <a href="/categories/tieu-thuyet-a">
                         <i class="fas fa-book"></i>
                         <span>Tiểu thuyết</span>
                     </a>
                 </li>
                 <li class="category-item">
-                    <a href="/category/bcat_2">
+                    <a href="/categories/tamly-kynangsong">
                         <i class="fas fa-lightbulb"></i>
                         <span>Kỹ năng sống</span>
                     </a>
                 </li>
                 <li class="category-item">
-                    <a href="/category/bcat_3">
+                    <a href="/categories/khoahoc-vientuong">
                         <i class="fas fa-dragon"></i>
                         <span>Truyện tranh</span>
                     </a>
                 </li>
                 <li class="category-item">
-                    <a href="/category/bcat_4">
+                    <a href="/categories/kinhte-quanly">
                         <i class="fas fa-chart-line"></i>
                         <span>Kinh tế</span>
                     </a>
                 </li>
                 <li class="category-item">
-                    <a href="/category/bcat_5">
+                    <a href="/categories/thieunhi">
                         <i class="fas fa-child"></i>
                         <span>Thiếu nhi</span>
                     </a>
                 </li>
                 <li class="category-item">
-                    <a href="/category/bcat_6">
+                    <a href="/categories/kienthuc-hocthuat">
                         <i class="fas fa-graduation-cap"></i>
                         <span>Giáo khoa</span>
                     </a>
                 </li>
                 <li class="category-item">
-                    <a href="/category/bcat_7">
+                    <a href="/categories/tamly-kynangsong">
                         <i class="fas fa-brain"></i>
                         <span>Tâm lý</span>
                     </a>
                 </li>
             </ul>
         </div>
+    </section>
     </section>
 
     <!-- Free Books Section -->
@@ -448,6 +448,44 @@
     <script th:src="@{/user_template/js/user-main.js}"></script>
     <!-- JS riêng cho Homepage -->
     <script th:src="@{/user_template/js/user-index.js}"></script>
+
+    <!-- Script điều khiển search box dựa trên banner -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kiểm tra xem có banner hay không
+            var hasBanner = /*[[${banners != null and #lists.size(banners) > 0}]]*/ false;
+
+            if (hasBanner) {
+                // Nếu có banner: Hiện search box trong navbar, ẩn trong hero
+                var navbarSearchForm = document.getElementById('navbarSearchForm');
+                if (navbarSearchForm) {
+                    navbarSearchForm.classList.remove('d-none');
+                    navbarSearchForm.classList.add('d-flex');
+                }
+            }
+        });
+
+        // Search function for navbar
+        function searchBooksFromNavbar() {
+            const query = document.getElementById('navbarSearchInput').value;
+            if (query.trim()) {
+                window.location.href = '/books/search?keyword=' + encodeURIComponent(query);
+            }
+        }
+
+        // Enter key search for navbar
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('navbarSearchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        searchBooksFromNavbar();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
 

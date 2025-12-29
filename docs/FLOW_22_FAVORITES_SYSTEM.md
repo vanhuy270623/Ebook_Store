@@ -106,7 +106,11 @@ User          FavoriteController    ReadingProgressService    Database
 ```
 POST /api/favorites/toggle         : Toggle favorite status
 GET  /api/favorites/check/{bookId} : Check if book is favorite
-GET  /api/favorites                : Get all favorites (JSON)
+```
+
+**Note:** Trang xem danh sách favorites ở `UserDashboardController.java`:
+```
+GET  /user/favorites               : View favorites page (HTML)
 ```
 
 #### 1. Toggle Favorite
@@ -178,56 +182,35 @@ public ResponseEntity<Map<String, Object>> checkFavorite(@PathVariable String bo
 
     } catch (Exception e) {
         response.put("isFavorite", false);
+        response.put("error", e.getMessage());
         return ResponseEntity.ok(response);
     }
 }
 ```
 
-#### 3. Get All Favorites
+#### 3. View Favorites Page (UserDashboardController)
 ```java
-@GetMapping("")
-public ResponseEntity<Map<String, Object>> getAllFavorites() {
+@GetMapping("/favorites")
+public String favorites(Authentication authentication, Model model) {
+    
+    User currentUser = (User) authentication.getPrincipal();
+    model.addAttribute("user", currentUser);
+    
+    // Layout variables
+    model.addAttribute("pageTitle", "Sách yêu thích");
+    model.addAttribute("currentPage", "favorites");
 
-    Map<String, Object> response = new HashMap<>();
+    // Lấy danh sách sách yêu thích
+    List<ReadingProgress> favoriteProgresses = readingProgressService.getFavoriteBooksByUser(currentUser);
 
-    try {
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
-            response.put("success", false);
-            response.put("favorites", Collections.emptyList());
-            return ResponseEntity.ok(response);
-        }
-
-        // Lấy tất cả favorite books
-        List<ReadingProgress> favorites = readingProgressService
-            .getReadingProgressByUser(currentUser)
-            .stream()
-            .filter(rp -> Boolean.TRUE.equals(rp.getIsFavorite()))
+    // Filter null books
+    List<ReadingProgress> safeFavorites = favoriteProgresses.stream()
+            .filter(rp -> rp.getBook() != null)
             .collect(Collectors.toList());
 
-        // Convert to DTOs
-        List<Map<String, Object>> favoriteBooks = favorites.stream()
-            .map(rp -> {
-                Map<String, Object> book = new HashMap<>();
-                book.put("bookId", rp.getBook().getBookId());
-                book.put("title", rp.getBook().getTitle());
-                book.put("coverImageUrl", rp.getBook().getCoverImageUrl());
-                book.put("lastReadAt", rp.getLastReadAt());
-                return book;
-            })
-            .collect(Collectors.toList());
-
-        response.put("success", true);
-        response.put("favorites", favoriteBooks);
-        response.put("count", favoriteBooks.size());
-
-        return ResponseEntity.ok(response);
-
-    } catch (Exception e) {
-        response.put("success", false);
-        response.put("message", "Có lỗi xảy ra: " + e.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    }
+    model.addAttribute("favoriteBooks", safeFavorites);
+    
+    return "user/favorites";
 }
 ```
 
@@ -237,51 +220,61 @@ public ResponseEntity<Map<String, Object>> getAllFavorites() {
 
 **Location:** `src/main/java/stu/datn/ebook_store/service/ReadingProgressService.java`
 
+**Interface Method:**
+```java
+boolean toggleFavorite(User user, String bookId);
+List<ReadingProgress> getFavoriteBooksByUser(User user);
+```
+
 #### toggleFavorite()
 ```java
+@Override
 @Transactional
 public boolean toggleFavorite(User user, String bookId) {
-    
-    // Tìm hoặc tạo reading progress
-    ReadingProgress progress = getOrCreateProgress(user.getUserId(), bookId);
-    
-    // Toggle
-    Boolean currentStatus = progress.getIsFavorite();
-    progress.setIsFavorite(currentStatus == null ? true : !currentStatus);
-    
-    // Save
+    // Tìm book từ database
+    Book book = bookRepository.findById(bookId)
+            .orElseThrow(() -> new RuntimeException("Book not found: " + bookId));
+
+    // Tìm hoặc tạo reading progress cho user và book
+    Optional<ReadingProgress> progressOpt = readingProgressRepository.findByUserAndBook(user, book);
+    ReadingProgress progress;
+
+    if (progressOpt.isPresent()) {
+        // Nếu đã có progress, toggle trạng thái favorite
+        progress = progressOpt.get();
+        progress.setIsFavorite(!progress.getIsFavorite());
+    } else {
+        // Nếu chưa có progress, tạo mới với favorite = true
+        progress = new ReadingProgress();
+        progress.setProgressId(generateProgressId());
+        progress.setUser(user);
+        progress.setBook(book);
+        progress.setIsFavorite(true);
+        progress.setProgressPercentage(0.0f);
+        progress.setIsCompleted(false);
+        progress.setCreatedAt(LocalDateTime.now());
+        progress.setLastReadAt(LocalDateTime.now());
+    }
+
     readingProgressRepository.save(progress);
-    
     return progress.getIsFavorite();
 }
 ```
 
-#### getOrCreateProgress()
+#### getFavoriteBooksByUser()
 ```java
-public ReadingProgress getOrCreateProgress(String userId, String bookId) {
-    Optional<ReadingProgress> existing = readingProgressRepository
-        .findByUser_UserIdAndBook_BookId(userId, bookId);
-    
-    if (existing.isPresent()) {
-        return existing.get();
-    }
-    
-    // Create new
-    User user = userService.getUserById(userId)
-        .orElseThrow(() -> new NotFoundException("User not found"));
-    
-    Book book = bookService.getBookById(bookId)
-        .orElseThrow(() -> new NotFoundException("Book not found"));
-    
-    ReadingProgress progress = new ReadingProgress();
-    progress.setProgressId(generateProgressId());
-    progress.setUser(user);
-    progress.setBook(book);
-    progress.setLastPageRead(0);
-    progress.setIsFavorite(false);
-    progress.setCreatedAt(LocalDateTime.now());
-    
-    return readingProgressRepository.save(progress);
+@Override
+public List<ReadingProgress> getFavoriteBooksByUser(User user) {
+    return readingProgressRepository.findByUserAndIsFavoriteTrue(user);
+}
+```
+
+**Repository Method:**
+```java
+public interface ReadingProgressRepository extends JpaRepository<ReadingProgress, String> {
+    List<ReadingProgress> findByUserAndIsFavoriteTrue(User user);
+    Optional<ReadingProgress> findByUserAndBook(User user, Book book);
+    // ... other methods
 }
 ```
 

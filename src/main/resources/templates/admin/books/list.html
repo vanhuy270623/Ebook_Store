@@ -74,12 +74,12 @@
 							<form method="get" action="/admin/books" class="form-inline">
 								<div class="form-group">
 									<input type="text" name="search" class="form-control"
-										   placeholder="Tìm kiếm..."
+										   placeholder="Tìm kiếm sách theo tên, ISBN..."
 										   th:value="${search}" style="width: 300px;">
 								</div>
-								<button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
-								<a th:href="@{/admin/books}" class="btn btn-default"><i class="fa fa-refresh"></i></a>
-								<a th:href="@{/admin/books/add}" class="btn btn-success pull-right"><i class="fa fa-plus"></i>Thêm sách mới</a>
+								<button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> Tìm kiếm</button>
+								<a th:href="@{/admin/books}" class="btn btn-default"><i class="fa fa-refresh"></i> Làm mới</a>
+								<a th:href="@{/admin/books/add}" class="btn btn-success pull-right"><i class="fa fa-plus"></i> Thêm sách mới</a>
 							</form>
 						</div>
 					</div>

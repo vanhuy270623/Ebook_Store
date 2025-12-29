@@ -38,7 +38,6 @@
 					<li><a th:href="@{/admin/books}"><i class="fa fa-list"></i> Danh sách sách</a></li>
 					<li><a th:href="@{/admin/books/statistics}"><i class="fa fa-bar-chart"></i> Thống kê sách</a></li>
 					<li><a th:href="@{/admin/books/add}"><i class="fa fa-plus"></i> Thêm sách mới</a></li>
-					<li><a th:href="@{/admin/books/assets}"><i class="fa fa-file-archive-o"></i> Quản lý file</a></li>
 				</ul>
 			</li>
 
@@ -128,15 +127,15 @@
 					</span>
 				</a>
 				<ul class="treeview-menu">
-					<li><a th:href="@{/admin_template/reports/sales}"><i class="fa fa-money"></i> Doanh thu</a></li>
-					<li><a th:href="@{/admin_template/reports/books}"><i class="fa fa-trophy"></i> Sách bán chạy</a></li>
-					<li><a th:href="@{/admin_template/reports/users}"><i class="fa fa-group"></i> Người dùng</a></li>
+					<li><a th:href="@{/admin/reports/sales}"><i class="fa fa-money"></i> Doanh thu</a></li>
+					<li><a th:href="@{/admin/reports/books}"><i class="fa fa-trophy"></i> Sách bán chạy</a></li>
+					<li><a th:href="@{/admin/reports/users}"><i class="fa fa-group"></i> Người dùng</a></li>
 				</ul>
 			</li>
 
 			<!-- Cài đặt hệ thống -->
 			<li>
-				<a th:href="@{/admin_template/settings}">
+				<a th:href="@{/admin/settings}">
 					<i class="fa fa-cog"></i>
 					<span>Cài đặt</span>
 				</a>

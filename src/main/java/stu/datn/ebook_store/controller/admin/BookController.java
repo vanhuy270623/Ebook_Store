@@ -354,4 +354,121 @@ public class BookController extends BaseController {
         model.addAttribute("topRatedBooks", bookService.getTopRatedBooks(10));
         return "admin/books/statistics";
     }
+
+    /**
+     * Quản lý file assets của sách
+     * GET /admin/books/assets/{bookId}
+     */
+    @GetMapping("/assets/{bookId}")
+    public String manageAssets(@PathVariable String bookId, Model model, RedirectAttributes redirectAttributes) {
+        Book book = bookService.getBookById(bookId).orElse(null);
+        if (book == null) {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy sách với ID: " + bookId);
+            return "redirect:/admin/books";
+        }
+
+        model.addAttribute("book", book);
+        model.addAttribute("assets", book.getBookAssets());
+
+        // Thống kê files sách (chỉ PDF và EPUB)
+        long totalFiles = book.getBookAssets().size();
+        long pdfCount = book.getBookAssets().stream()
+            .filter(a -> a.getFileType() == stu.datn.ebook_store.entity.BookAsset.FileType.PDF)
+            .count();
+        long epubCount = book.getBookAssets().stream()
+            .filter(a -> a.getFileType() == stu.datn.ebook_store.entity.BookAsset.FileType.EPUB)
+            .count();
+
+        long totalSize = book.getBookAssets().stream()
+            .mapToLong(stu.datn.ebook_store.entity.BookAsset::getFileSize)
+            .sum();
+
+        model.addAttribute("totalFiles", totalFiles);
+        model.addAttribute("pdfCount", pdfCount);
+        model.addAttribute("epubCount", epubCount);
+        model.addAttribute("totalSize", totalSize);
+
+        return "admin/books/assets";
+    }
+
+    /**
+     * Upload file asset mới
+     * POST /admin/books/assets/upload
+     */
+    @PostMapping("/assets/upload")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> uploadAsset(
+            @RequestParam String bookId,
+            @RequestParam String fileType,
+            @RequestParam("file") MultipartFile file) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Book book = bookService.getBookById(bookId).orElseThrow(
+                () -> new RuntimeException("Không tìm thấy sách"));
+
+            String categorySlug = book.getBookCategory() != null &&
+                book.getBookCategory().getCategorySlug() != null ?
+                book.getBookCategory().getCategorySlug() : "uncategorized";
+
+            String fileUrl;
+            stu.datn.ebook_store.entity.BookAsset.FileType assetFileType;
+
+            switch (fileType.toUpperCase()) {
+                case "PDF":
+                    fileUrl = fileStorageService.storeBookSource(file, categorySlug);
+                    assetFileType = stu.datn.ebook_store.entity.BookAsset.FileType.PDF;
+                    break;
+                case "EPUB":
+                    fileUrl = fileStorageService.storeBookSource(file, categorySlug);
+                    assetFileType = stu.datn.ebook_store.entity.BookAsset.FileType.EPUB;
+                    break;
+                default:
+                    throw new RuntimeException("Loại file không hợp lệ. Chỉ hỗ trợ PDF và EPUB.");
+            }
+
+            createBookAsset(book, fileUrl, assetFileType, file.getSize());
+
+            response.put("success", true);
+            response.put("message", "Upload file thành công!");
+            response.put("fileUrl", "/" + fileUrl);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * Xóa file asset
+     * POST /admin/books/assets/delete
+     */
+    @PostMapping("/assets/delete")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteAsset(@RequestParam String assetId) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            stu.datn.ebook_store.entity.BookAsset asset = bookAssetRepository.findById(assetId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy file"));
+
+            // Xóa file vật lý
+            fileStorageService.deleteFile(asset.getFileUrl());
+
+            // Xóa database record
+            bookAssetRepository.delete(asset);
+
+            response.put("success", true);
+            response.put("message", "Xóa file thành công!");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 }

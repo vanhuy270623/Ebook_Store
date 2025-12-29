@@ -33,7 +33,7 @@ public class Review {
     private Boolean isVerifiedPurchase = false;
 
     @Column(name = "is_approved")
-    private Boolean isApproved = true;
+    private Boolean isApproved = false; 
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

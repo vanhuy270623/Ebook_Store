@@ -9,7 +9,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${currentPage == 'index' ? 'active' : ''}" th:href="@{/user/index}">Trang chủ</a>
                     </li>
@@ -22,7 +22,23 @@
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${currentPage == 'subscription' ? 'active' : ''}" href="/subscription/plans">Gói VIP</a>
                     </li>
+                </ul>
 
+                <!-- Search Box - Hiển thị khi có banner hoạt động -->
+                <form id="navbarSearchForm" class="d-none d-lg-flex mx-3 my-2 my-lg-0" role="search" onsubmit="event.preventDefault(); searchBooksFromNavbar();">
+                    <div class="input-group" style="min-width: 250px;">
+                        <input type="text"
+                               class="form-control"
+                               placeholder="Tìm kiếm sách, tác giả..."
+                               id="navbarSearchInput"
+                               aria-label="Search">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <ul class="navbar-nav">
                     <!-- User Dropdown - Only show when authenticated -->
                     <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"

@@ -20,6 +20,9 @@
                         <a class="nav-link" th:classappend="${currentPage == 'categories' ? 'active' : ''}" href="/categories">Danh mục</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" th:classappend="${currentPage == 'posts' ? 'active' : ''}" href="/posts">Bài viết</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" th:classappend="${currentPage == 'subscription' ? 'active' : ''}" href="/subscription/plans">Gói VIP</a>
                     </li>
                 </ul>

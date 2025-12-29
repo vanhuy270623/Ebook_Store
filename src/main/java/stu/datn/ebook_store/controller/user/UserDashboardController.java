@@ -8,12 +8,14 @@ import org.springframework.web.bind.annotation.*;
 import stu.datn.ebook_store.entity.Banner; // Import Banner
 import stu.datn.ebook_store.entity.Book;
 import stu.datn.ebook_store.entity.Order;
+import stu.datn.ebook_store.entity.Post;
 import stu.datn.ebook_store.entity.ReadingProgress;
 import stu.datn.ebook_store.entity.User;
 import stu.datn.ebook_store.service.BannerService; // Import Service
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.OrderService;
 import stu.datn.ebook_store.service.OrderItemService;
+import stu.datn.ebook_store.service.PostService;
 import stu.datn.ebook_store.service.ReadingProgressService;
 
 import java.util.*;
@@ -34,18 +36,21 @@ public class UserDashboardController {
     private final OrderItemService orderItemService;
     private final ReadingProgressService readingProgressService;
     private final BannerService bannerService;
+    private final PostService postService;
 
     @Autowired
     public UserDashboardController(BookService bookService,
                                    OrderService orderService,
                                    OrderItemService orderItemService,
                                    ReadingProgressService readingProgressService,
-                                   BannerService bannerService) { // 2. Inject vào Constructor
+                                   BannerService bannerService,
+                                   PostService postService) { // 2. Inject vào Constructor
         this.bookService = bookService;
         this.orderService = orderService;
         this.orderItemService = orderItemService;
         this.readingProgressService = readingProgressService;
         this.bannerService = bannerService;
+        this.postService = postService;
     }
 
     private User getCurrentUser(Authentication authentication) {
@@ -78,9 +83,16 @@ public class UserDashboardController {
             // Get new releases
             List<Book> newBooks = bookService.getNewestBooks();
 
+            // Get latest posts (limit 6)
+            List<Post> latestPosts = postService.getLatestPosts()
+                    .stream()
+                    .limit(6)
+                    .toList();
+
             model.addAttribute("freeBooks", freeBooks);
             model.addAttribute("trendingBooks", trendingBooks);
             model.addAttribute("newBooks", newBooks);
+            model.addAttribute("latestPosts", latestPosts);
             model.addAttribute("user", currentUser);
             model.addAttribute("currentUser", currentUser);
             model.addAttribute("purchasedBookIds", getPurchasedBookIds(authentication));

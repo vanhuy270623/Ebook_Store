@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{user/layout/head :: head}"></th:block>
+    <style>
+        .post-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+        }
+        .post-thumbnail {
+            width: 100%;
+            max-height: 500px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .post-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #333;
+        }
+        .post-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .post-content p {
+            margin-bottom: 1.5rem;
+        }
+        .post-content h2, .post-content h3, .post-content h4 {
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .post-meta {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        .related-post-card {
+            transition: transform 0.3s;
+        }
+        .related-post-card:hover {
+            transform: translateY(-5px);
+        }
+        .related-post-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .share-buttons a {
+            transition: transform 0.2s;
+        }
+        .share-buttons a:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div th:replace="~{user/layout/navbar :: navbar}"></div>
+
+    <!-- Post Header -->
+    <div class="post-header">
+        <div class="container">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-transparent mb-3">
+                    <li class="breadcrumb-item"><a href="/user/index" class="text-white">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/posts" class="text-white">Bài viết</a></li>
+                    <li class="breadcrumb-item active text-white" aria-current="page" th:text="${post.title}">Chi tiết</li>
+                </ol>
+            </nav>
+
+            <h1 class="display-4 fw-bold mb-3" th:text="${post.title}">Tiêu đề bài viết</h1>
+
+            <div class="post-meta">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-2 mb-md-0">
+                            <img th:if="${post.user != null and post.user.avatarUrl != null}"
+                                 th:src="@{${post.user.avatarUrl}}"
+                                 class="rounded-circle me-3"
+                                 style="width: 50px; height: 50px; object-fit: cover;"
+                                 alt="Author Avatar">
+                            <i th:unless="${post.user != null and post.user.avatarUrl != null}"
+                               class="fas fa-user-circle me-3"
+                               style="font-size: 50px;"></i>
+                            <div>
+                                <h6 class="mb-0" th:text="${post.user != null ? post.user.fullName : 'Admin'}">Tác giả</h6>
+                                <small>
+                                    <i class="far fa-calendar-alt me-1"></i>
+                                    <span th:text="${#temporals.format(post.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024</span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <span class="badge bg-light text-dark me-2" th:if="${post.category}">
+                            <i class="fas fa-folder me-1"></i>
+                            <span th:text="${post.category.categoryName}">Danh mục</span>
+                        </span>
+                        <span class="badge bg-light text-dark">
+                            <i class="far fa-eye me-1"></i>
+                            <span th:text="${post.viewCount}">0</span> lượt xem
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container my-5">
+        <div class="row">
+            <!-- Post Content -->
+            <div class="col-lg-8">
+                <article class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <!-- Thumbnail -->
+                        <div class="mb-4" th:if="${post.thumbnailUrl}">
+                            <img th:src="@{${post.thumbnailUrl}}"
+                                 class="post-thumbnail"
+                                 th:alt="${post.title}">
+                        </div>
+
+                        <!-- Excerpt -->
+                        <div class="alert alert-info" th:if="${post.excerpt}">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Tóm tắt:</strong>
+                            <p class="mb-0 mt-2" th:text="${post.excerpt}">Mô tả ngắn</p>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="post-content" th:utext="${post.content}">
+                            Nội dung bài viết...
+                        </div>
+
+                        <!-- Share Buttons -->
+                        <div class="border-top pt-4 mt-5">
+                            <h5 class="mb-3"><i class="fas fa-share-alt me-2"></i>Chia sẻ bài viết</h5>
+                            <div class="share-buttons d-flex gap-2">
+                                <button class="btn btn-primary" onclick="shareOnFacebook()">
+                                    <i class="fab fa-facebook-f me-1"></i> Facebook
+                                </button>
+                                <button class="btn btn-info text-white"
+                                        th:attr="data-title=${post.title}"
+                                        onclick="shareOnTwitter(this)">
+                                    <i class="fab fa-twitter me-1"></i> Twitter
+                                </button>
+                                <button class="btn btn-secondary" onclick="copyToClipboard()">
+                                    <i class="fas fa-link me-1"></i> Sao chép liên kết
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Related Posts -->
+                <div class="mt-5" th:if="${relatedPosts != null and #lists.size(relatedPosts) > 0}">
+                    <h3 class="mb-4"><i class="fas fa-newspaper me-2"></i>Bài viết liên quan</h3>
+                    <div class="row row-cols-1 row-cols-md-2 g-4">
+                        <div class="col" th:each="relatedPost : ${relatedPosts}">
+                            <div class="card h-100 related-post-card">
+                                <img th:if="${relatedPost.thumbnailUrl}"
+                                     th:src="@{${relatedPost.thumbnailUrl}}"
+                                     class="card-img-top related-post-img"
+                                     th:alt="${relatedPost.title}">
+                                <img th:unless="${relatedPost.thumbnailUrl}"
+                                     src="https://via.placeholder.com/400x200?text=No+Image"
+                                     class="card-img-top related-post-img"
+                                     alt="No Image">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <a th:href="@{/posts/{slug}(slug=${relatedPost.slug})}"
+                                           class="text-decoration-none text-dark"
+                                           th:text="${relatedPost.title}">
+                                            Tiêu đề
+                                        </a>
+                                    </h6>
+                                    <p class="card-text text-muted small">
+                                        <i class="far fa-calendar-alt me-1"></i>
+                                        <span th:text="${#temporals.format(relatedPost.createdAt, 'dd/MM/yyyy')}">01/01/2024</span>
+                                        <span class="ms-2">
+                                            <i class="far fa-eye me-1"></i>
+                                            <span th:text="${relatedPost.viewCount}">0</span>
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Author Info -->
+                <div class="card shadow-sm mb-4" th:if="${post.user != null}">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>Tác giả</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <img th:if="${post.user.avatarUrl}"
+                             th:src="@{${post.user.avatarUrl}}"
+                             class="rounded-circle mb-3"
+                             style="width: 100px; height: 100px; object-fit: cover;"
+                             alt="Author Avatar">
+                        <i th:unless="${post.user.avatarUrl}"
+                           class="fas fa-user-circle mb-3"
+                           style="font-size: 100px; color: #ccc;"></i>
+                        <h5 th:text="${post.user.fullName}">Tên tác giả</h5>
+                        <p class="text-muted" th:if="${post.user.email}">
+                            <i class="fas fa-envelope me-1"></i>
+                            <span th:text="${post.user.email}">email@example.com</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Category Info -->
+                <div class="card shadow-sm mb-4" th:if="${post.category != null}">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="fas fa-folder-open me-2"></i>Danh mục</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6 th:text="${post.category.categoryName}">Tên danh mục</h6>
+                        <a th:href="@{/posts(category=${post.category.categoryId})}"
+                           class="btn btn-outline-warning btn-sm w-100 mt-2">
+                            <i class="fas fa-list me-1"></i> Xem tất cả bài viết
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Back to List -->
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <a href="/posts" class="btn btn-primary w-100">
+                            <i class="fas fa-arrow-left me-2"></i> Quay lại danh sách
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div th:replace="~{user/layout/footer :: footer}"></div>
+
+    <th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
+
+    <script>
+        function shareOnFacebook() {
+            const url = encodeURIComponent(window.location.href);
+            window.open('https://www.facebook.com/sharer/sharer.php?u=' + url,
+                       'facebook-share-dialog',
+                       'width=626,height=436');
+            return false;
+        }
+
+        function shareOnTwitter(button) {
+            const url = encodeURIComponent(window.location.href);
+            const title = button.getAttribute('data-title') || '';
+            const text = encodeURIComponent(title);
+            window.open('https://twitter.com/intent/tweet?url=' + url + '&text=' + text,
+                       'twitter-share-dialog',
+                       'width=626,height=436');
+            return false;
+        }
+
+        function copyToClipboard() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(function() {
+                alert('Đã sao chép liên kết vào clipboard!');
+            }, function(err) {
+                console.error('Lỗi khi sao chép: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
+

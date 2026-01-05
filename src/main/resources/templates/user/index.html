@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"></html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{user/layout/head :: head}"></th:block>
+    <!-- CSS riêng cho Index -->
+    <link rel="stylesheet" th:href="@{/user_template/css/index.css}">
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -12,6 +14,203 @@
     <div th:if="${error}" th:attr="data-flash-error=${error}" style="display:none;"></div>
     <div th:if="${info}" th:attr="data-flash-info=${info}" style="display:none;"></div>
 
+    <!-- Subscription Notification Modal - Popup Advertisement Style -->
+    <div th:if="${showSubscriptionNotification}" id="subscriptionNotificationModal"
+         style="position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                z-index: 999999 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                pointer-events: auto !important;">
+
+        <!-- Backdrop Overlay -->
+        <div onclick="closeSubscriptionModal()"
+             style="position: absolute !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    background: rgba(0, 0, 0, 0.75) !important;
+                    backdrop-filter: blur(5px) !important;
+                    -webkit-backdrop-filter: blur(5px) !important;
+                    animation: fadeIn 0.3s ease-out;"></div>
+
+        <!-- Modal Content Card -->
+        <div class="subscription-modal-content"
+             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border-radius: 24px;
+                    padding: 45px 40px;
+                    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5),
+                                0 10px 40px rgba(102, 126, 234, 0.4),
+                                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                    animation: popupBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55),
+                               pulseGlow 3s ease-in-out infinite 0.6s;
+                    position: relative !important;
+                    color: white;
+                    z-index: 1000000 !important;
+                    width: 90%;
+                    max-width: 550px;
+                    max-height: 85vh;
+                    overflow-y: auto;
+                    transform-origin: center center;">
+
+            <!-- Close Button - X -->
+            <button type="button" onclick="closeSubscriptionModal()"
+                    style="position: absolute;
+                           top: -12px;
+                           right: -12px;
+                           background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+                           border: 3px solid white;
+                           color: white;
+                           font-size: 20px;
+                           font-weight: bold;
+                           width: 40px;
+                           height: 40px;
+                           border-radius: 50%;
+                           cursor: pointer;
+                           transition: all 0.3s ease;
+                           box-shadow: 0 4px 15px rgba(238, 90, 111, 0.5);
+                           z-index: 10;"
+                    onmouseover="this.style.transform='rotate(90deg) scale(1.1)'; this.style.boxShadow='0 6px 20px rgba(238, 90, 111, 0.8)';"
+                    onmouseout="this.style.transform='rotate(0deg) scale(1)'; this.style.boxShadow='0 4px 15px rgba(238, 90, 111, 0.5)';">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <!-- Animated Icon -->
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="display: inline-block;
+                            background: rgba(255, 255, 255, 0.25);
+                            border-radius: 50%;
+                            padding: 25px;
+                            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2),
+                                        inset 0 2px 10px rgba(255, 255, 255, 0.15);
+                            animation: bounce 2s ease-in-out infinite;">
+                    <i class="fas fa-crown" style="font-size: 70px;
+                                                    color: #ffd700;
+                                                    filter: drop-shadow(0 5px 10px rgba(255, 215, 0, 0.5));
+                                                    animation: sparkle 1.5s ease-in-out infinite;"></i>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <h2 style="text-align: center;
+                       margin-bottom: 20px;
+                       font-weight: 800;
+                       font-size: 28px;
+                       color: white;
+                       text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+                       letter-spacing: 0.5px;">
+                <i class="fas fa-star" style="color: #ffd700;
+                                              margin-right: 8px;
+                                              animation: sparkle 1.5s ease-in-out infinite;"></i>
+                Chào mừng đến EbookStore!
+                <i class="fas fa-star" style="color: #ffd700;
+                                              margin-left: 8px;
+                                              animation: sparkle 1.5s ease-in-out infinite 0.5s;"></i>
+            </h2>
+
+            <!-- Message Content -->
+            <div style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                        border-radius: 16px;
+                        padding: 30px 25px;
+                        margin-bottom: 30px;
+                        backdrop-filter: blur(10px);
+                        box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.1);">
+
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="display: inline-block;
+                                background: rgba(255, 107, 107, 0.2);
+                                border: 2px dashed rgba(255, 107, 107, 0.5);
+                                border-radius: 12px;
+                                padding: 12px 24px;">
+                        <p style="font-size: 20px;
+                                  margin: 0;
+                                  font-weight: 700;
+                                  color: #ffebee;">
+                            <i class="fas fa-exclamation-circle" style="color: #ff6b6b; margin-right: 8px;"></i>
+                            Bạn chưa kích hoạt gói đăng ký
+                        </p>
+                    </div>
+                </div>
+
+                <p style="font-size: 17px;
+                          margin-bottom: 15px;
+                          text-align: center;
+                          font-weight: 500;
+                          line-height: 1.6;">
+                    Để trải nghiệm đọc sách, vui lòng kích hoạt<br>
+                    <strong style="color: #ffd700;
+                                   font-size: 20px;
+                                   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);">
+                        <i class="fas fa-gift"></i> Gói FREE
+                    </strong>
+                    hoặc nâng cấp lên Premium
+                </p>
+
+                <div style="background: rgba(255, 215, 0, 0.15);
+                            border-left: 4px solid #ffd700;
+                            border-radius: 8px;
+                            padding: 15px;
+                            margin-top: 20px;">
+                    <p style="font-size: 15px;
+                              margin: 0;
+                              text-align: center;
+                              color: #fff9e6;
+                              font-weight: 500;">
+                        <i class="fas fa-book-open" style="color: #ffd700; margin-right: 6px;"></i>
+                        Hàng ngàn đầu sách đang chờ bạn khám phá!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Call-to-Action Button -->
+            <div style="text-align: center;">
+                <a th:href="@{/subscription/plans}"
+                   style="display: inline-block;
+                          background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+                          color: #1a1a1a;
+                          padding: 18px 45px;
+                          font-size: 19px;
+                          font-weight: 800;
+                          border-radius: 50px;
+                          text-decoration: none;
+                          text-transform: uppercase;
+                          letter-spacing: 1px;
+                          box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4),
+                                      0 4px 15px rgba(0, 0, 0, 0.3),
+                                      inset 0 2px 5px rgba(255, 255, 255, 0.5);
+                          transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                          animation: buttonPulse 2s ease-in-out infinite;
+                          border: 2px solid rgba(255, 255, 255, 0.8);"
+                   onmouseover="this.style.transform='translateY(-3px) scale(1.05)';
+                                this.style.boxShadow='0 12px 35px rgba(255, 215, 0, 0.6), 0 6px 20px rgba(0, 0, 0, 0.4)';
+                                this.style.background='linear-gradient(135deg, #ffed4e 0%, #ffd700 100%)'"
+                   onmouseout="this.style.transform='translateY(0) scale(1)';
+                               this.style.boxShadow='0 8px 25px rgba(255, 215, 0, 0.4), 0 4px 15px rgba(0, 0, 0, 0.3)';
+                               this.style.background='linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)'">
+                    <i class="fas fa-bolt" style="margin-right: 8px;"></i>
+                    Kích hoạt ngay - MIỄN PHÍ
+                    <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+                </a>
+
+                <p style="margin-top: 15px;
+                          font-size: 13px;
+                          opacity: 0.85;
+                          text-align: center;">
+                    <i class="fas fa-lock"></i> Bảo mật 100% •
+                    <i class="fas fa-clock"></i> Kích hoạt chỉ trong 5 giây
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSS Animations -->
+    <!-- Styles moved to /user_template/css/index.css -->
 
     <!-- Dynamic Banner Carousel Section -->
     <section class="banner-carousel-section" th:if="${banners != null and #lists.size(banners) > 0}">
@@ -162,7 +361,6 @@
                 </li>
             </ul>
         </div>
-    </section>
     </section>
 
     <!-- Free Books Section -->
@@ -517,44 +715,8 @@
     <script th:src="@{/user_template/js/user-main.js}"></script>
     <!-- JS riêng cho Homepage -->
     <script th:src="@{/user_template/js/user-index.js}"></script>
-
-    <!-- Script điều khiển search box dựa trên banner -->
-    <script th:inline="javascript">
-        document.addEventListener('DOMContentLoaded', function() {
-            // Kiểm tra xem có banner hay không
-            var hasBanner = /*[[${banners != null and #lists.size(banners) > 0}]]*/ false;
-
-            if (hasBanner) {
-                // Nếu có banner: Hiện search box trong navbar, ẩn trong hero
-                var navbarSearchForm = document.getElementById('navbarSearchForm');
-                if (navbarSearchForm) {
-                    navbarSearchForm.classList.remove('d-none');
-                    navbarSearchForm.classList.add('d-flex');
-                }
-            }
-        });
-
-        // Search function for navbar
-        function searchBooksFromNavbar() {
-            const query = document.getElementById('navbarSearchInput').value;
-            if (query.trim()) {
-                window.location.href = '/books/search?keyword=' + encodeURIComponent(query);
-            }
-        }
-
-        // Enter key search for navbar
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('navbarSearchInput');
-            if (searchInput) {
-                searchInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        searchBooksFromNavbar();
-                    }
-                });
-            }
-        });
-    </script>
+    <!-- JS riêng cho Index page -->
+    <script th:src="@{/user_template/js/index.js}"></script>
 </body>
 </html>
 

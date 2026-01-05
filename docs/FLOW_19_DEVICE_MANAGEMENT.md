@@ -24,10 +24,24 @@
 Quản lý giới hạn số thiết bị đăng nhập đồng thời cho user, ngăn chặn chia sẻ tài khoản không kiểm soát.
 
 ### Business Rules
+**Device Limits theo Subscription:**
 - **FREE users:** Tối đa 1 thiết bị
-- **BASIC subscription:** Tối đa 2 thiết bị
+- **BASIC subscription:** Tối đa 2 thiết bị  
 - **PREMIUM subscription:** Tối đa 3 thiết bị
 - **VIP subscription:** Tối đa 5 thiết bị
+- **ADMIN role:** ♾️ Unlimited (999 devices - bypass tất cả giới hạn)
+
+**Violation Tracking:**
+- Mỗi lần login vượt quá giới hạn: `device_violation_count++`
+- Sau 3 lần vi phạm: Account tự động bị khóa
+- Account locked message: "Tài khoản đã bị khóa do vượt quá 3 lần giới hạn thiết bị"
+
+**Security Features:**
+- ✅ Device fingerprinting (browser + OS + screen + timezone)
+- ✅ IP tracking (first_ip, last_ip)
+- ✅ Trust score (tăng dần khi login thường xuyên)
+- ✅ Không cho phép xóa thiết bị đang sử dụng
+- ✅ Session invalidation khi xóa thiết bị
 
 ### Actors
 - **User**: Quản lý các thiết bị của mình
@@ -156,6 +170,10 @@ public String devicesPage(Authentication authentication,
     int maxDevices = getUserMaxDevices(currentUser.getUserId());
     String subscriptionInfo = getSubscriptionInfo(currentUser.getUserId());
 
+    // Kiểm tra xem user có phải admin không
+    boolean isAdmin = currentUser.getRole() != null &&
+                     currentUser.getRole().getRoleName() == Role.RoleName.ADMIN;
+
     // Tạo DTO cho view
     List<DeviceResponseDto> deviceDtos = devices.stream()
         .map(d -> DeviceResponseDto.fromEntity(
@@ -168,8 +186,23 @@ public String devicesPage(Authentication authentication,
     model.addAttribute("currentCount", devices.size());
     model.addAttribute("violationCount", currentUser.getDeviceViolationCount());
     model.addAttribute("subscriptionInfo", subscriptionInfo);
+    model.addAttribute("isAdmin", isAdmin);
 
     return "user/devices/manage";
+}
+
+/**
+ * Helper: Lấy max devices từ subscription
+ */
+private int getUserMaxDevices(String userId) {
+    return userService.getUserMaxDevices(userId);
+}
+
+/**
+ * Helper: Lấy thông tin subscription hiện tại
+ */
+private String getSubscriptionInfo(String userId) {
+    return userService.getUserSubscriptionInfo(userId);
 }
 ```
 
@@ -183,39 +216,56 @@ public Map<String, Object> removeDevice(
         HttpSession session) {
 
     Map<String, Object> response = new HashMap<>();
+    User currentUser = getCurrentUser(authentication);
+    String currentDeviceId = (String) session.getAttribute("currentDeviceId");
 
     try {
-        User currentUser = getCurrentUser(authentication);
-        String currentDeviceId = (String) session.getAttribute("currentDeviceId");
-
-        // Không cho phép xóa thiết bị đang dùng
-        if (deviceId.equals(currentDeviceId)) {
-            response.put("success", false);
-            response.put("message", "Không thể xóa thiết bị đang sử dụng");
-            return response;
-        }
-
-        // Xóa thiết bị
-        boolean removed = userService.removeDevice(
+        // Gọi service với current device check
+        userService.removeDeviceWithCurrentCheck(
             currentUser.getUserId(), 
-            deviceId
+            deviceId, 
+            currentDeviceId
         );
-
-        if (removed) {
-            response.put("success", true);
-            response.put("message", "Đã xóa thiết bị thành công");
-        } else {
-            response.put("success", false);
-            response.put("message", "Không tìm thấy thiết bị hoặc không có quyền xóa");
-        }
-
-        return response;
-
+        
+        response.put("success", true);
+        response.put("message", "Xóa thiết bị thành công");
     } catch (Exception e) {
         response.put("success", false);
-        response.put("message", "Có lỗi xảy ra: " + e.getMessage());
-        return response;
+        response.put("message", e.getMessage());
     }
+
+    return response;
+}
+```
+
+**Service Implementation (UserServiceImpl):**
+```java
+@Override
+public void removeDeviceWithCurrentCheck(String userId, String deviceId, 
+                                        String currentDeviceId) {
+    // Không cho phép xóa thiết bị đang dùng
+    if (deviceId.equals(currentDeviceId)) {
+        throw new IllegalArgumentException(
+            "Không thể xóa thiết bị đang sử dụng");
+    }
+
+    Optional<UserDevice> deviceOpt = userDeviceRepository.findById(deviceId);
+    
+    if (deviceOpt.isEmpty()) {
+        throw new NotFoundException("Không tìm thấy thiết bị");
+    }
+    
+    UserDevice device = deviceOpt.get();
+    
+    // Verify ownership
+    if (!device.getUser().getUserId().equals(userId)) {
+        throw new UnauthorizedException("Không có quyền xóa thiết bị này");
+    }
+    
+    // Soft delete hoặc hard delete
+    userDeviceRepository.delete(device);
+    
+    log.info("Device removed: {} for user: {}", deviceId, userId);
 }
 ```
 

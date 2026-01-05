@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       lang="vi">
@@ -123,12 +123,17 @@
                 </div>
 
                 <div th:unless="${isCurrent}">
-                    <a th:if="${isFree}"
-                       th:href="@{/payment/subscription/checkout/{id}(id=${sub.subscriptionId})}"
-                       class="subscribe-btn btn-secondary">
-                        <i class="fas fa-gift me-2"></i>Dùng ngay
-                    </a>
+                    <!-- Gói FREE: Kích hoạt ngay không cần thanh toán -->
+                    <form th:if="${isFree}"
+                          th:action="@{/subscription/activate-free/{id}(id=${sub.subscriptionId})}"
+                          method="post"
+                          onsubmit="return confirm('Bạn có chắc muốn kích hoạt gói FREE này?');">
+                        <button type="submit" class="subscribe-btn btn-secondary w-100">
+                            <i class="fas fa-gift me-2"></i>Dùng ngay
+                        </button>
+                    </form>
 
+                    <!-- Gói trả phí: Chuyển đến trang thanh toán -->
                     <a th:if="${!isFree && isFeatured}"
                        th:href="@{/payment/subscription/checkout/{id}(id=${sub.subscriptionId})}"
                        class="subscribe-btn btn-primary">

@@ -747,6 +747,12 @@ public class ReadingController extends BaseController {
     /**
      * Kiểm tra user có quyền đọc sách không
      */
+    /**
+     * Kiểm tra user có quyền đọc sách không
+     *
+     * QUAN TRỌNG: Người dùng BẮT BUỘC phải có subscription active (bao gồm cả gói FREE)
+     * để đọc bất kỳ sách nào, kể cả sách có access_type = FREE
+     */
     private boolean canUserAccessBook(User user, Book book) {
         // Admin có thể đọc mọi sách
         if (user.getRole() != null && user.getRole().getRoleName() != null &&
@@ -754,12 +760,19 @@ public class ReadingController extends BaseController {
             return true;
         }
 
-        // Sách miễn phí thì ai cũng đọc được
-        if (Book.AccessType.FREE.equals(book.getAccessType())) {
-            return true;
+        // KIỂM TRA BẮT BUỘC: User phải có subscription active (bao gồm cả FREE)
+        boolean hasAnyActiveSubscription = hasAnyActiveSubscription(user.getUserId());
+        if (!hasAnyActiveSubscription) {
+            log.warn("User {} does not have any active subscription (including FREE)", user.getUserId());
+            return false;
         }
 
         Book.AccessType accessType = book.getAccessType();
+
+        // Sách miễn phí - chỉ cần có subscription (kể cả FREE)
+        if (Book.AccessType.FREE.equals(accessType)) {
+            return true;
+        }
 
         // Kiểm tra sách PURCHASE hoặc BOTH - user đã mua sách chưa
         if (accessType == Book.AccessType.PURCHASE || accessType == Book.AccessType.BOTH) {
@@ -770,11 +783,11 @@ public class ReadingController extends BaseController {
             }
         }
 
-        // Kiểm tra sách SUBSCRIPTION hoặc BOTH - user có subscription active không
+        // Kiểm tra sách SUBSCRIPTION hoặc BOTH - user có subscription PREMIUM không (không tính FREE)
         if (accessType == Book.AccessType.SUBSCRIPTION || accessType == Book.AccessType.BOTH) {
-            boolean hasActiveSubscription = hasActiveSubscription(user.getUserId());
-            if (hasActiveSubscription) {
-                log.debug("User {} has active subscription for book {}", user.getUserId(), book.getBookId());
+            boolean hasPremiumSubscription = hasActiveSubscription(user.getUserId());
+            if (hasPremiumSubscription) {
+                log.debug("User {} has premium subscription for book {}", user.getUserId(), book.getBookId());
                 return true;
             }
         }
@@ -786,8 +799,35 @@ public class ReadingController extends BaseController {
     }
 
     /**
-     * Kiểm tra user có subscription active không (không tính gói FREE)
-     * Chỉ gói BASIC, PREMIUM, VIP mới được coi là có subscription
+     * Kiểm tra user có BẤT KỲ subscription active nào không (bao gồm cả FREE)
+     * Dùng để kiểm tra điều kiện bắt buộc phải có gói đăng ký
+     */
+    private boolean hasAnyActiveSubscription(String userId) {
+        try {
+            List<Order> subscriptionOrders = orderService.getOrdersByUserIdAndType(userId, Order.OrderType.SUBSCRIPTION);
+
+            LocalDateTime now = LocalDateTime.now();
+            return subscriptionOrders.stream()
+                    .anyMatch(order -> {
+                        // Kiểm tra payment status
+                        boolean isValidPaymentStatus = (order.getPaymentStatus() == Order.PaymentStatus.COMPLETED ||
+                                                        order.getPaymentStatus() == Order.PaymentStatus.PAID);
+
+                        // Kiểm tra end_date còn hạn
+                        boolean isNotExpired = order.getEndDate() != null &&
+                                               order.getEndDate().isAfter(now);
+
+                        return isValidPaymentStatus && isNotExpired;
+                    });
+        } catch (Exception e) {
+            log.error("Error checking any subscription status for user {}: {}", userId, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Kiểm tra user có subscription PREMIUM active không (không tính gói FREE)
+     * Chỉ gói BASIC, PREMIUM, VIP mới được coi là có subscription premium
      *
      * QUAN TRỌNG: User hủy gói (CANCELLED) vẫn được duy trì quyền đến hết end_date
      * Ví dụ: Đăng ký 01/12 → 30/12, hủy 07/12 → Vẫn đọc đến 30/12
@@ -856,6 +896,24 @@ public class ReadingController extends BaseController {
 
         // Mặc định là FREE (không nên đến đây nếu logic canUserAccessBook đúng)
         return ReadingProgress.AccessType.FREE;
+    }
+
+    /**
+     * Xử lý khi user không có quyền đọc sách
+     * Redirect về subscription plans nếu chưa có subscription
+     * Redirect về book detail nếu đã có subscription nhưng không đủ quyền
+     */
+    private String handleAccessDenied(User user, String bookId, RedirectAttributes redirectAttributes) {
+        // Kiểm tra xem user có subscription active không
+        if (!hasAnyActiveSubscription(user.getUserId())) {
+            redirectAttributes.addFlashAttribute("error",
+                "Bạn cần kích hoạt gói đăng ký để đọc sách. Vui lòng kích hoạt gói FREE hoặc nâng cấp lên gói Premium.");
+            return "redirect:/subscription/plans";
+        }
+
+        // User có subscription nhưng không đủ quyền đọc sách này (ví dụ: sách PREMIUM mà user dùng FREE)
+        redirectAttributes.addFlashAttribute("error", "Bạn không có quyền đọc cuốn sách này. Vui lòng mua sách hoặc nâng cấp gói đăng ký.");
+        return "redirect:/books/view/" + bookId;
     }
 
     /**
@@ -1011,6 +1069,8 @@ public class ReadingController extends BaseController {
         }
     }
 }
+
+
 
 
 

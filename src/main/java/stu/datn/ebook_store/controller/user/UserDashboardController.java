@@ -18,6 +18,7 @@ import stu.datn.ebook_store.service.OrderItemService;
 import stu.datn.ebook_store.service.PostService;
 import stu.datn.ebook_store.service.ReadingProgressService;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -69,6 +70,31 @@ public class UserDashboardController {
     @GetMapping("/index")
     public String index(Authentication authentication, Model model) {
         User currentUser = getCurrentUser(authentication);
+
+        // ===== KIỂM TRA SUBSCRIPTION =====
+        boolean shouldShowSubscriptionNotification = false;
+
+        if (currentUser != null) {
+            System.out.println("=== USER INDEX PAGE - SUBSCRIPTION CHECK ===");
+            System.out.println("User ID: " + currentUser.getUserId());
+            System.out.println("User Name: " + currentUser.getFullName());
+
+            // Kiểm tra xem user có subscription active không
+            boolean hasActiveSubscription = checkUserHasActiveSubscription(currentUser.getUserId());
+            System.out.println("Has Active Subscription: " + hasActiveSubscription);
+
+            // Nếu user chưa có subscription active, hiển thị thông báo
+            if (!hasActiveSubscription) {
+                shouldShowSubscriptionNotification = true;
+                System.out.println("🔔 SHOULD SHOW NOTIFICATION: TRUE");
+            } else {
+                System.out.println("✅ User has active subscription - no notification needed");
+            }
+        }
+
+        model.addAttribute("showSubscriptionNotification", shouldShowSubscriptionNotification);
+        System.out.println("Model attribute 'showSubscriptionNotification': " + shouldShowSubscriptionNotification);
+        // ===== END SUBSCRIPTION CHECK =====
 
         try {
             // 3. LẤY DANH SÁCH BANNER VÀ ĐƯA VÀO MODEL
@@ -169,5 +195,25 @@ public class UserDashboardController {
         model.addAttribute("currentPage", "favorites"); // Dùng để highlight menu bên trái nếu có
 
         return "user/favorites"; // Trả về file view: templates/user/favorites.html
+    }
+
+    /**
+     * Kiểm tra user có subscription active không
+     */
+    private boolean checkUserHasActiveSubscription(String userId) {
+        List<Order> subscriptionOrders = orderService.getOrdersByUserIdAndType(userId, Order.OrderType.SUBSCRIPTION);
+
+        return subscriptionOrders.stream()
+                .anyMatch(order -> {
+                    // Phải đã thanh toán (COMPLETED hoặc PAID)
+                    boolean isPaid = order.getPaymentStatus() == Order.PaymentStatus.COMPLETED ||
+                                    order.getPaymentStatus() == Order.PaymentStatus.PAID;
+
+                    // Phải còn trong thời hạn
+                    boolean notExpired = order.getEndDate() != null &&
+                                        order.getEndDate().isAfter(LocalDateTime.now());
+
+                    return isPaid && notExpired;
+                });
     }
 }

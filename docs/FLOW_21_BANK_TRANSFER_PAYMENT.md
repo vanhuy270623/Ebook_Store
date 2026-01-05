@@ -122,11 +122,27 @@ public enum PaymentStatus {
 ```
 
 ### URLs
-- `GET /payment/bank-transfer?orderId={orderId}` - Khởi tạo thanh toán
-- `POST /payment/bank-transfer/confirm` - User xác nhận đã chuyển khoản
-- `GET /payment/bank-transfer/waiting?orderId={orderId}` - Trang chờ duyệt
-- `POST /admin/orders/approve/{id}` - Admin duyệt đơn
-- `POST /admin/orders/reject/{id}` - Admin từ chối đơn
+
+**Payment Flow:**
+- `POST /order/create?paymentMethod=BANK_TRANSFER` - Create order (from OrderController)
+- `GET /payment/bank-transfer?orderId={orderId}` - Display bank info & QR code
+- `POST /payment/bank-transfer/confirm?orderId={orderId}` - User confirms transfer
+
+**Result Pages:**
+- `GET /payment/bank-transfer/waiting?orderId={orderId}` - Waiting for admin approval
+- `GET /payment/success?orderId={orderId}` - Payment approved by admin
+- `GET /payment/error?orderId={orderId}` - Payment rejected by admin
+
+**Admin Actions (in AdminOrderController):**
+- `POST /admin/orders/{orderId}/approve` - Admin approves payment
+- `POST /admin/orders/{orderId}/reject` - Admin rejects payment
+- `GET /admin/orders` - List orders pending approval
+
+**Important Architecture Notes:**
+- ✅ QR Code generated using VietQR API
+- ✅ Bank info stored in `application.properties`
+- ✅ No automatic webhook verification (manual approval by admin)
+- ✅ Order status flow: PENDING → WAITING_APPROVAL → PAID/FAILED
 
 ---
 

@@ -404,7 +404,13 @@
 // ============================================
 // NOTIFICATION STYLES (Injected via JS)
 // ============================================
-const notificationStyles = `
+(function() {
+    // Check if styles already exist
+    if (document.querySelector('#notification-styles')) {
+        return;
+    }
+
+    const notificationStyles = `
     .notification-container {
         position: fixed;
         top: 80px;
@@ -479,11 +485,10 @@ const notificationStyles = `
     }
 `;
 
-// Inject notification styles
-if (!document.querySelector('#notification-styles')) {
+    // Inject notification styles
     const styleEl = document.createElement('style');
     styleEl.id = 'notification-styles';
     styleEl.textContent = notificationStyles;
     document.head.appendChild(styleEl);
-}
+})();
 

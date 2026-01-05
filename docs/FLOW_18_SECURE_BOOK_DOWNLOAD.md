@@ -152,7 +152,13 @@ downloadAuthService.recordDownload(currentUser, book);
 **Endpoint:**
 ```
 GET /books/download/{bookId}
+GET /books/download/{bookId}?fileType=PDF|EPUB
 ```
+
+**Request Parameters:**
+- `bookId` (Path): ID của sách cần tải
+- `fileType` (Query, Optional): Loại file muốn tải (PDF hoặc EPUB)
+  - Nếu không chỉ định: Tự động chọn EPUB > PDF
 
 **Key Methods:**
 
@@ -160,45 +166,147 @@ GET /books/download/{bookId}
 ```java
 @GetMapping("/{bookId}")
 @ResponseBody
-public ResponseEntity<Resource> downloadBook(@PathVariable String bookId) {
-    // 1. Authentication
-    User currentUser = getCurrentUser();
-    if (currentUser == null) {
-        return ResponseEntity.status(401).body(null);
-    }
-
-    // 2. Find book
-    Optional<Book> bookOpt = bookService.getBookById(bookId);
-    if (bookOpt.isEmpty()) {
-        return ResponseEntity.notFound().build();
-    }
-    Book book = bookOpt.get();
-
-    // 3. Authorization
-    if (!downloadAuthService.canDownload(currentUser, book)) {
-        String reason = downloadAuthService.getDownloadDeniedReason(currentUser, book);
-        return ResponseEntity.status(403)
-            .header("X-Download-Error", URLEncoder.encode(reason, StandardCharsets.UTF_8))
-            .body(null);
-    }
-
-    // 4. Find asset (EPUB > PDF)
-    Optional<BookAsset> assetOpt = bookAssetRepository
-        .findByBook_BookIdAndFileType(bookId, BookAsset.FileType.EPUB);
+public ResponseEntity<Resource> downloadBook(
+        @PathVariable String bookId,
+        @RequestParam(required = false) String fileType) {
     
-    if (assetOpt.isEmpty()) {
-        assetOpt = bookAssetRepository
-            .findByBook_BookIdAndFileType(bookId, BookAsset.FileType.PDF);
-    }
+    try {
+        // 1. Kiểm tra authentication
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(401).body(null);
+        }
 
-    if (assetOpt.isEmpty()) {
-        return ResponseEntity.notFound().build();
-    }
-    BookAsset asset = assetOpt.get();
+        // 2. Tìm sách
+        Optional<Book> bookOpt = bookService.getBookById(bookId);
+        if (bookOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Book book = bookOpt.get();
 
-    // 5. Check file exists
-    Path filePath = fileStorageService.resolveFilePath(asset.getFileUrl());
-    if (!Files.exists(filePath)) {
+        // 3. Kiểm tra quyền tải xuống
+        if (!downloadAuthService.canDownload(currentUser, book)) {
+            String reason = downloadAuthService.getDownloadDeniedReason(
+                currentUser, book);
+            return ResponseEntity.status(403)
+                .header("X-Download-Error", 
+                    URLEncoder.encode(reason, StandardCharsets.UTF_8))
+                .body(null);
+        }
+
+        // 4. Tìm BookAsset theo fileType (nếu được chỉ định)
+        Optional<BookAsset> assetOpt = Optional.empty();
+        
+        if (fileType != null && !fileType.isEmpty()) {
+            // User đã chọn file type cụ thể
+            try {
+                BookAsset.FileType requestedType = 
+                    BookAsset.FileType.valueOf(fileType.toUpperCase());
+                assetOpt = bookAssetRepository
+                    .findByBook_BookIdAndFileType(bookId, requestedType);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(400)
+                    .header("X-Download-Error", "Loại file không hợp lệ")
+                    .body(null);
+            }
+        } else {
+            // Tự động chọn: ưu tiên EPUB, sau đó PDF
+            assetOpt = bookAssetRepository
+                .findByBook_BookIdAndFileType(bookId, BookAsset.FileType.EPUB);
+            
+            if (assetOpt.isEmpty()) {
+                assetOpt = bookAssetRepository
+                    .findByBook_BookIdAndFileType(bookId, BookAsset.FileType.PDF);
+            }
+        }
+
+        if (assetOpt.isEmpty()) {
+            return ResponseEntity.status(404)
+                .header("X-Download-Error", "Không tìm thấy file sách")
+                .body(null);
+        }
+        BookAsset asset = assetOpt.get();
+
+        // 5. Load file từ storage
+        Path filePath = fileStorageService.loadFile(asset.getFileUrl());
+        
+        if (!Files.exists(filePath)) {
+            return ResponseEntity.status(404)
+                .header("X-Download-Error", "File không tồn tại trên server")
+                .body(null);
+        }
+
+        // 6. Get file size
+        long fileSize = Files.size(filePath);
+
+        // 7. Create InputStreamResource với BufferedInputStream
+        // Đảm bảo đóng file handle đúng cách và tránh file locking
+        InputStream inputStream = new BufferedInputStream(
+                Files.newInputStream(filePath, StandardOpenOption.READ)
+        );
+        Resource resource = new InputStreamResource(inputStream);
+
+        // 8. Xác định Content-Type
+        String contentType = determineContentType(asset.getFileType());
+
+        // 9. Tạo tên file download (có dấu tiếng Việt)
+        String fileName = sanitizeFileName(book.getTitle()) + 
+                         getFileExtension(asset.getFileType());
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
+                .replaceAll("\\+", "%20");
+
+        // 10. Trả về file stream
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename*=UTF-8''" + encodedFileName)
+                .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileSize))
+                .body(resource);
+
+    } catch (IOException e) {
+        return ResponseEntity.status(500)
+                .header("X-Download-Error", "Lỗi khi tải file: " + e.getMessage())
+                .body(null);
+    } catch (Exception e) {
+        return ResponseEntity.status(500)
+                .header("X-Download-Error", "Lỗi hệ thống: " + e.getMessage())
+                .body(null);
+    }
+}
+
+/**
+ * Xác định Content-Type dựa trên loại file
+ */
+private String determineContentType(BookAsset.FileType fileType) {
+    return switch (fileType) {
+        case PDF -> "application/pdf";
+        case EPUB -> "application/epub+zip";
+    };
+}
+
+/**
+ * Lấy extension file
+ */
+private String getFileExtension(BookAsset.FileType fileType) {
+    return switch (fileType) {
+        case PDF -> ".pdf";
+        case EPUB -> ".epub";
+    };
+}
+
+/**
+ * Làm sạch tên file (loại bỏ ký tự đặc biệt, giữ dấu tiếng Việt)
+ */
+private String sanitizeFileName(String fileName) {
+    if (fileName == null) {
+        return "ebook";
+    }
+    // Giữ lại chữ cái, số, dấu tiếng Việt, khoảng trắng
+    return fileName.replaceAll("[^a-zA-ZÀ-ỹ0-9\\s\\-_]", "")
+                   .replaceAll("\\s+", "_")
+                   .substring(0, Math.min(fileName.length(), 100));
+}
+```
         return ResponseEntity.notFound().build();
     }
 

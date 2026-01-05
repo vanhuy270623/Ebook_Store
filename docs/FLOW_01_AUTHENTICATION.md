@@ -22,11 +22,11 @@
 
 ### URLs
 - `GET /auth/register` - Trang đăng ký
-- `POST /auth/register` - Xử lý đăng ký
+- `POST /auth/register` - Xử lý đăng ký (validation + auto VIP cho admin)
 - `GET /auth/login` - Trang đăng nhập
-- `POST /auth/login` - Xử lý đăng nhập (với device checking)
-- `GET /logout` - Đăng xuất (deprecated)
-- `POST /auth/logout` - Đăng xuất (CSRF protected, recommended)
+- `POST /auth/login` - Xử lý đăng nhập (với Device Fingerprinting & Violation Check)
+- `GET /logout` - Đăng xuất (deprecated - sẽ bị loại bỏ)
+- `POST /auth/logout` - Đăng xuất (✅ CSRF protected, recommended)
 
 ### Key Features
 - ✅ Đăng ký tài khoản với validation

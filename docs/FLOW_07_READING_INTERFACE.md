@@ -67,11 +67,18 @@
   - Custom JavaScript - Reader controls
 
 ### URLs
-- `GET /reading/book/{bookId}` - Universal reader (auto-detect format)
-- `GET /reading/pdf/{bookId}` - PDF reader
-- `GET /reading/epub/{bookId}` - EPUB reader
-- `POST /api/reading/progress` - Save reading progress
-- `POST /api/reading/bookmark` - Save bookmark
+**Reading Interface:**
+- `GET /reading/pdf/{bookId}` - PDF viewer (sử dụng PDF.js)
+- `GET /reading/epub/{bookId}` - EPUB reader (sử dụng ePub.js)
+- `GET /reading/pdf/{category}/{fileName}` - PDF viewer by path (alternative route)
+- `GET /reading/epub/{category}/{fileName}` - EPUB reader by path (alternative route)
+
+**Secure Streaming:**
+- `GET /reading/stream/{bookId}` - Secure file streaming endpoint (validates access)
+
+**Progress Tracking:**
+- `POST /api/reading/progress/update` - Save reading progress
+- `GET /api/reading/progress/{bookId}` - Get reading progress
 
 ---
 
@@ -105,95 +112,259 @@ User → Browser → ReadingController → OrderService → ReadingProgressServi
 
 ### Implementation Details
 
-**Controller**:
+**Controller**: `ReadingController.java`
+
 ```java
 @Controller
 @RequestMapping("/reading")
-public class ReadingController {
+@Slf4j
+public class ReadingController extends BaseController {
     
-    private final OrderService orderService;
-    private final ReadingProgressService readingProgressService;
     private final BookService bookService;
+    private final BookAssetService bookAssetService;
+    private final ReadingProgressService readingProgressService;
+    private final OrderService orderService;
+    private final OrderItemService orderItemService;
+    private final FileStorageService fileStorageService;
     
-    @GetMapping("/book/{bookId}")
-    public String readBook(
-            @PathVariable String bookId,
-            Authentication authentication,
-            Model model,
-            RedirectAttributes redirectAttributes) {
-        
+    /**
+     * PDF Viewer - Route theo bookId
+     * URL: /reading/pdf/{bookId}
+     */
+    @GetMapping("/pdf/{bookId}")
+    public String pdfViewer(@PathVariable String bookId,
+                            Model model,
+                            RedirectAttributes redirectAttributes) {
+        return prepareReaderView(bookId, "PDF", model, redirectAttributes, 
+                                "user/reading/pdf-viewer");
+    }
+    
+    /**
+     * PDF Viewer - Route theo category/fileName  
+     * URL: /reading/pdf/{category}/{fileName}
+     * Example: /reading/pdf/khoahoc-vientuong/Cac_The_Gioi_Song_Song.pdf
+     */
+    @GetMapping("/pdf/{category}/{fileName:.+}")
+    public String pdfViewerByPath(@PathVariable String category,
+                                   @PathVariable String fileName,
+                                   Model model,
+                                   RedirectAttributes redirectAttributes) {
         try {
-            // 1. Get current user
-            User currentUser = (User) authentication.getPrincipal();
+            log.info("Opening PDF by path - category: {}, fileName: {}", 
+                     category, fileName);
+            User currentUser = getCurrentUser();
             
-            // 2. Get book
-            Book book = bookService.getBookById(bookId);
-            if (book == null) {
-                redirectAttributes.addFlashAttribute("error", "Sách không tồn tại");
-                return "redirect:/user/books";
-            }
-            
-            // 3. Check ownership
-            boolean hasAccess = checkBookAccess(currentUser, book);
-            if (!hasAccess) {
+            // Kiểm tra authentication
+            if (currentUser == null) {
                 redirectAttributes.addFlashAttribute("error", 
-                    "Bạn cần mua sách này để đọc");
-                return "redirect:/user/books/" + bookId;
+                    "Vui lòng đăng nhập để đọc sách");
+                return "redirect:/auth/login";
             }
             
-            // 4. Get or create reading progress
+            // Tìm book theo file path
+            String fileUrl = "/book_asset/source/" + category + "/" + fileName;
+            BookAsset asset = bookAssetService.findByFileUrl(fileUrl);
+            
+            if (asset == null) {
+                log.error("Asset not found for fileUrl: {}", fileUrl);
+                redirectAttributes.addFlashAttribute("error", 
+                    "Không tìm thấy file sách");
+                return "redirect:/books";
+            }
+            
+            Book book = asset.getBook();
+            
+            // Kiểm tra quyền truy cập
+            if (!canUserAccessBook(currentUser, book)) {
+                log.warn("User {} does not have access to book {}", 
+                        currentUser.getUserId(), book.getBookId());
+                redirectAttributes.addFlashAttribute("error", 
+                    "Bạn không có quyền đọc cuốn sách này");
+                return "redirect:/books/view/" + book.getBookId();
+            }
+            
+            // Lấy hoặc tạo mới reading progress
             ReadingProgress progress = readingProgressService
-                .getOrCreateProgress(currentUser, book);
+                    .getReadingProgressByUserAndBook(currentUser, book)
+                    .orElseGet(() -> {
+                        ReadingProgress newProgress = new ReadingProgress();
+                        newProgress.setUser(currentUser);
+                        newProgress.setBook(book);
+                        newProgress.setBookAsset(asset);
+                        newProgress.setProgressPercentage(0.0f);
+                        newProgress.setIsCompleted(false);
+                        newProgress.setIsFavorite(false);
+                        newProgress.setAccessType(determineAccessType(book, currentUser));
+                        newProgress.setCreatedAt(LocalDateTime.now());
+                        newProgress.setLastReadAt(LocalDateTime.now());
+                        return readingProgressService.saveReadingProgress(newProgress);
+                    });
             
-            // 5. Detect format and redirect to appropriate reader
-            String format = detectBookFormat(book);
+            // Prepare model
+            model.addAttribute("book", book);
+            model.addAttribute("asset", asset);
+            model.addAttribute("progress", progress);
+            model.addAttribute("user", currentUser);
             
-            switch (format.toLowerCase()) {
-                case "pdf":
-                    return "redirect:/reading/pdf/" + bookId;
-                case "epub":
-                    return "redirect:/reading/epub/" + bookId;
-                default:
-                    model.addAttribute("book", book);
-                    model.addAttribute("progress", progress);
-                    return "user/reading/reader";
+            // Encode lastReadLocation cho JavaScript
+            if (progress != null && progress.getLastReadLocation() != null) {
+                String encodedLocation = Base64.getEncoder()
+                        .encodeToString(progress.getLastReadLocation()
+                        .getBytes(StandardCharsets.UTF_8));
+                model.addAttribute("encodedLocation", encodedLocation);
             }
+            
+            return "user/reading/pdf-viewer";
             
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi mở sách");
-            return "redirect:/user/books";
+            log.error("Error opening PDF: {}", e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", 
+                "Có lỗi xảy ra khi mở sách");
+            return "redirect:/books";
         }
     }
     
     /**
-     * Check if user has access to book (purchased or free)
+     * EPUB Reader - Route theo bookId
+     * URL: /reading/epub/{bookId}
      */
-    private boolean checkBookAccess(User user, Book book) {
-        // Check if book is free
-        if (book.getPrice() == null || book.getPrice().compareTo(BigDecimal.ZERO) == 0) {
+    @GetMapping("/epub/{bookId}")
+    public String epubReader(@PathVariable String bookId,
+                             Model model,
+                             RedirectAttributes redirectAttributes) {
+        return prepareReaderView(bookId, "EPUB", model, redirectAttributes, 
+                                "user/reading/epub-viewer");
+    }
+    
+    /**
+     * Shared logic để prepare reader view
+     */
+    private String prepareReaderView(String bookId, String expectedFormat,
+                                     Model model, 
+                                     RedirectAttributes redirectAttributes,
+                                     String viewName) {
+        try {
+            User currentUser = getCurrentUser();
+            
+            if (currentUser == null) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "Vui lòng đăng nhập");
+                return "redirect:/auth/login";
+            }
+            
+            // Get book
+            Book book = bookService.getBookById(bookId)
+                    .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+            
+            // Check access
+            if (!canUserAccessBook(currentUser, book)) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "Bạn không có quyền đọc cuốn sách này");
+                return "redirect:/books/view/" + bookId;
+            }
+            
+            // Get asset
+            BookAsset asset = bookAssetService.getByBookId(bookId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy file sách"));
+            
+            // Get or create progress
+            ReadingProgress progress = readingProgressService
+                    .getOrCreateProgress(currentUser, book, asset);
+            
+            // Add to model
+            model.addAttribute("book", book);
+            model.addAttribute("asset", asset);
+            model.addAttribute("progress", progress);
+            model.addAttribute("user", currentUser);
+            
+            return viewName;
+            
+        } catch (Exception e) {
+            log.error("Error in prepareReaderView: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/books";
+        }
+    }
+    
+    /**
+     * Check if user can access book
+     * Returns true if:
+     * - Book is FREE
+     * - User has purchased book
+     * - User has active subscription with unlimited access
+     */
+    private boolean canUserAccessBook(User user, Book book) {
+        // FREE books
+        if (book.getAccessType() == Book.AccessType.FREE) {
             return true;
         }
         
-        // Check if user has purchased
-        return orderService.hasUserPurchasedBook(user.getUserId(), book.getBookId());
+        // Check if purchased
+        boolean hasPurchased = orderItemService
+                .hasUserPurchasedBook(user.getUserId(), book.getBookId());
+        
+        if (hasPurchased) {
+            return true;
+        }
+        
+        // Check subscription (PREMIUM access)
+        // TODO: Implement subscription-based access
+        
+        return false;
+    }
+}
+```
+
+**Access Control Logic:**
+
+The system uses **3-tier access control**:
+
+1. **FREE Books** (`access_type = 'FREE'`)
+   - Anyone can read (no purchase required)
+   
+2. **PREMIUM Books** (`access_type = 'PREMIUM'`)
+   - Must purchase individually OR have active subscription
+   
+3. **SUBSCRIPTION_ONLY** 
+   - Requires active subscription (cannot purchase individually)
+
+**Service: BookAsset URL Methods**
+
+```java
+@Entity
+public class BookAsset {
+    /**
+     * Get viewer page URL
+     * Returns: /reading/pdf/{bookId} or /reading/epub/{bookId}
+     * This is the main URL users click to open books
+     */
+    public String getViewerUrl() {
+        if (this.book == null || this.book.getBookId() == null) {
+            return null;
+        }
+        
+        String bookId = this.book.getBookId();
+        
+        if (this.fileType == FileType.PDF) {
+            return "/reading/pdf/" + bookId;
+        } else if (this.fileType == FileType.EPUB) {
+            return "/reading/epub/" + bookId;
+        }
+        
+        return null;
     }
     
     /**
-     * Detect book format from source file
+     * Get secure streaming URL
+     * Returns: /reading/stream/{bookId}
+     * Used by viewer pages to stream file content with validation
      */
-    private String detectBookFormat(Book book) {
-        String sourceUrl = book.getSourceFileUrl();
-        if (sourceUrl == null) {
-            return "unknown";
+    public String getReadingUrl() {
+        if (this.book == null || this.book.getBookId() == null) {
+            return null;
         }
         
-        if (sourceUrl.toLowerCase().endsWith(".pdf")) {
-            return "pdf";
-        } else if (sourceUrl.toLowerCase().endsWith(".epub")) {
-            return "epub";
-        } else {
-            return "unknown";
-        }
+        return "/reading/stream/" + this.book.getBookId();
     }
 }
 ```

@@ -127,6 +127,73 @@ public class UserSubscriptionController extends BaseController {
     }
 
     /**
+     * Kích hoạt gói FREE trực tiếp không cần thanh toán
+     * URL: POST /subscription/activate-free/{subscriptionId}
+     */
+    @PostMapping("/activate-free/{subscriptionId}")
+    public String activateFreeSubscription(@PathVariable String subscriptionId,
+                                          RedirectAttributes redirectAttributes) {
+
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để kích hoạt gói FREE");
+            return "redirect:/auth/login";
+        }
+
+        try {
+            // Lấy subscription plan
+            Optional<Subscription> subscriptionOpt = subscriptionService.getSubscriptionById(subscriptionId);
+            if (subscriptionOpt.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Gói đăng ký không tồn tại");
+                return "redirect:/subscription/plans";
+            }
+
+            Subscription subscription = subscriptionOpt.get();
+
+            // Kiểm tra xem có phải gói FREE không
+            if (subscription.getPrice().compareTo(java.math.BigDecimal.ZERO) != 0) {
+                redirectAttributes.addFlashAttribute("error", "Gói này không phải gói miễn phí");
+                return "redirect:/subscription/plans";
+            }
+
+            // Kiểm tra xem user đã có gói active chưa
+            Optional<UserSubscription> activeSubscription = getActiveSubscription(currentUser.getUserId());
+            if (activeSubscription.isPresent()) {
+                redirectAttributes.addFlashAttribute("error",
+                    "Bạn đã có gói đăng ký đang hoạt động. Vui lòng hủy gói hiện tại trước khi đăng ký gói mới.");
+                return "redirect:/subscription/plans";
+            }
+
+            // Tạo order cho gói FREE
+            Order order = new Order();
+            order.setOrderId("SUB_FREE_" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+            order.setUser(currentUser);
+            order.setSubscription(subscription);
+            order.setOrderType(Order.OrderType.SUBSCRIPTION);
+            order.setTotalAmount(subscription.getPrice()); // 0
+            order.setPaymentMethod(Order.PaymentMethod.FREE);
+            order.setPaymentStatus(Order.PaymentStatus.COMPLETED); // Kích hoạt ngay
+
+            // Set thời gian gói
+            LocalDateTime startDate = LocalDateTime.now();
+            LocalDateTime endDate = startDate.plusDays(subscription.getDurationDays());
+            order.setStartDate(startDate);
+            order.setEndDate(endDate);
+
+            // Lưu order
+            orderService.saveOrder(order);
+
+            redirectAttributes.addFlashAttribute("success",
+                "Đã kích hoạt gói FREE thành công! Bạn có thể bắt đầu đọc sách ngay.");
+            return "redirect:/subscription/my-subscriptions";
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/subscription/plans";
+        }
+    }
+
+    /**
      * Hủy gói đăng ký
      * URL: POST /subscription/cancel/{subscriptionId}
      */

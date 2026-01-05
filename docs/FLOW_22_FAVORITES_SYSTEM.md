@@ -104,14 +104,18 @@ User          FavoriteController    ReadingProgressService    Database
 
 **Endpoints:**
 ```
-POST /api/favorites/toggle         : Toggle favorite status
-GET  /api/favorites/check/{bookId} : Check if book is favorite
+POST /api/favorites/toggle         : Toggle favorite status (AJAX)
+GET  /api/favorites/check/{bookId} : Check if book is favorite (AJAX)
+GET  /user/favorites               : View favorites page (HTML - UserDashboardController)
 ```
 
-**Note:** Trang xem danh sách favorites ở `UserDashboardController.java`:
-```
-GET  /user/favorites               : View favorites page (HTML)
-```
+**Architecture Note:**
+- Favorites được lưu trong bảng `reading_progress` với field `is_favorite`
+- Không có bảng `favorites` riêng
+- Khi user toggle favorite, system sẽ:
+  1. Tìm hoặc tạo mới ReadingProgress record
+  2. Toggle field `is_favorite` (true/false)
+  3. Lưu vào database
 
 #### 1. Toggle Favorite
 ```java

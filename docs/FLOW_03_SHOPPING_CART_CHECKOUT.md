@@ -79,9 +79,52 @@
 ```
 
 ### Components
-- **Controllers**: `UserBookController.java`, `CartController.java`, `OrderController.java`
-- **Services**: `BookService.java`, `CartService.java`, `OrderService.java`
-- **Entities**: `Book.java`, `Cart.java`, `CartItem.java`, `Order.java`, `OrderItem.java`
+**Controllers:**
+- `CartController.java` - Xử lý giỏ hàng (add, remove, view)
+- `OrderController.java` - Xử lý checkout và tạo đơn hàng
+- `PaymentController.java` - Xử lý thanh toán (VNPay, Bank Transfer)
+- `UserBookController.java` - Browse và search sách
+
+**Services:**
+- `CartService.java` - Business logic cho giỏ hàng
+- `CartItemService.java` - Quản lý cart items
+- `OrderService.java` - Xử lý đơn hàng
+- `OrderItemService.java` - Quản lý order items
+- `VNPayService.java` - Tích hợp VNPay payment gateway
+- `BankTransferService.java` - Xử lý chuyển khoản ngân hàng
+
+**Entities:**
+- `Book.java` - Thông tin sách
+- `Cart.java` - Giỏ hàng (1-1 với User)
+- `CartItem.java` - Item trong giỏ (composite key: cart_id + book_id)
+- `CartItemId.java` - Composite key cho CartItem
+- `Order.java` - Đơn hàng
+- `OrderItem.java` - Item trong đơn hàng
+
+**URLs:**
+
+**Cart Management:**
+- `GET /cart` - Xem giỏ hàng
+- `POST /cart/add/{bookId}` - Thêm sách vào giỏ
+- `POST /cart/remove` - Xóa sách khỏi giỏ (requires cartItemId)
+- `POST /cart/clear` - Xóa toàn bộ giỏ hàng
+- `GET /cart/count` - API lấy số lượng sách trong giỏ (JSON)
+
+**Checkout & Payment:**
+- `GET /order/checkout` - Trang checkout
+- `POST /order/create` - Tạo đơn hàng (requires paymentMethod)
+- `GET /payment/vnpay?orderId={id}` - Khởi tạo thanh toán VNPay
+- `GET /payment/vnpay/return` - Callback từ VNPay
+- `GET /payment/bank-transfer?orderId={id}` - Trang hướng dẫn chuyển khoản
+- `POST /payment/bank-transfer/confirm` - Xác nhận đã chuyển khoản
+- `GET /payment/success?orderId={id}` - Trang thanh toán thành công
+- `GET /payment/error?orderId={id}` - Trang thanh toán thất bại
+
+**Order Management:**
+- `GET /user/orders` - Danh sách đơn hàng
+- `GET /user/orders/{orderId}` - Chi tiết đơn hàng
+- `POST /order/{orderId}/cancel` - Hủy đơn hàng
+- `GET /order/api/status?orderId={id}` - API check order status (JSON)
 
 ### ⚠️ Important Changes
 **CartItem Structure (Updated 20/12/2025):**

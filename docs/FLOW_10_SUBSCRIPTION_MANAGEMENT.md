@@ -50,20 +50,36 @@
 
 ### URLs
 
-**User Endpoints**:
-- `GET /subscription/plans` - View all subscription plans
-- `GET /subscription/my-subscriptions` - View user's subscriptions
-- `POST /subscription/cancel/{orderId}` - Cancel subscription
-- `GET /payment/vnpay?orderId={id}&type=subscription` - Subscribe payment
+**User Endpoints:**
+- `GET /subscription/plans` - View all subscription plans (public, no login required)
+- `GET /subscription/my-subscriptions` - View user's subscription history (requires login)
+- `POST /subscription/cancel/{subscriptionId}` - Cancel subscription (requires login)
 
-**Admin Endpoints**:
-- `GET /admin/subscriptions` - List all plans
+**Payment Flow (handled by PaymentController):**
+- User selects plan → Creates order with `order_type = 'SUBSCRIPTION'`
+- `POST /order/create?paymentMethod=VNPAY` → Creates subscription order
+- `GET /payment/vnpay?orderId={id}` → VNPay payment
+- After payment success → Subscription auto-activated with `start_date` and `end_date`
+
+**Admin Endpoints:**
+- `GET /admin/subscriptions` - List all subscription plans
 - `GET /admin/subscriptions/create` - Create plan form
-- `POST /admin/subscriptions/create` - Create plan
+- `POST /admin/subscriptions/create` - Save new plan
 - `GET /admin/subscriptions/edit/{id}` - Edit plan form
-- `POST /admin/subscriptions/edit/{id}` - Update plan
+- `POST /admin/subscriptions/update/{id}` - Update plan
 - `POST /admin/subscriptions/delete/{id}` - Soft delete plan
 - `POST /admin/subscriptions/toggle-status/{id}` - Toggle active status
+
+**Important Architecture Notes:**
+- ✅ Subscriptions stored in `orders` table with `order_type = 'SUBSCRIPTION'`
+- ✅ No separate `user_subscriptions` table
+- ✅ Active subscription = Order with:
+  - `order_type = 'SUBSCRIPTION'`
+  - `payment_status IN ('COMPLETED', 'PAID', 'CANCELLED')`
+  - `end_date > NOW()`
+- ✅ Cancelled subscriptions still valid until `end_date`
+- ✅ Payment handled by PaymentController (VNPay, Bank Transfer)
+- ✅ Subscription auto-activated after payment success
 
 ---
 
@@ -94,18 +110,28 @@ User → Browser → SubscriptionController → SubscriptionService → Database
 
 ### Implementation Details
 
-**Controller Method**:
+**Controller**: `UserSubscriptionController.java`
+
+**Important Notes:**
+- Controller KHÔNG xử lý payment logic
+- Payment được xử lý bởi `PaymentController` và `OrderController`
+- Subscriptions được lưu dưới dạng `Order` với `order_type = 'SUBSCRIPTION'`
+
+**Method: showSubscriptionPlans()**
 ```java
 @GetMapping("/plans")
-public String showSubscriptionPlans(Authentication authentication, Model model) {
-    // 1. Get all active subscription plans
+public String showSubscriptionPlans(Model model) {
+    // Lấy tất cả gói đang active
     List<Subscription> subscriptions = subscriptionService.getActiveSubscriptions();
     model.addAttribute("subscriptions", subscriptions);
 
-    // 2. If user is logged in, check current subscription
-    User currentUser = getCurrentUser(authentication);
+    // Nếu user đã đăng nhập, kiểm tra gói hiện tại
+    User currentUser = getCurrentUser();
     if (currentUser != null) {
-        Optional<UserSubscription> activeSubscription = 
+        // QUAN TRỌNG: Thêm user vào model để template có thể hiển thị
+        model.addAttribute("user", currentUser);
+
+        Optional<UserSubscription> activeSubscription =
             getActiveSubscription(currentUser.getUserId());
 
         model.addAttribute("currentSubscription", activeSubscription.orElse(null));
@@ -118,7 +144,7 @@ public String showSubscriptionPlans(Authentication authentication, Model model) 
 }
 ```
 
-**Get Active Subscription Helper**:
+**Helper Method: getActiveSubscription()**
 ```java
 private Optional<UserSubscription> getActiveSubscription(String userId) {
     List<Order> orders = orderService.getOrdersByUserIdAndType(
@@ -127,17 +153,55 @@ private Optional<UserSubscription> getActiveSubscription(String userId) {
 
     return orders.stream()
         .filter(order -> {
-            // Must be paid
+            // Phải đã thanh toán HOẶC đã hủy 
+            // (CANCELLED vẫn giữ quyền đến hết thời gian đã trả)
             if (order.getPaymentStatus() != Order.PaymentStatus.COMPLETED &&
-                order.getPaymentStatus() != Order.PaymentStatus.PAID) {
+                order.getPaymentStatus() != Order.PaymentStatus.PAID &&
+                order.getPaymentStatus() != Order.PaymentStatus.CANCELLED) {
                 return false;
             }
-            // Must not be expired
-            return order.getEndDate() != null &&
+            // Phải còn trong thời hạn
+            return order.getEndDate() != null && 
                    order.getEndDate().isAfter(LocalDateTime.now());
         })
         .map(UserSubscription::new)
         .findFirst();
+}
+```
+
+**DTO: UserSubscription**
+```java
+public class UserSubscription {
+    private String orderId;
+    private String packageName;
+    private BigDecimal price;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
+    private Order.PaymentStatus paymentStatus;
+    private int durationDays;
+    private int maxDevices;
+    
+    public UserSubscription(Order order) {
+        this.orderId = order.getOrderId();
+        this.packageName = order.getSubscription().getPackageName();
+        this.price = order.getTotalAmount();
+        this.startDate = order.getStartDate();
+        this.endDate = order.getEndDate();
+        this.paymentStatus = order.getPaymentStatus();
+        this.durationDays = order.getSubscription().getDurationDays();
+        this.maxDevices = order.getSubscription().getMaxDevices();
+    }
+    
+    public boolean isActive() {
+        return endDate != null && endDate.isAfter(LocalDateTime.now());
+    }
+    
+    public long getDaysRemaining() {
+        if (endDate == null) return 0;
+        return java.time.temporal.ChronoUnit.DAYS.between(
+            LocalDateTime.now(), endDate
+        );
+    }
 }
 ```
 

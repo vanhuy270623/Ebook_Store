@@ -70,7 +70,7 @@ public class Order {
     }
 
     public enum PaymentMethod {
-        VNPAY, BANK_TRANSFER, CREDIT_CARD
+        VNPAY, BANK_TRANSFER, CREDIT_CARD, FREE
     }
 }
 

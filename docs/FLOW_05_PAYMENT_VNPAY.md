@@ -102,10 +102,20 @@ vnpay.return_url=http://localhost:2706/payment/vnpay/return
 ```
 
 ### URLs
-- `GET /payment/vnpay?orderId={orderId}` - Khởi tạo thanh toán
-- `GET /payment/vnpay/return?vnp_*` - Callback từ VNPay (với query parameters)
+**Payment Initiation:**
+- `GET /payment/vnpay?orderId={orderId}` - Khởi tạo thanh toán VNPay (redirect to VNPay gateway)
+
+**Payment Callback:**
+- `GET /payment/vnpay/return?vnp_*` - Callback từ VNPay sau khi user thanh toán
+  - Query params: `vnp_Amount`, `vnp_BankCode`, `vnp_ResponseCode`, `vnp_TransactionNo`, `vnp_SecureHash`, etc.
+
+**Result Pages:**
 - `GET /payment/success?orderId={orderId}` - Trang thanh toán thành công
 - `GET /payment/error?orderId={orderId}` - Trang thanh toán thất bại
+
+**Alternative Payment Methods (cùng PaymentController):**
+- `GET /payment/bank-transfer?orderId={orderId}` - Thanh toán chuyển khoản
+- `POST /payment/bank-transfer/confirm` - Xác nhận đã chuyển khoản
 
 ### Key Features
 - ✅ **Business Logic in Service Layer**: VNPayService handles all VNPay integration

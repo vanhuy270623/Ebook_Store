@@ -65,41 +65,23 @@ public class BookAsset {
     }
 
     /**
-     * Get the streaming URL for this asset.
-     * Returns URL to the secure streaming endpoint: /reading/stream/{category}/{fileName}
+     * Get the secure reading URL for this asset.
+     * Returns URL to the secure streaming endpoint: /reading/stream/{bookId}
      *
      * This endpoint validates user access before serving the file.
      * Used internally by the viewer pages to stream file content.
-     * Example: /reading/stream/tamly-kynangsong/Cac_The_Gioi_Song_Song_-_Michio_Kaku.pdf
+     * Example: /reading/stream/book_02
      */
     public String getReadingUrl() {
-        if (this.fileUrl == null || this.fileUrl.isEmpty()) {
-            System.err.println("⚠️ getReadingUrl() - fileUrl is null or empty!");
+        if (this.book == null || this.book.getBookId() == null) {
+            System.err.println("⚠️ getReadingUrl() - book or bookId is null!");
             return null;
         }
 
-        // Normalize fileUrl - ensure it starts with /
-        String normalizedFileUrl = this.fileUrl;
-        if (!normalizedFileUrl.startsWith("/")) {
-            System.out.println("ℹ️ getReadingUrl() - Adding leading slash to fileUrl");
-            normalizedFileUrl = "/" + normalizedFileUrl;
-        }
-
-        // fileUrl format: /book_asset/source/category/fileName
-        // Extract category and fileName from fileUrl
-        String prefix = "/book_asset/source/";
-        if (!normalizedFileUrl.startsWith(prefix)) {
-            System.err.println("⚠️ getReadingUrl() - fileUrl doesn't start with prefix!");
-            System.err.println("   normalized fileUrl: " + normalizedFileUrl);
-            System.err.println("   expected prefix: " + prefix);
-            return null;
-        }
-
-        String pathAfterPrefix = normalizedFileUrl.substring(prefix.length());
-        String readingUrl = "/reading/stream/" + pathAfterPrefix;
+        String readingUrl = "/reading/stream/" + this.book.getBookId();
 
         System.out.println("✅ getReadingUrl() - Generated: " + readingUrl);
-        System.out.println("   from fileUrl: " + this.fileUrl);
+        System.out.println("   for bookId: " + this.book.getBookId());
 
         return readingUrl;
     }
@@ -108,4 +90,3 @@ public class BookAsset {
         PDF, EPUB
     }
 }
-

@@ -861,43 +861,38 @@ public class ReadingController extends BaseController {
     /**
      * SECURE STREAMING ENDPOINT
      * Stream file content sau khi kiểm tra quyền truy cập
-     * URL: /reading/stream/{category}/{fileName}
+     * URL: /reading/stream/{bookId}
      *
      * Endpoint này thay thế việc truy cập trực tiếp vào /book_asset/source/**
      */
-    @GetMapping("/stream/{category}/{fileName:.+}")
+    @GetMapping("/stream/{bookId}")
     public org.springframework.http.ResponseEntity<org.springframework.core.io.Resource> streamFile(
-            @PathVariable String category,
-            @PathVariable String fileName) {
+            @PathVariable String bookId) {
         try {
-            log.info("Streaming file request - category: {}, fileName: {}", category, fileName);
+            log.info("Streaming file request - bookId: {}", bookId);
 
             User currentUser = getCurrentUser();
             if (currentUser == null) {
-                log.warn("Unauthorized streaming attempt for: {}/{}", category, fileName);
+                log.warn("Unauthorized streaming attempt for book: {}", bookId);
                 return org.springframework.http.ResponseEntity
                         .status(org.springframework.http.HttpStatus.UNAUTHORIZED)
                         .build();
             }
 
-            // Tìm asset theo fileUrl (thử cả 2 format: có và không có dấu /)
-            String fileUrl = "/book_asset/source/" + category + "/" + fileName;
-            log.debug("Searching for asset with fileUrl: {}", fileUrl);
+            // Tìm asset theo bookId và fileType PDF (ưu tiên PDF trước)
+            log.debug("Searching for asset with bookId: {}", bookId);
 
-            BookAsset asset = bookAssetService.findByFileUrl(fileUrl);
+            BookAsset asset = bookAssetService.getAssetByBookIdAndFileType(bookId, BookAsset.FileType.PDF).orElse(null);
 
-            // Fallback: Thử tìm không có dấu / nếu không tìm thấy
+            // Fallback: Thử tìm EPUB nếu không có PDF
             if (asset == null) {
-                String fileUrlWithoutSlash = "book_asset/source/" + category + "/" + fileName;
-                log.warn("Asset not found with leading slash, trying without: {}", fileUrlWithoutSlash);
-                asset = bookAssetService.findByFileUrl(fileUrlWithoutSlash);
+                log.warn("PDF asset not found for book {}, trying EPUB", bookId);
+                asset = bookAssetService.getAssetByBookIdAndFileType(bookId, BookAsset.FileType.EPUB).orElse(null);
             }
 
             if (asset == null) {
-                log.error("Asset not found for streaming (tried both formats):");
-                log.error("  - With slash: {}", fileUrl);
-                log.error("  - Without slash: book_asset/source/{}/{}", category, fileName);
-                log.error("Please check database: SELECT * FROM bookassets WHERE file_url LIKE '%{}%'", fileName);
+                log.error("No asset found for book: {}", bookId);
+                log.error("Please check database: SELECT * FROM bookassets WHERE book_id = '{}'", bookId);
                 return org.springframework.http.ResponseEntity
                         .status(org.springframework.http.HttpStatus.NOT_FOUND)
                         .build();
@@ -922,6 +917,7 @@ public class ReadingController extends BaseController {
             }
 
             // Load file từ storage service (giống download controller)
+            String fileUrl = asset.getFileUrl();
             java.nio.file.Path filePath = fileStorageService.loadFile(fileUrl);
 
             if (!java.nio.file.Files.exists(filePath)) {
@@ -941,6 +937,8 @@ public class ReadingController extends BaseController {
                 contentType = "application/octet-stream";
             }
 
+            // Extract filename from fileUrl for logging and header
+            String fileName = java.nio.file.Paths.get(fileUrl).getFileName().toString();
             log.info("✅ Streaming file {} ({}) to user {}", fileName, contentType, currentUser.getUserId());
 
             // Get file size for content-length header
@@ -968,7 +966,7 @@ public class ReadingController extends BaseController {
                     .body(resource);
 
         } catch (Exception e) {
-            log.error("Error streaming file {}/{}: {}", category, fileName, e.getMessage(), e);
+            log.error("Error streaming file for bookId {}: {}", bookId, e.getMessage(), e);
             return org.springframework.http.ResponseEntity
                     .status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
                     .build();

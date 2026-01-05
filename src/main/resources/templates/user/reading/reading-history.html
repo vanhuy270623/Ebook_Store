@@ -8,11 +8,19 @@
     <!-- Device Management CSS -->
     <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
 
-    <!-- Custom Styles for Progress Bar Animation -->
+    <!-- Custom Styles for Progress Bar -->
     <style>
-        /* Progress bar animation for reading history */
-        .section .card .progress .progress-bar {
-            transition: width 0.8s ease-out;
+        /* Progress bar styles matching library.html */
+        .progress-bar {
+            width: 100%;
+            max-width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            transition: width 0.3s ease;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
     </style>
 </head>
@@ -74,16 +82,9 @@
                         <div class="mb-3">
                             <div class="d-flex justify-content-between mb-1">
                                 <small class="text-muted">Tiến độ đọc</small>
-                                <small class="text-primary fw-bold" th:text="${progress.progressPercentage != null ? progress.progressPercentage + '%' : '0%'}">0%</small>
+                                <small class="text-success fw-bold" th:text="${progress.progressPercentage != null ? #numbers.formatDecimal(progress.progressPercentage, 1, 0) + '%' : '0%'}">0%</small>
                             </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar" role="progressbar"
-                                     style="width: 0%"
-                                     th:attr="data-target-width=${progress.progressPercentage != null ? progress.progressPercentage : 0},
-                                              aria-valuenow=${progress.progressPercentage != null ? progress.progressPercentage : 0}"
-                                     aria-valuemin="0"
-                                     aria-valuemax="100"></div>
-                            </div>
+                            <div class="progress-bar" th:style="'width: ' + ${progress.progressPercentage != null ? progress.progressPercentage : 0} + '%'"></div>
                         </div>
 
                         <!-- Reading Info -->
@@ -154,65 +155,11 @@
 </section>
 
 <!-- Footer -->
-<footer class="bg-dark text-white py-5 mt-5">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-4 mb-4 mb-lg-0">
-                <h5 class="mb-3"><i class="fas fa-book-reader me-2"></i>EbookStore</h5>
-                <p class="text-white-50">Thư viện sách điện tử hàng đầu Việt Nam với hơn 10,000+ đầu sách đa thể loại.</p>
-            </div>
-            <div class="col-lg-4 mb-4 mb-lg-0">
-                <h5 class="mb-3">Liên kết</h5>
-                <ul class="list-unstyled">
-                    <li><a href="/about" class="text-white-50 text-decoration-none">Về chúng tôi</a></li>
-                    <li><a href="/contact" class="text-white-50 text-decoration-none">Liên hệ</a></li>
-                    <li><a href="/terms" class="text-white-50 text-decoration-none">Điều khoản</a></li>
-                    <li><a href="/privacy" class="text-white-50 text-decoration-none">Chính sách</a></li>
-                </ul>
-            </div>
-            <div class="col-lg-4">
-                <h5 class="mb-3">Theo dõi</h5>
-                <div class="d-flex gap-2">
-                    <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-youtube"></i></a>
-                </div>
-            </div>
-        </div>
-        <hr class="my-4 bg-white">
-        <div class="text-center text-white-50">
-            <p class="mb-0">&copy; 2024 EbookStore. All rights reserved.</p>
-        </div>
-    </div>
-</footer>
+<div th:replace="~{user/layout/footer :: footer}"></div>
 
 <!-- Scripts -->
 <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
 <!-- Load cart counter script -->
 <script th:src="@{/user_template/js/user-main.js}"></script>
-
-<!-- Progress Bar Animation Script -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Animate progress bars on page load
-        const progressBars = document.querySelectorAll('.section .progress .progress-bar');
-
-        progressBars.forEach(function(bar) {
-            // Get target width from data attribute
-            const targetWidth = bar.getAttribute('data-target-width');
-
-            if (targetWidth) {
-                // Start from 0
-                bar.style.width = '0%';
-
-                // Animate to target width after a small delay
-                setTimeout(function() {
-                    bar.style.width = targetWidth + '%';
-                }, 150);
-            }
-        });
-    });
-</script>
 </body>
 </html>

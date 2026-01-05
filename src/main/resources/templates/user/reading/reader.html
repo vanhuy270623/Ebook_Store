@@ -6,6 +6,28 @@
 
     <!-- Reading CSS -->
     <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
+
+    <!-- Custom Styles for Progress Bar -->
+    <style>
+        /* Progress bar styles matching library.html */
+        .progress-bar {
+            width: 100%;
+            max-width: 100%;
+            height: 20px;
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
 </head>
 <body>
 <!-- Navigation Bar -->
@@ -15,56 +37,6 @@
 <div th:if="${success}" th:attr="data-flash-success=${success}" style="display:none;"></div>
 <div th:if="${error}" th:attr="data-flash-error=${error}" style="display:none;"></div>
 
-<!-- Book Header Section -->
-    <section class="hero-banner py-4 bg-light">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-8">
-                    <div class="d-flex align-items-start">
-                        <img th:src="${book.coverImageUrl != null ? book.coverImageUrl : '/images/default-cover.jpg'}"
-                             alt="Book Cover"
-                             class="book-cover rounded shadow-sm me-4"
-                             onerror="this.src='/images/default-cover.jpg'"
-                             style="width: 120px; height: 160px; object-fit: cover;">
-                        <div class="book-details flex-grow-1">
-                            <h2 class="mb-2 fw-bold" th:text="${book.title}">Tên Sách</h2>
-                            <p class="text-muted mb-3">
-                                <i class="fas fa-user-edit me-1"></i>
-                                <span th:text="${book.authorNames ?: 'Unknown Author'}">Tác Giả</span>
-                            </p>
-                            <div class="d-flex flex-wrap gap-3 mb-3">
-                                <div class="text-muted">
-                                    <i class="fas fa-eye text-primary me-1"></i>
-                                    <span th:text="${book.viewCount ?: 0}">0</span> lượt xem
-                                </div>
-                                <div class="text-muted">
-                                    <i class="fas fa-star text-warning me-1"></i>
-                                    <span th:text="${book.averageRating ?: 0}">0</span>/5
-                                </div>
-                                <div class="text-muted" th:if="${book.pages}">
-                                    <i class="fas fa-file-alt text-info me-1"></i>
-                                    <span th:text="${book.pages}">0</span> trang
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-                    <div class="d-flex flex-column flex-lg-row gap-2 justify-content-lg-end">
-                        <a th:href="@{/books/view/{id}(id=${book.bookId})}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left"></i> Quay lại
-                        </a>
-                        <button class="btn btn-outline-primary" onclick="showBookmarks()">
-                            <i class="fas fa-bookmark"></i> Bookmarks
-                        </button>
-                        <button class="btn btn-outline-success" onclick="shareBook()">
-                            <i class="fas fa-share-alt"></i> Chia sẻ
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Main Content Section -->
     <section class="section py-5">
@@ -151,16 +123,10 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="fw-bold">Tiến độ đọc</span>
-                        <span class="badge bg-primary" th:text="${progress.progressPercentage != null ? #numbers.formatDecimal(progress.progressPercentage, 1, 1) + '%' : '0%'}">0%</span>
+                        <span class="badge bg-success" th:text="${progress.progressPercentage != null ? #numbers.formatDecimal(progress.progressPercentage, 1, 0) + '%' : '0%'}">0%</span>
                     </div>
-                    <div class="progress mb-3" style="height: 20px;">
-                        <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
-                             role="progressbar"
-                             th:style="'width: ' + (${progress.progressPercentage != null ? progress.progressPercentage : 0}) + '%'"
-                             th:attr="aria-valuenow=${progress.progressPercentage != null ? progress.progressPercentage : 0}"
-                             aria-valuemin="0"
-                             aria-valuemax="100">
-                        </div>
+                    <div class="progress-bar mb-3" th:style="'width: ' + ${progress.progressPercentage != null ? progress.progressPercentage : 0} + '%'"
+                         th:text="${progress.progressPercentage != null ? #numbers.formatDecimal(progress.progressPercentage, 1, 0) + '%' : '0%'}">
                     </div>
                     <div class="row g-3">
                         <div class="col-md-6" th:if="${progress.lastReadAt}">

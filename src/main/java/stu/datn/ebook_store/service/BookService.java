@@ -10,25 +10,21 @@ import stu.datn.ebook_store.entity.BookCategory;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Book Service Interface
+ * REFACTORED: Removed 7 unused methods (REST API methods, uploadCoverImage, getDownloadableBooks, getBooksByMinRating, countBooksByAccessType)
+ */
 public interface BookService {
     // Basic CRUD operations
     List<Book> getAllBooks();
     Optional<Book> getBookById(String bookId);
     Book saveBook(Book book);
 
-    // MVC form operations (Admin)
+    // MVC form operations (Admin) - ĐANG DÙNG
     Book createBook(BookCreateRequest request);
     Book updateBook(BookUpdateRequest request);
 
-    // REST API operations (if needed separately)
-    BookResponse createBookFromRequest(BookCreateRequest request);
-    BookResponse updateBookFromRequest(String bookId, BookUpdateRequest request);
-    BookResponse getBookResponse(String bookId);
-
     void deleteBook(String bookId);
-
-    // File upload
-    String uploadCoverImage(MultipartFile file);
 
     // Query methods
     List<Book> getBooksByCategory(BookCategory category);
@@ -36,10 +32,7 @@ public interface BookService {
     List<Book> searchBooksByKeyword(String keyword);
     List<Book> getTopViewedBooks();
     List<Book> getNewestBooks();
-    List<Book> getDownloadableBooks();
-    List<Book> getBooksByAuthor(String authorId);
-    List<Book> getBooksByMinRating(Float minRating);
-    long countBooksByAccessType(Book.AccessType accessType);
+    List<Book> getBooksByAuthor(String authorId); // GIỮ LẠI - author page future
     void updateBookRating(String bookId);
 
     // Admin statistics methods

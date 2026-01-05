@@ -63,15 +63,6 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findByUser(user);
     }
 
-    @Override
-    public List<Order> getOrdersByUserSortedByDate(User user) {
-        return orderRepository.findByUserOrderByCreatedAtDesc(user);
-    }
-
-    @Override
-    public Optional<Order> getOrderByTransactionId(String transactionId) {
-        return orderRepository.findByTransactionId(transactionId);
-    }
 
     @Override
     public List<Order> getOrdersByPaymentStatus(Order.PaymentStatus paymentStatus) {
@@ -83,15 +74,6 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findByOrderType(orderType);
     }
 
-    @Override
-    public List<Order> getOrdersByUserAndOrderType(User user, Order.OrderType orderType) {
-        return orderRepository.findByUserAndOrderType(user, orderType);
-    }
-
-    @Override
-    public List<Order> getOrdersByUserAndPaymentStatus(User user, Order.PaymentStatus paymentStatus) {
-        return orderRepository.findByUserAndPaymentStatus(user, paymentStatus);
-    }
 
     @Override
     public List<Order> getOrdersBySubscription(Subscription subscription) {

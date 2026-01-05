@@ -22,7 +22,9 @@ public class SecurityConfig {
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .ignoringRequestMatchers("/admin/books/delete/**") // Ignore CSRF for delete endpoint
                         .ignoringRequestMatchers("/admin/books/assets/delete") // Ignore CSRF for file asset delete
+                        .ignoringRequestMatchers("/admin/books/assets/upload") // Ignore CSRF for file asset upload
                         .ignoringRequestMatchers("/reading/api/**") // Ignore CSRF for reading API (progress, bookmarks)
+                        .ignoringRequestMatchers("/reading/stream/**") // Ignore CSRF for streaming endpoint
                         .ignoringRequestMatchers("/api/favorites/**") // Ignore CSRF for favorites API
                 )
 

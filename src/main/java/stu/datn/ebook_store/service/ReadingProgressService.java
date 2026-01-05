@@ -7,28 +7,20 @@ import stu.datn.ebook_store.entity.Book;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Service interface for Reading Progress management
+ * REFACTORED: Removed 13 unused methods (có thể filter/sort trong code)
+ */
 public interface ReadingProgressService {
-    List<ReadingProgress> getAllReadingProgress();
-    Optional<ReadingProgress> getReadingProgressById(String progressId);
+    // Core methods - ĐANG DÙNG
     Optional<ReadingProgress> getReadingProgressByUserAndBook(User user, Book book);
     ReadingProgress saveReadingProgress(ReadingProgress readingProgress);
-    void deleteReadingProgress(String progressId);
     List<ReadingProgress> getReadingProgressByUser(User user);
     List<ReadingProgress> getReadingProgressByUserWithBookDetails(User user);
     List<ReadingProgress> getFavoriteBooksByUser(User user);
-    List<ReadingProgress> getRecentReadingByUser(User user);
-    List<ReadingProgress> getCompletedBooksByUser(User user);
-    List<ReadingProgress> getReadingProgressByUserAndAccessType(User user, ReadingProgress.AccessType accessType);
-    List<ReadingProgress> getReadingProgressByBook(Book book);
-    long countCompletedBooksByUser(User user);
-    List<ReadingProgress> getContinueReadingByUser(User user);
-    void markAsFavorite(String progressId);
-    void unmarkAsFavorite(String progressId);
     boolean toggleFavorite(User user, String bookId);
-    void markAsCompleted(String progressId);
-    void updateProgress(String progressId, Float percentage, String location);
 
-    // Bookmark management methods
+    // Bookmark management methods - ĐANG DÙNG
     void addBookmark(String progressId, String location, Integer pageNumber, Float percentage, String note);
     void removeBookmark(String progressId, String bookmarkId);
     List<ReadingProgress.BookmarkData> getBookmarks(String progressId);

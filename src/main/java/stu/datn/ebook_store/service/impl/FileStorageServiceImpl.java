@@ -123,8 +123,8 @@ public class FileStorageServiceImpl implements FileStorageService {
         // Lưu file (Ghi đè - REPLACE_EXISTING)
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        // Trả về đường dẫn tương đối (dùng '/' chuẩn web)
-        return subDir + "/" + fileName;
+        // Trả về đường dẫn tương đối với leading slash (dùng '/' chuẩn web)
+        return "/" + subDir + "/" + fileName;
     }
 
     /**
@@ -167,7 +167,13 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public Path loadFile(String fileUrl) {
-        return Paths.get(baseUploadDir, fileUrl);
+        // Normalize fileUrl - remove leading slash for Paths.get()
+        // Paths.get(baseDir, "/path") creates incorrect path on Windows
+        String normalizedUrl = fileUrl;
+        if (normalizedUrl.startsWith("/")) {
+            normalizedUrl = normalizedUrl.substring(1);
+        }
+        return Paths.get(baseUploadDir, normalizedUrl);
     }
 
     private void validateImage(MultipartFile file) throws IOException {

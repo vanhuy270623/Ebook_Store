@@ -28,15 +28,6 @@ public class ReadingProgressServiceImpl implements ReadingProgressService {
         this.bookRepository = bookRepository;
     }
 
-    @Override
-    public List<ReadingProgress> getAllReadingProgress() {
-        return readingProgressRepository.findAll();
-    }
-
-    @Override
-    public Optional<ReadingProgress> getReadingProgressById(String progressId) {
-        return readingProgressRepository.findById(progressId);
-    }
 
     @Override
     public Optional<ReadingProgress> getReadingProgressByUserAndBook(User user, Book book) {
@@ -63,10 +54,6 @@ public class ReadingProgressServiceImpl implements ReadingProgressService {
         return saved;
     }
 
-    @Override
-    public void deleteReadingProgress(String progressId) {
-        readingProgressRepository.deleteById(progressId);
-    }
 
     @Override
     public List<ReadingProgress> getReadingProgressByUser(User user) {
@@ -83,55 +70,6 @@ public class ReadingProgressServiceImpl implements ReadingProgressService {
         return readingProgressRepository.findByUserAndIsFavoriteTrue(user);
     }
 
-    @Override
-    public List<ReadingProgress> getRecentReadingByUser(User user) {
-        return readingProgressRepository.findByUserOrderByLastReadAtDesc(user);
-    }
-
-    @Override
-    public List<ReadingProgress> getCompletedBooksByUser(User user) {
-        return readingProgressRepository.findByUserAndIsCompletedTrue(user);
-    }
-
-    @Override
-    public List<ReadingProgress> getReadingProgressByUserAndAccessType(User user, ReadingProgress.AccessType accessType) {
-        return readingProgressRepository.findByUserAndAccessType(user, accessType);
-    }
-
-    @Override
-    public List<ReadingProgress> getReadingProgressByBook(Book book) {
-        return readingProgressRepository.findByBook(book);
-    }
-
-    @Override
-    public long countCompletedBooksByUser(User user) {
-        return readingProgressRepository.countByUserAndIsCompletedTrue(user);
-    }
-
-    @Override
-    public List<ReadingProgress> getContinueReadingByUser(User user) {
-        return readingProgressRepository.findContinueReading(user);
-    }
-
-    @Override
-    public void markAsFavorite(String progressId) {
-        Optional<ReadingProgress> progressOpt = readingProgressRepository.findById(progressId);
-        if (progressOpt.isPresent()) {
-            ReadingProgress progress = progressOpt.get();
-            progress.setIsFavorite(true);
-            readingProgressRepository.save(progress);
-        }
-    }
-
-    @Override
-    public void unmarkAsFavorite(String progressId) {
-        Optional<ReadingProgress> progressOpt = readingProgressRepository.findById(progressId);
-        if (progressOpt.isPresent()) {
-            ReadingProgress progress = progressOpt.get();
-            progress.setIsFavorite(false);
-            readingProgressRepository.save(progress);
-        }
-    }
 
     @Override
     @Transactional
@@ -165,32 +103,6 @@ public class ReadingProgressServiceImpl implements ReadingProgressService {
         return progress.getIsFavorite();
     }
 
-    @Override
-    public void markAsCompleted(String progressId) {
-        Optional<ReadingProgress> progressOpt = readingProgressRepository.findById(progressId);
-        if (progressOpt.isPresent()) {
-            ReadingProgress progress = progressOpt.get();
-            progress.setIsCompleted(true);
-            progress.setProgressPercentage(100.0f);
-            progress.setLastReadAt(LocalDateTime.now());
-            readingProgressRepository.save(progress);
-        }
-    }
-
-    @Override
-    public void updateProgress(String progressId, Float percentage, String location) {
-        Optional<ReadingProgress> progressOpt = readingProgressRepository.findById(progressId);
-        if (progressOpt.isPresent()) {
-            ReadingProgress progress = progressOpt.get();
-            progress.setProgressPercentage(percentage);
-            progress.setLastReadLocation(location);
-            progress.setLastReadAt(LocalDateTime.now());
-            if (percentage >= 100.0f) {
-                progress.setIsCompleted(true);
-            }
-            readingProgressRepository.save(progress);
-        }
-    }
 
     private String generateProgressId() {
         // Format: prog_XX (ví dụ: prog_01, prog_02, prog_100)

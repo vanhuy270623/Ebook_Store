@@ -6,34 +6,29 @@ import lombok.NoArgsConstructor;
 import stu.datn.ebook_store.entity.BookAsset;
 
 /**
- * DTO for BookAsset to be serialized to JavaScript
+ * DTO đơn giản để truyền thông tin BookAsset sang JavaScript
+ * Tránh circular reference và chỉ chứa thông tin cần thiết
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookAssetDTO {
-    private String assetId;
-    private String fileType;
-    private String fileUrl;
-    private String readingUrl;
-    private Long fileSize;
+    private String fileType;  // "PDF" hoặc "EPUB"
+    private Long fileSize;    // Size in bytes
+    private String fileUrl;   // URL của file (optional, for debugging)
 
     /**
-     * Create DTO from BookAsset entity
+     * Convert từ BookAsset entity sang DTO
      */
     public static BookAssetDTO fromEntity(BookAsset asset) {
         if (asset == null) {
             return null;
         }
-
-        BookAssetDTO dto = new BookAssetDTO();
-        dto.setAssetId(asset.getBookAssetId());
-        dto.setFileType(asset.getFileType() != null ? asset.getFileType().name() : null);
-        dto.setFileUrl(asset.getFileUrl());
-        dto.setReadingUrl(asset.getReadingUrl());
-        dto.setFileSize(asset.getFileSize());
-
-        return dto;
+        return new BookAssetDTO(
+                asset.getFileType() != null ? asset.getFileType().name() : null,
+                asset.getFileSize(),
+                asset.getFileUrl()
+        );
     }
 }
 

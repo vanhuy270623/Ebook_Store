@@ -2,7 +2,6 @@ package stu.datn.ebook_store.controller.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.entity.Book;
@@ -62,7 +62,8 @@ public class BookDownloadController extends BaseController {
     @GetMapping("/{bookId}")
     @ResponseBody
     public ResponseEntity<Resource> downloadBook(
-            @PathVariable String bookId) {
+            @PathVariable String bookId,
+            @RequestParam(required = false) String fileType) {
 
         try {
             // 1. Kiểm tra authentication
@@ -89,13 +90,29 @@ public class BookDownloadController extends BaseController {
                         .body(null);
             }
 
-            // 4. Tìm BookAsset (ưu tiên EPUB, sau đó PDF)
-            Optional<BookAsset> assetOpt = bookAssetRepository
-                    .findByBook_BookIdAndFileType(bookId, BookAsset.FileType.EPUB);
+            // 4. Tìm BookAsset theo fileType (nếu được chỉ định)
+            Optional<BookAsset> assetOpt = Optional.empty();
 
-            if (assetOpt.isEmpty()) {
+            if (fileType != null && !fileType.isEmpty()) {
+                // User đã chọn file type cụ thể (PDF hoặc EPUB)
+                try {
+                    BookAsset.FileType requestedType = BookAsset.FileType.valueOf(fileType.toUpperCase());
+                    assetOpt = bookAssetRepository
+                            .findByBook_BookIdAndFileType(bookId, requestedType);
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.status(400)
+                            .header("X-Download-Error", "Loại file không hợp lệ")
+                            .body(null);
+                }
+            } else {
+                // Tự động chọn: ưu tiên EPUB, sau đó PDF
                 assetOpt = bookAssetRepository
-                        .findByBook_BookIdAndFileType(bookId, BookAsset.FileType.PDF);
+                        .findByBook_BookIdAndFileType(bookId, BookAsset.FileType.EPUB);
+
+                if (assetOpt.isEmpty()) {
+                    assetOpt = bookAssetRepository
+                            .findByBook_BookIdAndFileType(bookId, BookAsset.FileType.PDF);
+                }
             }
 
             if (assetOpt.isEmpty()) {
@@ -115,28 +132,30 @@ public class BookDownloadController extends BaseController {
                         .body(null);
             }
 
-            Resource resource = new UrlResource(filePath.toUri());
+            // 6. Get file size
+            long fileSize = Files.size(filePath);
 
-            if (!resource.exists() || !resource.isReadable()) {
-                return ResponseEntity.status(500)
-                        .header("X-Download-Error", "Không thể đọc file")
-                        .body(null);
-            }
+            // 7. Create InputStreamResource with BufferedInputStream for better performance
+            // This ensures proper file handle closure and prevents file locking issues
+            java.io.InputStream inputStream = new java.io.BufferedInputStream(
+                    Files.newInputStream(filePath, java.nio.file.StandardOpenOption.READ)
+            );
+            Resource resource = new org.springframework.core.io.InputStreamResource(inputStream);
 
-            // 6. Xác định Content-Type
+            // 8. Xác định Content-Type
             String contentType = determineContentType(asset.getFileType());
 
-            // 7. Tạo tên file download (có dấu tiếng Việt)
+            // 9. Tạo tên file download (có dấu tiếng Việt)
             String fileName = sanitizeFileName(book.getTitle()) + getFileExtension(asset.getFileType());
             String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
                     .replaceAll("\\+", "%20");
 
-            // 8. Trả về file stream
+            // 10. Trả về file stream
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename*=UTF-8''" + encodedFileName)
-                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
+                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileSize))
                     .body(resource);
 
         } catch (IOException e) {

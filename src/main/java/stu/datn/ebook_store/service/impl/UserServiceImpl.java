@@ -12,6 +12,7 @@ import stu.datn.ebook_store.dto.DeviceInfoDto;
 import stu.datn.ebook_store.entity.*;
 import stu.datn.ebook_store.repository.*;
 import stu.datn.ebook_store.service.UserService;
+import stu.datn.ebook_store.service.UserDeviceService;
 import stu.datn.ebook_store.dto.RegisterDto;
 import stu.datn.ebook_store.util.DeviceFingerprintUtil;
 
@@ -22,8 +23,9 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // Device Management - CHỈ dùng bảng có sẵn
-    private final UserDeviceRepository deviceRepository;
+    // Device Management - SỬ DỤNG SERVICE LAYER (REFACTORED)
+    private final UserDeviceService userDeviceService;
+    private final UserDeviceRepository deviceRepository; // Giữ lại cho một số cases cần thiết
     private final SubscriptionRepository subscriptionRepository;
     private final OrderRepository orderRepository;
 
@@ -34,12 +36,14 @@ public class UserServiceImpl implements UserService {
     public UserServiceImpl(UserRepository userRepository,
                            RoleRepository roleRepository,
                            PasswordEncoder passwordEncoder,
+                           UserDeviceService userDeviceService,
                            UserDeviceRepository deviceRepository,
                            SubscriptionRepository subscriptionRepository,
                            OrderRepository orderRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userDeviceService = userDeviceService;
         this.deviceRepository = deviceRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.orderRepository = orderRepository;
@@ -73,27 +77,6 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    /**
-     * Xác thực đăng nhập người dùng (chỉ user chưa bị xóa)
-     */
-    @Override
-    public User authenticateUser(String username, String password) throws Exception {
-        // Tìm user theo username (chỉ tìm user chưa bị xóa)
-        User user = userRepository.findActiveByUsername(username)
-                .orElseThrow(() -> new Exception("Tên đăng nhập hoặc mật khẩu không đúng"));
-
-        // Kiểm tra tài khoản có bị khóa không
-        if (!user.getIsActive()) {
-            throw new Exception("Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.");
-        }
-
-        // Kiểm tra password
-        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new Exception("Tên đăng nhập hoặc mật khẩu không đúng");
-        }
-
-        return user;
-    }
 
     /**
      * Cập nhật thời gian đăng nhập cuối cùng (chỉ cho user chưa bị xóa)
@@ -184,7 +167,8 @@ public class UserServiceImpl implements UserService {
                 e.getMessage().startsWith("Lỗi hệ thống")) {
                 throw e;
             }
-            throw new Exception("Đã xảy ra lỗi khi đăng ký: " + e.getMessage());
+            // Ném exception chung cho các lỗi khác
+            throw new Exception("Lỗi hệ thống khi đăng ký: " + e.getMessage(), e);
         }
     }
 
@@ -195,6 +179,29 @@ public class UserServiceImpl implements UserService {
     public boolean checkUsernameExists(String username) {
         return userRepository.findActiveByUsername(username).isPresent();
     }
+
+    /**
+     * Xác thực đăng nhập người dùng (chỉ user chưa bị xóa)
+     * INTERNAL METHOD - Được gọi từ authenticateWithDeviceCheck
+     */
+    private User authenticateUser(String username, String password) throws Exception {
+        // Tìm user theo username (chỉ tìm user chưa bị xóa)
+        User user = userRepository.findActiveByUsername(username)
+                .orElseThrow(() -> new Exception("Tên đăng nhập hoặc mật khẩu không đúng"));
+
+        // Kiểm tra tài khoản có bị khóa không
+        if (!user.getIsActive()) {
+            throw new Exception("Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.");
+        }
+
+        // Kiểm tra password
+        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw new Exception("Tên đăng nhập hoặc mật khẩu không đúng");
+        }
+
+        return user;
+    }
+
 
     /**
      * Kiểm tra email đã tồn tại chưa (chỉ kiểm tra user chưa bị xóa)
@@ -229,11 +236,6 @@ public class UserServiceImpl implements UserService {
         return userRepository.countActiveByIsVerified(true);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public long getAdminUsersCount() {
-        return userRepository.countActiveByRoleName(Role.RoleName.ADMIN);
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -259,11 +261,6 @@ public class UserServiceImpl implements UserService {
         return userRepository.findActiveById(userId);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<User> getUserByIdWithRole(String userId) {
-        return userRepository.findActiveByIdWithRole(userId);
-    }
 
     @Override
     @Transactional
@@ -326,12 +323,6 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    @Override
-    @Transactional
-    public void deleteUser(String userId) {
-        // This method is kept for backward compatibility but now does soft delete
-        softDeleteUser(userId);
-    }
 
     @Override
     @Transactional
@@ -442,9 +433,9 @@ public class UserServiceImpl implements UserService {
         boolean isAdmin = user.getRole() != null && user.getRole().getRoleName() == Role.RoleName.ADMIN;
 
         if (!isAdmin) {
-            // Chỉ kiểm tra giới hạn cho user thường
+            // Chỉ kiểm tra giới hạn cho user thường - SỬ DỤNG SERVICE
             int maxDevicesAllowed = getMaxDevicesForUser(user);
-            int activeDeviceCount = deviceRepository.countByUser_UserIdAndIsActiveTrue(user.getUserId());
+            int activeDeviceCount = userDeviceService.getActiveDeviceCount(user.getUserId());
 
             if (activeDeviceCount >= maxDevicesAllowed) {
                 // VƯỢT QUÁ GIỚI HẠN
@@ -576,12 +567,12 @@ public class UserServiceImpl implements UserService {
 
 
     /**
-     * Lấy danh sách devices của user
+     * Lấy danh sách devices của user - SỬ DỤNG SERVICE
      */
     @Override
     @Transactional(readOnly = true)
     public List<UserDevice> getUserDevices(String userId) {
-        return deviceRepository.findByUser_UserIdAndIsActiveTrue(userId);
+        return userDeviceService.getUserDevices(userId);
     }
 
     /**
@@ -619,28 +610,14 @@ public class UserServiceImpl implements UserService {
         // Gọi logic xóa thông thường
         removeDevice(userId, deviceId);
     }
-    /**
-     * Đếm số violations (lấy từ users.device_violation_count)
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public long getUnresolvedViolationsCount(String userId) {
-        User user = userRepository.findById(userId).orElse(null);
-        if (user == null) return 0;
-        return user.getDeviceViolationCount() != null ? user.getDeviceViolationCount() : 0;
-    }
 
     /**
-     * Lấy giới hạn thiết bị của user (public method)
+     * Lấy giới hạn thiết bị của user (public method) - SỬ DỤNG SERVICE
      */
     @Override
     @Transactional(readOnly = true)
     public int getUserMaxDevices(String userId) {
-        User user = userRepository.findById(userId).orElse(null);
-        if (user == null) {
-            return DEFAULT_MAX_DEVICES;
-        }
-        return getMaxDevicesForUser(user);
+        return userDeviceService.getMaxDevicesForUser(userId);
     }
 
     /**

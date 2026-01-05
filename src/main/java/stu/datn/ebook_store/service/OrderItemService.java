@@ -10,6 +10,7 @@ import java.util.Optional;
 
 /**
  * Service interface for managing order items
+ * REFACTORED: Removed 4 unused methods, createOrderItem→private helper
  */
 public interface OrderItemService {
 
@@ -21,45 +22,11 @@ public interface OrderItemService {
     List<OrderItem> getOrderItemsByOrderId(String orderId);
 
     /**
-     * Get all order items for a specific order by Order entity
-     * @param order The order entity
-     * @return List of order items
-     */
-    List<OrderItem> getOrderItemsByOrder(Order order);
-
-    /**
-     * Get an order item by ID
-     * @param orderItemId The order item ID
-     * @return Optional containing the order item if found
-     */
-    Optional<OrderItem> getOrderItemById(String orderItemId);
-
-    /**
-     * Create a new order item
-     * @param orderItem The order item to create
-     * @return The created order item
-     */
-    OrderItem createOrderItem(OrderItem orderItem);
-
-    /**
-     * Save an order item (alias for createOrderItem)
+     * Save an order item
      * @param orderItem The order item to save
      * @return The saved order item
      */
     OrderItem saveOrderItem(OrderItem orderItem);
-
-    /**
-     * Delete an order item
-     * @param orderItemId The order item ID
-     */
-    void deleteOrderItem(String orderItemId);
-
-    /**
-     * Get order items by book ID
-     * @param bookId The book ID
-     * @return List of order items
-     */
-    List<OrderItem> getOrderItemsByBookId(String bookId);
 
     /**
      * Check if a user has purchased a book
@@ -70,7 +37,7 @@ public interface OrderItemService {
     boolean hasUserPurchasedBook(String userId, String bookId);
 
     /**
-     * Get total sales count for a book
+     * Get total sales count for a book - GIỮ LẠI cho statistics future
      * @param bookId The book ID
      * @return Total number of sales
      */

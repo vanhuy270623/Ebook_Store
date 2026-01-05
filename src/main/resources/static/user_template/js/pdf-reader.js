@@ -74,9 +74,36 @@ function initPDFViewer() {
 
         // Get data from HTML
         const dataContainer = document.getElementById('pdf-data');
+        if (!dataContainer) {
+            throw new Error('PDF data container not found');
+        }
+
         bookId = dataContainer.dataset.bookId;
         const assetPath = dataContainer.dataset.assetPath;
+        const assetFileUrl = dataContainer.dataset.assetFileUrl; // Fallback
         const encodedLocation = dataContainer.dataset.encodedLocation;
+
+        console.log('=== INIT DEBUG ===');
+        console.log('bookId:', bookId);
+        console.log('assetPath (readingUrl):', assetPath);
+        console.log('assetFileUrl (fallback):', assetFileUrl);
+        console.log('encodedLocation:', encodedLocation);
+
+        // Validate assetPath - use readingUrl if available, otherwise fileUrl
+        let finalPath = assetPath;
+        if (!assetPath || assetPath.trim() === '' || assetPath === 'null' || assetPath === 'undefined') {
+            console.warn('⚠️ readingUrl is null/empty, trying fileUrl as fallback...');
+            finalPath = assetFileUrl;
+        }
+
+        if (!finalPath || finalPath.trim() === '' || finalPath === 'null' || finalPath === 'undefined') {
+            console.error('❌ Both readingUrl and fileUrl are invalid!');
+            console.error('assetPath:', assetPath);
+            console.error('assetFileUrl:', assetFileUrl);
+            throw new Error('Đường dẫn file PDF không hợp lệ. Vui lòng thử lại hoặc liên hệ admin.');
+        }
+
+        console.log('✅ Using finalPath:', finalPath);
 
         // Decode saved location
         let lastReadLocation = 'page-1';
@@ -92,8 +119,10 @@ function initPDFViewer() {
 
         pageNum = parsePageNumber(lastReadLocation);
 
-        // Store assetPath globally
-        window.pdfAssetPath = assetPath;
+        // Store finalPath globally (using readingUrl or fileUrl fallback)
+        window.pdfAssetPath = finalPath;
+        console.log('Stored pdfAssetPath:', window.pdfAssetPath);
+        console.log('Stored pdfAssetPath:', window.pdfAssetPath);
 
         loadPDF();
 
@@ -117,6 +146,13 @@ async function loadPDF() {
         const pdfPath = window.pdfAssetPath;
         console.log('=== PDF LOADING DEBUG ===');
         console.log('Asset Path:', pdfPath);
+
+        // Validate pdfPath before proceeding
+        if (!pdfPath || pdfPath.trim() === '' || pdfPath === 'null' || pdfPath === 'undefined') {
+            console.error('❌ Invalid PDF path:', pdfPath);
+            throw new Error('Đường dẫn file PDF không hợp lệ');
+        }
+
         console.log('Full URL:', window.location.origin + pdfPath);
 
         // Test file accessibility

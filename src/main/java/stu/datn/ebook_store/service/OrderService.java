@@ -10,18 +10,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Order Service Interface
+ * REFACTORED: Removed 4 unused methods (DataTables xử lý sort/filter)
+ */
 public interface OrderService {
     List<Order> getAllOrders();
     Optional<Order> getOrderById(String orderId);
     Order saveOrder(Order order);
     void deleteOrder(String orderId);
     List<Order> getOrdersByUser(User user);
-    List<Order> getOrdersByUserSortedByDate(User user);
-    Optional<Order> getOrderByTransactionId(String transactionId);
     List<Order> getOrdersByPaymentStatus(Order.PaymentStatus paymentStatus);
     List<Order> getOrdersByOrderType(Order.OrderType orderType);
-    List<Order> getOrdersByUserAndOrderType(User user, Order.OrderType orderType);
-    List<Order> getOrdersByUserAndPaymentStatus(User user, Order.PaymentStatus paymentStatus);
     List<Order> getOrdersBySubscription(Subscription subscription);
     List<Order> getOrdersBetweenDates(LocalDateTime startDate, LocalDateTime endDate);
     Double getTotalRevenueBetweenDates(LocalDateTime startDate, LocalDateTime endDate);

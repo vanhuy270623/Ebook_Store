@@ -67,11 +67,6 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public List<Review> getReviewsByUser(User user) {
-        return reviewRepository.findByUser(user);
-    }
-
-    @Override
     public Optional<Review> getReviewByUserAndBook(User user, Book book) {
         return reviewRepository.findByUserAndBook(user, book);
     }
@@ -91,10 +86,6 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewRepository.findByIsVerifiedPurchaseTrue();
     }
 
-    @Override
-    public List<Review> getReviewsByBookAndRating(Book book, Integer rating) {
-        return reviewRepository.findByBookAndRating(book, rating);
-    }
 
     @Override
     public Double getAverageRatingForBook(Book book) {

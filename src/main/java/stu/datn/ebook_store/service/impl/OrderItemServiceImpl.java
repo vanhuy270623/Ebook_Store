@@ -36,40 +36,21 @@ public class OrderItemServiceImpl implements OrderItemService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<OrderItem> getOrderItemsByOrder(Order order) {
-        return orderItemRepository.findByOrder_OrderId(order.getOrderId());
+    public OrderItem saveOrderItem(OrderItem orderItem) {
+        return createOrderItem(orderItem);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<OrderItem> getOrderItemById(String orderItemId) {
-        return orderItemRepository.findById(orderItemId);
-    }
-
-    @Override
-    public OrderItem createOrderItem(OrderItem orderItem) {
+    /**
+     * PRIVATE HELPER - Tạo order item
+     * Được gọi từ saveOrderItem
+     */
+    private OrderItem createOrderItem(OrderItem orderItem) {
         if (orderItem.getOrderItemId() == null || orderItem.getOrderItemId().isEmpty()) {
             orderItem.setOrderItemId(generateOrderItemId());
         }
         return orderItemRepository.save(orderItem);
     }
 
-    @Override
-    public OrderItem saveOrderItem(OrderItem orderItem) {
-        return createOrderItem(orderItem);
-    }
-
-    @Override
-    public void deleteOrderItem(String orderItemId) {
-        orderItemRepository.deleteById(orderItemId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<OrderItem> getOrderItemsByBookId(String bookId) {
-        return orderItemRepository.findByBook_BookId(bookId);
-    }
 
     @Override
     @Transactional(readOnly = true)

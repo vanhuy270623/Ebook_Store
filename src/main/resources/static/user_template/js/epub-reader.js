@@ -72,13 +72,20 @@ async function loadEPUB() {
 
         // Get data from HTML data attributes
         const dataContainer = document.getElementById('epub-data');
+        if (!dataContainer) {
+            throw new Error('EPUB data container not found');
+        }
+
         bookId = dataContainer.dataset.bookId;
         const assetPath = dataContainer.dataset.assetPath;
+        const assetFileUrl = dataContainer.dataset.assetFileUrl; // Fallback
         const encodedLocation = dataContainer.dataset.encodedLocation;
 
         console.log('=== EPUB LOADING ===');
         console.log('bookId:', bookId);
-        console.log('assetPath:', assetPath);
+        console.log('assetPath (readingUrl):', assetPath);
+        console.log('assetFileUrl (fallback):', assetFileUrl);
+        console.log('encodedLocation:', encodedLocation);
 
         // Decode saved location (CFI string)
         let savedCFI = null;
@@ -91,26 +98,37 @@ async function loadEPUB() {
             }
         }
 
-        // Validate path
-        if (!assetPath || assetPath.trim() === '') {
-            throw new Error('Đường dẫn file EPUB không hợp lệ (trống)');
+        // Validate path - use readingUrl if available, otherwise fileUrl
+        let finalPath = assetPath;
+        if (!assetPath || assetPath.trim() === '' || assetPath === 'null' || assetPath === 'undefined') {
+            console.warn('⚠️ readingUrl is null/empty, trying fileUrl as fallback...');
+            finalPath = assetFileUrl;
         }
+
+        if (!finalPath || finalPath.trim() === '' || finalPath === 'null' || finalPath === 'undefined') {
+            console.error('❌ Both readingUrl and fileUrl are invalid!');
+            console.error('assetPath:', assetPath);
+            console.error('assetFileUrl:', assetFileUrl);
+            throw new Error('Đường dẫn file EPUB không hợp lệ. Vui lòng thử lại hoặc liên hệ admin.');
+        }
+
+        console.log('✅ Using finalPath:', finalPath);
 
         // Test file accessibility
         console.log('Testing file accessibility...');
-        const testResponse = await fetch(assetPath, { method: 'HEAD' });
+        const testResponse = await fetch(finalPath, { method: 'HEAD' });
         if (!testResponse.ok) {
             throw new Error(`File không tồn tại. HTTP ${testResponse.status}`);
         }
         console.log('✅ File accessible');
 
         // Initialize book
-        book = ePub(assetPath);
+        book = ePub(finalPath);
         console.log('Book instance created');
 
         // Open book
         try {
-            await book.open(assetPath);
+            await book.open(finalPath);
             console.log('✅ Book opened');
         } catch (openErr) {
             console.warn('⚠️ book.open() failed:', openErr);

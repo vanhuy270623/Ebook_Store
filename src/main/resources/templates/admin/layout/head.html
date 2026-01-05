@@ -5,6 +5,10 @@
   <!-- Desktop Only - Min width 1280px recommended -->
   <meta content="width=1280" name="viewport">
 
+  <!-- CSRF Token for AJAX requests -->
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
 

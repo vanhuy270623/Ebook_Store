@@ -1,5 +1,7 @@
 package stu.datn.ebook_store.controller.user;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -7,7 +9,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import stu.datn.ebook_store.controller.BaseController;
+import stu.datn.ebook_store.dto.BookAssetDTO;
 import stu.datn.ebook_store.entity.*;
+import stu.datn.ebook_store.service.BookAssetService;
 import stu.datn.ebook_store.service.BookCategoryService;
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.OrderItemService;
@@ -36,14 +40,19 @@ public class UserBookController extends BaseController {
     private final BookCategoryService bookCategoryService;
     private final OrderItemService orderItemService;
     private final ReviewService reviewService;
+    private final BookAssetService bookAssetService;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     public UserBookController(BookService bookService, BookCategoryService bookCategoryService,
-                              OrderItemService orderItemService, ReviewService reviewService) {
+                              OrderItemService orderItemService, ReviewService reviewService,
+                              BookAssetService bookAssetService, ObjectMapper objectMapper) {
         this.bookService = bookService;
         this.bookCategoryService = bookCategoryService;
         this.orderItemService = orderItemService;
         this.reviewService = reviewService;
+        this.bookAssetService = bookAssetService;
+        this.objectMapper = objectMapper;
     }
 
     private Set<String> getPurchasedBookIds() {
@@ -184,6 +193,29 @@ public class UserBookController extends BaseController {
                                 .orElse(null);
                     }
 
+                    // Lấy danh sách assets để hiển thị options download
+                    List<BookAsset> bookAssets = bookAssetService.getAssetsByBookId(id);
+                    // Lọc chỉ lấy PDF và EPUB
+                    List<BookAsset> downloadableAssets = bookAssets.stream()
+                            .filter(asset -> asset.getFileType() == BookAsset.FileType.PDF ||
+                                           asset.getFileType() == BookAsset.FileType.EPUB)
+                            .toList();
+
+                    // Convert to DTO để tránh circular reference và chỉ lấy info cần thiết
+                    List<BookAssetDTO> assetDTOs = downloadableAssets.stream()
+                            .map(BookAssetDTO::fromEntity)
+                            .toList();
+
+                    // Serialize to JSON string for JavaScript
+                    String bookAssetsJson = "[]";
+                    try {
+                        bookAssetsJson = objectMapper.writeValueAsString(assetDTOs);
+                        log.info("Serialized {} book assets for bookId {}: {}",
+                                assetDTOs.size(), id, bookAssetsJson);
+                    } catch (JsonProcessingException e) {
+                        log.error("Error serializing bookAssets to JSON", e);
+                    }
+
                     model.addAttribute("book", book);
                     model.addAttribute("relatedBooks", relatedBooks);
                     model.addAttribute("categories", bookCategoryService.getAllCategories());
@@ -193,6 +225,8 @@ public class UserBookController extends BaseController {
                     model.addAttribute("reviewCount", reviewCount);
                     model.addAttribute("avgRating", avgRating != null ? avgRating : 0.0);
                     model.addAttribute("userReview", userReview);
+                    model.addAttribute("bookAssets", downloadableAssets);
+                    model.addAttribute("bookAssetsJson", bookAssetsJson);
 
                     return "user/books/view";
                 })

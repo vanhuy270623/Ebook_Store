@@ -25,11 +25,6 @@ public class CartItemServiceImpl implements CartItemService {
     }
 
     @Override
-    public List<CartItem> getAllCartItems() {
-        return cartItemRepository.findAll();
-    }
-
-    @Override
     public Optional<CartItem> getCartItemById(CartItemId cartItemId) {
         return cartItemRepository.findById(cartItemId);
     }
@@ -54,15 +49,6 @@ public class CartItemServiceImpl implements CartItemService {
         return cartItemRepository.findByCartAndBook(cart, book);
     }
 
-    @Override
-    public long countCartItemsByCart(Cart cart) {
-        return cartItemRepository.countByCart(cart);
-    }
-
-    @Override
-    public void deleteCartItemByCartAndBook(Cart cart, Book book) {
-        cartItemRepository.deleteByCartAndBook(cart, book);
-    }
 
     @Override
     public void clearCart(Cart cart) {

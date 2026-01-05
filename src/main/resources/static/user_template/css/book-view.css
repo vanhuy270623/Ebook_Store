@@ -219,6 +219,23 @@
     transform: scale(1.05);
 }
 
+.btn-favorite.active {
+    background: #e53e3e;
+    color: #fff;
+    border-color: #e53e3e;
+}
+
+.btn-favorite.active:hover {
+    background: #c53030;
+    border-color: #c53030;
+}
+
+.btn-favorite:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+
 .book-badge-detail {
     position: absolute;
     top: 15px;

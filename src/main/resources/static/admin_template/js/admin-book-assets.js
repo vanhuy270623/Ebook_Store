@@ -19,15 +19,22 @@ $(document).ready(function() {
         var originalText = $submitBtn.html();
         $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Đang upload...');
 
-        $.ajax({
+        // Get CSRF token from meta tag or cookie
+        var csrfToken = $('meta[name="_csrf"]').attr('content');
+        var csrfHeader = $('meta[name="_csrf_header"]').attr('content');
+
+        // If not in meta tag, try to get from cookie
+        if (!csrfToken) {
+            csrfToken = getCookie('XSRF-TOKEN');
+            csrfHeader = 'X-XSRF-TOKEN';
+        }
+
+        var ajaxConfig = {
             url: '/admin/books/assets/upload',
             type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="_csrf"]').attr('content')
-            },
             success: function(response) {
                 if (response.success) {
                     showAlert('success', response.message);
@@ -46,15 +53,26 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 var message = 'Lỗi khi upload file';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
+                if (xhr.status === 403) {
+                    message = 'Lỗi 403: Không có quyền truy cập! Vui lòng kiểm tra quyền admin.';
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
                     message = xhr.responseJSON.message;
                 }
                 showAlert('error', message);
+                console.error('Upload error:', xhr);
             },
             complete: function() {
                 $submitBtn.prop('disabled', false).html(originalText);
             }
-        });
+        };
+
+        // Add CSRF token to headers if available
+        if (csrfToken && csrfHeader) {
+            ajaxConfig.headers = {};
+            ajaxConfig.headers[csrfHeader] = csrfToken;
+        }
+
+        $.ajax(ajaxConfig);
     });
 
     // Preview file before upload
@@ -92,14 +110,21 @@ $(document).ready(function() {
             return;
         }
 
-        $.ajax({
+        // Get CSRF token from meta tag or cookie
+        var csrfToken = $('meta[name="_csrf"]').attr('content');
+        var csrfHeader = $('meta[name="_csrf_header"]').attr('content');
+
+        // If not in meta tag, try to get from cookie
+        if (!csrfToken) {
+            csrfToken = getCookie('XSRF-TOKEN');
+            csrfHeader = 'X-XSRF-TOKEN';
+        }
+
+        var ajaxConfig = {
             url: '/admin/books/assets/delete',
             type: 'POST',
             data: {
                 assetId: assetId
-            },
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="_csrf"]').attr('content')
             },
             success: function(response) {
                 if (response.success) {
@@ -126,12 +151,22 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 var message = 'Lỗi khi xóa file';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
+                if (xhr.status === 403) {
+                    message = 'Lỗi 403: Không có quyền truy cập!';
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
                     message = xhr.responseJSON.message;
                 }
                 showAlert('error', message);
             }
-        });
+        };
+
+        // Add CSRF token to headers if available
+        if (csrfToken && csrfHeader) {
+            ajaxConfig.headers = {};
+            ajaxConfig.headers[csrfHeader] = csrfToken;
+        }
+
+        $.ajax(ajaxConfig);
     });
 
     /**
@@ -168,6 +203,16 @@ $(document).ready(function() {
         var sizes = ['Bytes', 'KB', 'MB', 'GB'];
         var i = Math.floor(Math.log(bytes) / Math.log(k));
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    /**
+     * Get cookie value by name
+     */
+    function getCookie(name) {
+        var value = "; " + document.cookie;
+        var parts = value.split("; " + name + "=");
+        if (parts.length === 2) return parts.pop().split(";").shift();
+        return null;
     }
 });
 

@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
@@ -153,10 +153,19 @@
 <!-- Data container for Thymeleaf variables -->
 <div id="pdf-data"
      th:data-book-id="${book.bookId}"
-     th:data-asset-path="${asset.fileUrl}"
+     th:data-asset-path="${asset.readingUrl != null ? asset.readingUrl : ''}"
+     th:data-asset-file-url="${asset.fileUrl != null ? asset.fileUrl : ''}"
      th:data-encoded-location="${encodedLocation}"
      th:data-progress-percentage="${progress != null ? (progress.progressPercentage != null ? progress.progressPercentage : 0) : 0}"
      style="display: none;"></div>
+
+<!-- Debug info (visible in page source) -->
+<!--
+Asset Debug Info:
+- FileUrl: [[${asset.fileUrl}]]
+- ReadingUrl: [[${asset.readingUrl}]]
+- FileType: [[${asset.fileType}]]
+-->
 
 <!-- PDF Reader Script -->
 <script th:src="@{/user_template/js/pdf-reader.js}"></script>

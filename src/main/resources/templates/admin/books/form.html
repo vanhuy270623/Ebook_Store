@@ -69,6 +69,8 @@
 				  method="post"
 				  enctype="multipart/form-data">
 
+				<!-- Hidden field for bookId (required for update) -->
+				<input type="hidden" th:field="*{bookId}" th:if="${isEdit}">
 
 				<div class="row">
 					<!-- Left Column -->

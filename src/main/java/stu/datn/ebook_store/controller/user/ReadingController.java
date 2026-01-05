@@ -40,6 +40,7 @@ public class ReadingController extends BaseController {
     private final OrderService orderService;
     private final OrderItemService orderItemService;
     private final BookRepository bookRepository;
+    private final stu.datn.ebook_store.service.FileStorageService fileStorageService;
 
     @Autowired
     public ReadingController(BookService bookService,
@@ -47,134 +48,15 @@ public class ReadingController extends BaseController {
                              ReadingProgressService readingProgressService,
                              OrderService orderService,
                              OrderItemService orderItemService,
-                             BookRepository bookRepository) {
+                             BookRepository bookRepository,
+                             stu.datn.ebook_store.service.FileStorageService fileStorageService) {
         this.bookService = bookService;
         this.bookAssetService = bookAssetService;
         this.readingProgressService = readingProgressService;
         this.orderService = orderService;
         this.orderItemService = orderItemService;
         this.bookRepository = bookRepository;
-    }
-
-    /**
-     * Mở sách để đọc - trang chung cho cả PDF và EPUB
-     */
-    @GetMapping("/book/{bookId}")
-    public String openBook(@PathVariable String bookId,
-                           Model model,
-                           RedirectAttributes redirectAttributes) {
-        try {
-            log.info("Opening book with ID: {}", bookId);
-            User currentUser = getCurrentUser();
-
-            // Kiểm tra user đã đăng nhập
-            if (currentUser == null) {
-                log.warn("User not authenticated, redirecting to login");
-                redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để đọc sách");
-                return "redirect:/auth/login";
-            }
-            log.debug("User found: {} ({})", currentUser.getUsername(), currentUser.getUserId());
-
-            Book book = bookService.getBookById(bookId)
-                    .orElseThrow(() -> new RuntimeException("Book not found: " + bookId));
-            log.debug("Book found: {}", book.getTitle());
-
-            // Kiểm tra quyền truy cập
-            if (!canUserAccessBook(currentUser, book)) {
-                log.warn("User {} does not have access to book {}", currentUser.getUserId(), bookId);
-                redirectAttributes.addFlashAttribute("error", "Bạn không có quyền đọc cuốn sách này");
-                return "redirect:/books/view/" + bookId;
-            }
-
-            // Lấy file asset của sách
-            List<BookAsset> assets = bookAssetService.getAssetsByBookId(bookId);
-            log.debug("Found {} assets for book {}", assets.size(), bookId);
-
-            BookAsset readableAsset = assets.stream()
-                    .filter(asset -> BookAsset.FileType.PDF.equals(asset.getFileType()) ||
-                            BookAsset.FileType.EPUB.equals(asset.getFileType()))
-                    .findFirst()
-                    .orElse(null);
-
-            if (readableAsset == null) {
-                log.warn("No readable asset found for book {}", bookId);
-                redirectAttributes.addFlashAttribute("error", "Sách này chưa có file đọc");
-                return "redirect:/books/view/" + bookId;
-            }
-
-            log.info("Readable asset found: {} - {}", readableAsset.getFileType(), readableAsset.getFileUrl());
-
-            // Kiểm tra file tồn tại trên disk
-            // fileUrl có dạng: /book_asset/source/tamly-kynangsong/Dac nhan tam.pdf
-            // Cần lấy phần sau /book_asset/source/ để ghép với base path
-            String fileUrl = readableAsset.getFileUrl();
-            String relativePath = fileUrl.replace("/book_asset/source/", "");
-            String fullPath = "F:/datn_uploads/book_asset/source/" + relativePath;
-
-            java.io.File file = new java.io.File(fullPath);
-            if (!file.exists()) {
-                log.error("File not found on disk: {}", fullPath);
-                log.error("FileUrl from DB: {}", fileUrl);
-                log.error("Relative path: {}", relativePath);
-                redirectAttributes.addFlashAttribute("error", "File sách không tồn tại trên hệ thống");
-                return "redirect:/books/view/" + bookId;
-            }
-            log.info("File exists on disk: {} (size: {} bytes)", fullPath, file.length());
-
-            // Lấy hoặc tạo mới reading progress
-            ReadingProgress progress = null;
-            try {
-                progress = readingProgressService
-                        .getReadingProgressByUserAndBook(currentUser, book)
-                        .orElseGet(() -> {
-                            try {
-                                log.info("Creating new reading progress for user {} and book {}", currentUser.getUserId(), book.getBookId());
-                                ReadingProgress newProgress = new ReadingProgress();
-                                // Không set progressId - để service tự generate với format prog_XX
-                                newProgress.setUser(currentUser);
-                                newProgress.setBook(book);
-                                newProgress.setBookAsset(readableAsset);
-                                newProgress.setProgressPercentage(0.0f);
-                                newProgress.setIsCompleted(false);
-                                newProgress.setIsFavorite(false);
-                                newProgress.setAccessType(determineAccessType(book, currentUser));
-                                newProgress.setCreatedAt(LocalDateTime.now());
-                                newProgress.setLastReadAt(LocalDateTime.now());
-                                ReadingProgress saved = readingProgressService.saveReadingProgress(newProgress);
-                                log.info("Reading progress created successfully: {}", saved.getProgressId());
-                                return saved;
-                            } catch (Exception e) {
-                                log.error("Error creating reading progress: {}", e.getMessage(), e);
-                                throw new RuntimeException("Cannot create reading progress: " + e.getMessage(), e);
-                            }
-                        });
-            } catch (Exception e) {
-                log.error("Error with reading progress: {}", e.getMessage(), e);
-                // Nếu lỗi tạo progress, vẫn cho phép đọc nhưng không track progress
-                log.warn("Continuing without progress tracking");
-                progress = null;
-            }
-
-            // Tăng view count nếu cần
-            // bookService.incrementViewCount(bookId);
-
-            model.addAttribute("book", book);
-            model.addAttribute("asset", readableAsset);
-            model.addAttribute("progress", progress);
-            model.addAttribute("user", currentUser);
-
-            // Chuyển hướng đến reader phù hợp
-            if (BookAsset.FileType.PDF.equals(readableAsset.getFileType())) {
-                return "user/reading/pdf-viewer";
-            } else {
-                return "user/reading/epub-viewer";
-            }
-
-        } catch (Exception e) {
-            log.error("Error opening book {}: {}", bookId, e.getMessage(), e);
-            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi mở sách: " + e.getMessage());
-            return "redirect:/books";
-        }
+        this.fileStorageService = fileStorageService;
     }
 
 
@@ -249,6 +131,12 @@ public class ReadingController extends BaseController {
                         return readingProgressService.saveReadingProgress(newProgress);
                     });
 
+            // Debug logging for asset readingUrl
+            log.info("📘 PDF Viewer rendering - Book: {}", book.getTitle());
+            log.info("📁 Asset fileUrl: {}", asset.getFileUrl());
+            log.info("🔗 Asset readingUrl: {}", asset.getReadingUrl());
+            log.info("📄 Asset fileType: {}", asset.getFileType());
+
             model.addAttribute("book", book);
             model.addAttribute("asset", asset);
             model.addAttribute("progress", progress);
@@ -260,6 +148,7 @@ public class ReadingController extends BaseController {
                     String encodedLocation = java.util.Base64.getEncoder()
                             .encodeToString(progress.getLastReadLocation().getBytes(java.nio.charset.StandardCharsets.UTF_8));
                     model.addAttribute("encodedLocation", encodedLocation);
+                    log.debug("Encoded location: {}", encodedLocation);
                 } catch (Exception e) {
                     log.warn("Could not encode location: {}", e.getMessage());
                     model.addAttribute("encodedLocation", null);
@@ -268,6 +157,7 @@ public class ReadingController extends BaseController {
                 model.addAttribute("encodedLocation", null);
             }
 
+            log.info("✅ Rendering PDF viewer for book: {}", book.getBookId());
             return "user/reading/pdf-viewer";
 
         } catch (Exception e) {
@@ -348,6 +238,12 @@ public class ReadingController extends BaseController {
                         return readingProgressService.saveReadingProgress(newProgress);
                     });
 
+            // Debug logging for asset readingUrl
+            log.info("📗 EPUB Viewer rendering - Book: {}", book.getTitle());
+            log.info("📁 Asset fileUrl: {}", asset.getFileUrl());
+            log.info("🔗 Asset readingUrl: {}", asset.getReadingUrl());
+            log.info("📄 Asset fileType: {}", asset.getFileType());
+
             model.addAttribute("book", book);
             model.addAttribute("asset", asset);
             model.addAttribute("progress", progress);
@@ -359,6 +255,7 @@ public class ReadingController extends BaseController {
                     String encodedLocation = java.util.Base64.getEncoder()
                             .encodeToString(progress.getLastReadLocation().getBytes(java.nio.charset.StandardCharsets.UTF_8));
                     model.addAttribute("encodedLocation", encodedLocation);
+                    log.debug("Encoded location: {}", encodedLocation);
                 } catch (Exception e) {
                     log.warn("Could not encode location: {}", e.getMessage());
                     model.addAttribute("encodedLocation", null);
@@ -367,6 +264,7 @@ public class ReadingController extends BaseController {
                 model.addAttribute("encodedLocation", null);
             }
 
+            log.info("✅ Rendering EPUB viewer for book: {}", book.getBookId());
             return "user/reading/epub-viewer";
 
         } catch (Exception e) {
@@ -383,16 +281,18 @@ public class ReadingController extends BaseController {
     public String reader(@PathVariable String bookId,
                          Model model,
                          RedirectAttributes redirectAttributes) {
-        // Redirect đến /choose-format để kiểm tra số lượng file và tự động chọn
-        return "redirect:/reading/choose-format/" + bookId;
+        // Redirect đến /book để kiểm tra số lượng file và tự động chọn
+        return "redirect:/reading/book/" + bookId;
     }
 
     /**
      * Trang chọn format đọc sách (PDF/EPUB)
      * - Nếu chỉ có 1 file → TỰ ĐỘNG load luôn
      * - Nếu có cả 2 file → Hiển thị trang chọn
+     *
+     * URL: /reading/book/{bookId}
      */
-    @GetMapping("/choose-format/{bookId}")
+    @GetMapping("/book/{bookId}")
     public String chooseFormat(@PathVariable String bookId,
                                Model model,
                                RedirectAttributes redirectAttributes) {
@@ -473,6 +373,7 @@ public class ReadingController extends BaseController {
             model.addAttribute("hasEPUB", hasEPUB);
             model.addAttribute("progress", progress);
             model.addAttribute("user", user);
+            model.addAttribute("pageTitle", "Đọc sách: " + book.getTitle());
 
             // Hiển thị trang chọn format
             return "user/reading/reader";
@@ -956,7 +857,163 @@ public class ReadingController extends BaseController {
         // Mặc định là FREE (không nên đến đây nếu logic canUserAccessBook đúng)
         return ReadingProgress.AccessType.FREE;
     }
+
+    /**
+     * SECURE STREAMING ENDPOINT
+     * Stream file content sau khi kiểm tra quyền truy cập
+     * URL: /reading/stream/{category}/{fileName}
+     *
+     * Endpoint này thay thế việc truy cập trực tiếp vào /book_asset/source/**
+     */
+    @GetMapping("/stream/{category}/{fileName:.+}")
+    public org.springframework.http.ResponseEntity<org.springframework.core.io.Resource> streamFile(
+            @PathVariable String category,
+            @PathVariable String fileName) {
+        try {
+            log.info("Streaming file request - category: {}, fileName: {}", category, fileName);
+
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                log.warn("Unauthorized streaming attempt for: {}/{}", category, fileName);
+                return org.springframework.http.ResponseEntity
+                        .status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .build();
+            }
+
+            // Tìm asset theo fileUrl (thử cả 2 format: có và không có dấu /)
+            String fileUrl = "/book_asset/source/" + category + "/" + fileName;
+            log.debug("Searching for asset with fileUrl: {}", fileUrl);
+
+            BookAsset asset = bookAssetService.findByFileUrl(fileUrl);
+
+            // Fallback: Thử tìm không có dấu / nếu không tìm thấy
+            if (asset == null) {
+                String fileUrlWithoutSlash = "book_asset/source/" + category + "/" + fileName;
+                log.warn("Asset not found with leading slash, trying without: {}", fileUrlWithoutSlash);
+                asset = bookAssetService.findByFileUrl(fileUrlWithoutSlash);
+            }
+
+            if (asset == null) {
+                log.error("Asset not found for streaming (tried both formats):");
+                log.error("  - With slash: {}", fileUrl);
+                log.error("  - Without slash: book_asset/source/{}/{}", category, fileName);
+                log.error("Please check database: SELECT * FROM bookassets WHERE file_url LIKE '%{}%'", fileName);
+                return org.springframework.http.ResponseEntity
+                        .status(org.springframework.http.HttpStatus.NOT_FOUND)
+                        .build();
+            }
+
+            log.info("✅ Found asset: {} (fileUrl: {})", asset.getBookAssetId(), asset.getFileUrl());
+
+            Book book = asset.getBook();
+            if (book == null) {
+                log.error("Book not found for asset: {}", asset.getBookAssetId());
+                return org.springframework.http.ResponseEntity
+                        .status(org.springframework.http.HttpStatus.NOT_FOUND)
+                        .build();
+            }
+
+            // Kiểm tra quyền truy cập
+            if (!canUserAccessBook(currentUser, book)) {
+                log.warn("User {} forbidden from streaming book {}", currentUser.getUserId(), book.getBookId());
+                return org.springframework.http.ResponseEntity
+                        .status(org.springframework.http.HttpStatus.FORBIDDEN)
+                        .build();
+            }
+
+            // Load file từ storage service (giống download controller)
+            java.nio.file.Path filePath = fileStorageService.loadFile(fileUrl);
+
+            if (!java.nio.file.Files.exists(filePath)) {
+                log.error("Physical file not found: {}", filePath);
+                return org.springframework.http.ResponseEntity
+                        .status(org.springframework.http.HttpStatus.NOT_FOUND)
+                        .build();
+            }
+
+            // Xác định content type
+            String contentType;
+            if (asset.getFileType() == BookAsset.FileType.PDF) {
+                contentType = "application/pdf";
+            } else if (asset.getFileType() == BookAsset.FileType.EPUB) {
+                contentType = "application/epub+zip";
+            } else {
+                contentType = "application/octet-stream";
+            }
+
+            log.info("✅ Streaming file {} ({}) to user {}", fileName, contentType, currentUser.getUserId());
+
+            // Get file size for content-length header
+            long fileSize = java.nio.file.Files.size(filePath);
+
+            // Use InputStreamResource with BufferedInputStream for better performance
+            // This ensures proper file handle closure and prevents file locking issues
+            java.io.InputStream inputStream = new java.io.BufferedInputStream(
+                    java.nio.file.Files.newInputStream(filePath, java.nio.file.StandardOpenOption.READ)
+            );
+
+            org.springframework.core.io.InputStreamResource resource =
+                    new org.springframework.core.io.InputStreamResource(inputStream);
+
+            // Trả về file với headers phù hợp cho streaming
+            return org.springframework.http.ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, contentType)
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"" + java.net.URLEncoder.encode(fileName, "UTF-8").replace("+", "%20") + "\"")
+                    .header(org.springframework.http.HttpHeaders.ACCEPT_RANGES, "bytes")
+                    .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+                    .header(org.springframework.http.HttpHeaders.PRAGMA, "no-cache")
+                    .header(org.springframework.http.HttpHeaders.EXPIRES, "0")
+                    .contentLength(fileSize)
+                    .body(resource);
+
+        } catch (Exception e) {
+            log.error("Error streaming file {}/{}: {}", category, fileName, e.getMessage(), e);
+            return org.springframework.http.ResponseEntity
+                    .status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
+        }
+    }
+
+    /**
+     * DEBUG ENDPOINT - List all book assets for a book
+     * URL: /reading/debug/assets/{bookId}
+     * Remove this in production!
+     */
+    @GetMapping("/debug/assets/{bookId}")
+    @ResponseBody
+    public String debugAssets(@PathVariable String bookId) {
+        try {
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return "ERROR: Not authenticated";
+            }
+
+            List<BookAsset> assets = bookAssetService.getAssetsByBookId(bookId);
+
+            if (assets.isEmpty()) {
+                return "No assets found for book: " + bookId;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("=== ASSETS FOR BOOK: ").append(bookId).append(" ===\n\n");
+
+            for (BookAsset asset : assets) {
+                sb.append("Asset ID: ").append(asset.getBookAssetId()).append("\n");
+                sb.append("File Type: ").append(asset.getFileType()).append("\n");
+                sb.append("File URL: ").append(asset.getFileUrl()).append("\n");
+                sb.append("Reading URL: ").append(asset.getReadingUrl()).append("\n");
+                sb.append("File Size: ").append(asset.getFileSize()).append(" bytes\n");
+                sb.append("---\n");
+            }
+
+            return sb.toString();
+        } catch (Exception e) {
+            return "ERROR: " + e.getMessage();
+        }
+    }
 }
+
 
 
 

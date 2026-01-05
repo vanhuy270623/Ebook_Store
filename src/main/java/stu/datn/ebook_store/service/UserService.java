@@ -10,32 +10,33 @@ import java.util.List;
 import java.util.Map;
 
 
+/**
+ * User Service Interface
+ * REFACTORED: Removed 5 unused methods (giữ lại removeDevice cho business logic)
+ * Xóa: authenticateUser, getAdminUsersCount, getUserByIdWithRole, deleteUser, getUnresolvedViolationsCount
+ */
 public interface UserService {
     void registerUser(RegisterDto registerDto) throws Exception;
     boolean checkUsernameExists(String username);
     boolean checkEmailExists(String email);
-    User authenticateUser(String username, String password) throws Exception;
     void updateLastLogin(String userId);
 
     // Admin methods
     long getTotalUsersCount();
     long getActiveUsersCount();
     long getVerifiedUsersCount();
-    long getAdminUsersCount();
     long getAllAdminsCountIncludingDeleted(); // Count all admins including deleted ones
     java.util.List<User> getRecentUsers(int limit);
     java.util.List<User> getAllUsers();
     java.util.Optional<User> getUserById(String userId);
-    java.util.Optional<User> getUserByIdWithRole(String userId);
     User saveUser(User user);
-    void deleteUser(String userId);
     void toggleUserStatus(String userId);
     java.util.List<User> searchUsers(String keyword);
 
     // Soft deletion methods
     void softDeleteUser(String userId);
     void restoreUser(String userId);
-    java.util.List<User> getDeletedUsers();
+    java.util.List<User> getDeletedUsers(); // GIỮ LẠI - admin restore users
     java.util.List<User> getAllUsersIncludingDeleted();
 
     // Device Management methods - Tích hợp vào UserService
@@ -62,10 +63,6 @@ public interface UserService {
      */
     void removeDeviceWithCurrentCheck(String userId, String deviceId, String currentDeviceId) throws Exception;
 
-    /**
-     * Đếm số violations chưa xử lý
-     */
-    long getUnresolvedViolationsCount(String userId);
 
     /**
      * Lấy giới hạn thiết bị của user theo subscription

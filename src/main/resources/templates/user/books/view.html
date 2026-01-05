@@ -113,12 +113,11 @@
                             <a th:href="@{/reading/reader/{id}(id=${book.bookId})}" class="btn action-btn-success w-100 mb-2">
                                 <i class="fas fa-book-reader me-2"></i>Đọc ngay
                             </a>
-                            <a th:if="${book.isDownloadable}"
-                               th:href="@{/books/download/{id}(id=${book.bookId})}"
-                               class="btn btn-outline-primary w-100"
-                               download>
+                            <button th:if="${book.isDownloadable}"
+                                    class="btn btn-outline-primary w-100 book-download-btn"
+                                    th:attr="data-book-id=${book.bookId}">
                                 <i class="fas fa-download me-2"></i>Tải xuống
-                            </a>
+                            </button>
                         </div>
 
                         <!-- PURCHASE Book -->
@@ -139,12 +138,11 @@
                                 <i class="fas fa-book-reader me-2"></i>Đọc sách
                             </a>
                             <!-- Nút tải xuống: chỉ hiện khi đã mua và sách cho phép tải -->
-                            <a th:if="${purchasedBookIds.contains(book.bookId) && book.isDownloadable}"
-                               th:href="@{/books/download/{id}(id=${book.bookId})}"
-                               class="btn btn-outline-success w-100"
-                               download>
+                            <button th:if="${purchasedBookIds.contains(book.bookId) && book.isDownloadable}"
+                                    class="btn btn-outline-success w-100 book-download-btn"
+                                    th:attr="data-book-id=${book.bookId}">
                                 <i class="fas fa-download me-2"></i>Tải xuống sách đã mua
-                            </a>
+                            </button>
                         </div>
 
                         <!-- SUBSCRIPTION Book -->
@@ -175,12 +173,11 @@
                                 <i class="fas fa-book-reader me-2"></i>Đọc sách
                             </a>
                             <!-- Nút tải xuống: CHỈ hiện khi đã MUA LẺ và sách cho phép tải -->
-                            <a th:if="${purchasedBookIds.contains(book.bookId) && book.isDownloadable}"
-                               th:href="@{/books/download/{id}(id=${book.bookId})}"
-                               class="btn btn-outline-success w-100 mb-2"
-                               download>
+                            <button th:if="${purchasedBookIds.contains(book.bookId) && book.isDownloadable}"
+                                    class="btn btn-outline-success w-100 mb-2 book-download-btn"
+                                    th:attr="data-book-id=${book.bookId}">
                                 <i class="fas fa-download me-2"></i>Tải xuống sách đã mua
-                            </a>
+                            </button>
                             <!-- Thông báo cho user chưa mua -->
                             <div th:if="${!purchasedBookIds.contains(book.bookId) && book.isDownloadable}"
                                  class="alert alert-info mb-2 py-2 px-3" style="font-size: 0.85rem;">
@@ -193,7 +190,9 @@
                         </div>
 
                         <!-- Favorite Button -->
-                        <button class="btn btn-favorite w-100">
+                        <button class="btn btn-favorite w-100"
+                                th:attr="data-book-id=${book.bookId}"
+                                id="favoriteBtn">
                             <i class="far fa-heart me-2"></i>Yêu thích
                         </button>
                     </div>
@@ -521,13 +520,38 @@
         </div>
     </section>
 
+    <!-- Modal chọn format tải xuống -->
+    <div class="modal fade" id="downloadFormatModal" tabindex="-1" aria-labelledby="downloadFormatModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="downloadFormatModalLabel">
+                        <i class="fas fa-download me-2"></i>Chọn định dạng tải xuống
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Sách này có nhiều định dạng. Vui lòng chọn định dạng bạn muốn tải xuống:</p>
+                    <div class="d-grid gap-2" id="downloadOptions">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <div th:replace="~{user/layout/footer :: footer}"></div>
 
     <!-- Scripts -->
     <th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
+
+    <!-- Book Assets Data for Download Modal -->
+    <script id="bookAssetsData" type="application/json" th:utext="${bookAssetsJson}"></script>
+
     <script th:src="@{/user_template/js/user-main.js}"></script>
     <script th:src="@{/user_template/js/book-download.js}"></script>
+    <script th:src="@{/user_template/js/favorite.js}"></script>
     <script th:src="@{/user_template/js/review.js}"></script>
 </body>
 </html>

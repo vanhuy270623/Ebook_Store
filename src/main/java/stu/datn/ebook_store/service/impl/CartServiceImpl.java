@@ -36,11 +36,6 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public List<Cart> getAllCarts() {
-        return cartRepository.findAll();
-    }
-
-    @Override
     public Optional<Cart> getCartById(String cartId) {
         return cartRepository.findById(cartId);
     }
@@ -50,18 +45,6 @@ public class CartServiceImpl implements CartService {
         return cartRepository.findByUser(user);
     }
 
-    @Override
-    public Cart saveCart(Cart cart) {
-        if (cart.getCartId() == null || cart.getCartId().isEmpty()) {
-            cart.setCartId(generateCartId());
-        }
-        return cartRepository.save(cart);
-    }
-
-    @Override
-    public void deleteCart(String cartId) {
-        cartRepository.deleteById(cartId);
-    }
 
     @Override
     public Cart createCartForUser(User user) {
@@ -115,8 +98,11 @@ public class CartServiceImpl implements CartService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    @Override
-    public List<String> findDuplicateBookTitles(Cart cart, User user) {
+    /**
+     * Tìm sách trong cart đã mua (duplicate)
+     * INTERNAL METHOD - Được gọi từ getCartValidationErrors
+     */
+    private List<String> findDuplicateBookTitles(Cart cart, User user) {
         List<CartItem> cartItems = cartItemService.getCartItemsByCart(cart);
 
         // Lấy danh sách sách đã mua
@@ -145,11 +131,6 @@ public class CartServiceImpl implements CartService {
         }
     }
 
-    @Override
-    public void clearCartForUser(User user) {
-        Optional<Cart> cartOpt = getCartByUser(user);
-        cartOpt.ifPresent(this::clearCart);
-    }
 
     private String generateCartId() {
         long count = cartRepository.count();

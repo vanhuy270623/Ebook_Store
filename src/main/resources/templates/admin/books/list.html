@@ -134,12 +134,11 @@
 											<span th:if="${book.price > 0}" th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + 'đ'" class="text-primary">0đ</span>
 										</td>
 										<td>
-											<span th:switch="${book.accessType}">
-												<span th:case="'FREE'" class="label label-success">Miễn phí</span>
-												<span th:case="'PURCHASE'" class="label label-primary">Mua</span>
-												<span th:case="'SUBSCRIPTION'" class="label label-warning">Gói đăng ký</span>
-												<span th:case="'BOTH'" class="label label-info">Cả hai</span>
-											</span>
+											<span th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).FREE}" class="label label-success">Miễn phí</span>
+											<span th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).PURCHASE}" class="label label-primary">Mua</span>
+											<span th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).SUBSCRIPTION}" class="label label-warning">Gói đăng ký</span>
+											<span th:if="${book.accessType == T(stu.datn.ebook_store.entity.Book.AccessType).BOTH}" class="label label-info">Cả hai</span>
+											<span th:if="${book.accessType == null}" class="label label-default">N/A</span>
 										</td>
 										<td>
 											<i class="fa fa-star text-yellow"></i>

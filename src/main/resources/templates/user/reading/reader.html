@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <th:block th:replace="~{user/layout/head :: head}"></th:block>
-    <title>Đọc sách - Ebook Store</title>
 
-    <!-- Device Management CSS -->
+    <!-- Reading CSS -->
     <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
 </head>
 <body>
@@ -201,11 +201,8 @@
     <!-- Footer -->
     <div th:replace="~{user/layout/footer :: footer}"></div>
 
-    <!-- Bootstrap JS -->
-    <script th:src="@{/user_template/js/bootstrap.bundle.min.js}"></script>
-
-    <!-- Load cart counter script -->
-    <script th:src="@{/user_template/js/user-main.js}"></script>
+    <!-- Scripts -->
+    <th:block th:replace="~{user/layout/scripts :: scripts}"></th:block>
 
     <!-- Reader specific script -->
     <script th:inline="javascript">
@@ -263,34 +260,29 @@
 
         function openReader(format) {
             let url;
+            let selectedAsset = null;
 
             // Find the asset with the requested format
-            let selectedAsset = null;
             if (availableAssets && availableAssets.length > 0) {
                 selectedAsset = availableAssets.find(asset => {
                     if (format === 'pdf') return asset.fileType === 'PDF';
                     if (format === 'epub') return asset.fileType === 'EPUB';
+                    // For 'auto', prefer PDF first, then EPUB
                     return asset.fileType === 'PDF' || asset.fileType === 'EPUB';
                 });
             }
 
-            // Use readingUrl from asset if available, otherwise fallback to bookId
-            if (selectedAsset && selectedAsset.readingUrl) {
-                url = selectedAsset.readingUrl;
+            // Use viewerUrl from asset to navigate to the correct viewer page
+            if (selectedAsset && selectedAsset.viewerUrl) {
+                url = selectedAsset.viewerUrl;
+            } else if (selectedAsset) {
+                // Fallback: construct URL based on file type
+                const fileType = selectedAsset.fileType.toLowerCase();
+                url = `/reading/${fileType}/${bookId}`;
             } else {
-                // Fallback to old format
-                switch(format) {
-                    case 'pdf':
-                        url = `/reading/pdf/${bookId}`;
-                        break;
-                    case 'epub':
-                        url = `/reading/epub/${bookId}`;
-                        break;
-                    case 'auto':
-                    default:
-                        url = `/reading/book/${bookId}`;
-                        break;
-                }
+                // If no specific asset found, redirect to book viewer
+                // This will handle the logic to find the right format
+                url = `/reading/book/${bookId}`;
             }
 
             // Navigate to reader

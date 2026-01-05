@@ -42,5 +42,8 @@ public interface BookRepository extends JpaRepository<Book, String> {
 
     @Query("SELECT b FROM Book b WHERE b.averageRating > 0 ORDER BY b.averageRating DESC, b.totalReviews DESC")
     List<Book> findTopBooksByRating(org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT b FROM Book b LEFT JOIN FETCH b.bookCategory ORDER BY b.createdAt DESC")
+    List<Book> findAllWithCategory();
 }
 

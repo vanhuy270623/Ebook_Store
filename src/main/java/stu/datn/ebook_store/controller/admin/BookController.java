@@ -2,6 +2,10 @@ package stu.datn.ebook_store.controller.admin;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,6 +25,11 @@ import stu.datn.ebook_store.service.AuthorService;
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.FileStorageService;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -217,6 +226,12 @@ public class BookController extends BaseController {
                            @RequestParam(value = "sourceFileEpub", required = false) MultipartFile sourceFileEpub,
                            Model model,
                            RedirectAttributes redirectAttributes) {
+
+        // Validate bookId is present
+        if (request.getBookId() == null || request.getBookId().trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi: Không tìm thấy ID sách. Vui lòng thử lại.");
+            return "redirect:/admin/books";
+        }
 
         if (bindingResult.hasErrors()) {
             String errors = bindingResult.getAllErrors().stream()
@@ -471,4 +486,70 @@ public class BookController extends BaseController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
+    /**
+     * Download file asset for admin
+     * GET /admin/books/assets/download/{assetId}
+     */
+    @GetMapping("/assets/download/{assetId}")
+    @ResponseBody
+    public ResponseEntity<Resource> downloadAsset(@PathVariable String assetId) {
+        try {
+            // Tìm asset
+            stu.datn.ebook_store.entity.BookAsset asset = bookAssetRepository.findById(assetId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy file"));
+
+            // Load file từ storage
+            Path filePath = fileStorageService.loadFile(asset.getFileUrl());
+
+            if (!Files.exists(filePath)) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (!resource.exists() || !resource.isReadable()) {
+                return ResponseEntity.status(500).build();
+            }
+
+            // Xác định Content-Type
+            String contentType = "application/octet-stream";
+            if (asset.getFileType() == stu.datn.ebook_store.entity.BookAsset.FileType.PDF) {
+                contentType = "application/pdf";
+            } else if (asset.getFileType() == stu.datn.ebook_store.entity.BookAsset.FileType.EPUB) {
+                contentType = "application/epub+zip";
+            }
+
+            // Tạo tên file download
+            String bookTitle = asset.getBook() != null ? asset.getBook().getTitle() : "book";
+            String extension = asset.getFileType() == stu.datn.ebook_store.entity.BookAsset.FileType.PDF ? ".pdf" : ".epub";
+            String fileName = sanitizeFileName(bookTitle) + extension;
+            String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
+                    .replaceAll("\\+", "%20");
+
+            // Trả về file stream
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename*=UTF-8''" + encodedFileName)
+                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
+                    .body(resource);
+
+        } catch (IOException e) {
+            return ResponseEntity.status(500).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * Sanitize file name for download
+     */
+    private String sanitizeFileName(String fileName) {
+        // Remove special characters but keep Vietnamese characters
+        return fileName.replaceAll("[^a-zA-Z0-9ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵýỷỹ\\s_-]", "_")
+                .replaceAll("_{2,}", "_")
+                .trim();
+    }
 }
+

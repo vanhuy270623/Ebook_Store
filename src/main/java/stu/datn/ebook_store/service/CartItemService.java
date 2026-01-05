@@ -8,15 +8,16 @@ import stu.datn.ebook_store.entity.CartItemId;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Cart Item Service Interface
+ * REFACTORED: Removed 3 unused methods
+ */
 public interface CartItemService {
-    List<CartItem> getAllCartItems();
     Optional<CartItem> getCartItemById(CartItemId cartItemId);
     CartItem saveCartItem(CartItem cartItem);
     void deleteCartItem(CartItemId cartItemId);
     List<CartItem> getCartItemsByCart(Cart cart);
-    Optional<CartItem> getCartItemByCartAndBook(Cart cart, Book book);
-    long countCartItemsByCart(Cart cart);
-    void deleteCartItemByCartAndBook(Cart cart, Book book);
+    Optional<CartItem> getCartItemByCartAndBook(Cart cart, Book book); // GIỮ LẠI - validation duplicate
     void clearCart(Cart cart);
 }
 

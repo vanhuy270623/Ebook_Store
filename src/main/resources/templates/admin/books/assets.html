@@ -210,8 +210,8 @@
                                         <!-- Actions -->
                                         <td>
                                             <div class="btn-group">
-                                                <a th:href="${asset.fileUrl}" target="_blank"
-                                                   class="btn btn-sm btn-info" title="Xem/Tải">
+                                                <a th:href="@{/admin/books/assets/download/{id}(id=${asset.bookAssetId})}"
+                                                   class="btn btn-sm btn-info" title="Tải xuống">
                                                     <i class="fa fa-download"></i>
                                                 </a>
                                                 <button class="btn btn-sm btn-danger btn-delete-asset"

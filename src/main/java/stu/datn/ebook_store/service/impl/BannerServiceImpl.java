@@ -48,15 +48,6 @@ public class BannerServiceImpl implements BannerService {
         bannerRepository.deleteById(bannerId);
     }
 
-    @Override
-    public List<Banner> getActiveBanners() {
-        return bannerRepository.findByIsActiveTrue();
-    }
-
-    @Override
-    public List<Banner> getActiveBannersByPosition(BannerPosition position) {
-        return bannerRepository.findByPositionAndIsActiveTrue(position);
-    }
 
     @Override
     public List<Banner> getBannersByUser(User user) {

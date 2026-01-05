@@ -11,6 +11,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Value("${file.upload-dir:F:/datn_uploads/book_asset}")
     private String uploadDir;
 
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Handle source files FIRST (PDF, EPUB) - IMPORTANT for reading functionality

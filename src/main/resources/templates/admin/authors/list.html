@@ -86,12 +86,12 @@
 								<tbody>
 									<tr th:each="author : ${authors}">
 										<td>
-											<img th:if="${author.avatarUrl}"
+											<img th:if="${author.avatarUrl != null and !#strings.isEmpty(author.avatarUrl)}"
 												 th:src="${author.avatarUrl}"
 												 th:alt="${author.name}"
 												 class="img-thumbnail"
 												 style="width: 50px; height: 50px; border-radius: 50%;">
-											<i th:unless="${author.avatarUrl}"
+											<i th:unless="${author.avatarUrl != null and !#strings.isEmpty(author.avatarUrl)}"
 											   class="fas fa-user-circle text-muted"
 											   style="font-size: 50px;"></i>
 										</td>

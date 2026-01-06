@@ -102,7 +102,7 @@
 							</div>
 							<div class="box-body">
 								<!-- Avatar URL Display -->
-								<div th:if="${isEdit && author != null && author.avatarUrl}">
+								<div th:if="${isEdit and author != null and author.avatarUrl != null and !#strings.isEmpty(author.avatarUrl)}">
 									<img th:src="${author.avatarUrl}" alt="Avatar hiện tại"
 										 class="img-responsive" style="border-radius: 50%; max-height: 200px;">
 									<p class="text-muted text-center margin-top">Avatar hiện tại</p>
@@ -111,7 +111,7 @@
 								<!-- Avatar Upload -->
 								<div class="form-group">
 									<label for="avatarFile">Tải lên avatar mới</label>
-									<input type="file" id="avatarFile" class="form-control"
+									<input type="file" id="avatarFile" name="avatarImage" class="form-control"
 										   accept="image/*" onchange="previewImage(this)">
 									<small class="text-muted">Định dạng: JPG, PNG (tối đa 2MB)</small>
 									<img id="imagePreview" class="image-preview" src="" alt="Preview" style="display: none;">

@@ -32,5 +32,12 @@ public interface ReviewRepository extends JpaRepository<Review, String> {
     List<Object[]> calculateAverageRatingForBook(@Param("bookId") String bookId);
 
     long countByBookAndIsApprovedTrue(Book book);
+
+    @Query("SELECT r FROM Review r WHERE " +
+           "LOWER(r.book.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(r.user.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(r.comment) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "ORDER BY r.createdAt DESC")
+    List<Review> searchReviews(@Param("keyword") String keyword);
 }
 

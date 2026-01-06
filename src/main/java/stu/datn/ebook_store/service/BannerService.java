@@ -21,5 +21,6 @@ public interface BannerService {
     void activateBanner(String bannerId);
     void deactivateBanner(String bannerId);
     List<Banner> getActiveBannersForDisplay(BannerPosition position);
+    List<Banner> searchBanners(String keyword, User user);
 }
 

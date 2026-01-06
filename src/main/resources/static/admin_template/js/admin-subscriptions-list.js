@@ -6,7 +6,7 @@ $(function () {
     $('#subscriptionsTable').DataTable({
         'paging': true,
         'lengthChange': false,
-        'searching': true,
+        'searching': false, // Disabled - using custom search form instead
         'ordering': true,
         'info': true,
         'autoWidth': false,

@@ -49,30 +49,38 @@ public class ReviewController extends BaseController {
      */
     @GetMapping
     public String reviewsList(@RequestParam(required = false, defaultValue = "unapproved") String filter,
+                             @RequestParam(required = false) String search,
                              Model model) {
         List<Review> reviews;
 
-        switch (filter.toLowerCase()) {
-            case "approved":
-                // Lấy những reviews đã được duyệt
-                reviews = reviewService.getAllReviews().stream()
-                        .filter(Review::getIsApproved)
-                        .collect(Collectors.toList());
-                break;
-            case "rejected":
-                // Lấy những reviews bị từ chối
-                reviews = reviewService.getAllReviews().stream()
-                        .filter(r -> !r.getIsApproved())
-                        .collect(Collectors.toList());
-                break;
-            case "verified":
-                // Lấy những reviews từ mua hàng đã xác thực
-                reviews = reviewService.getVerifiedPurchaseReviews();
-                break;
-            case "unapproved":
-            default:
-                reviews = reviewService.getUnapprovedReviews();
-                break;
+        // Tìm kiếm nếu có từ khóa
+        if (search != null && !search.trim().isEmpty()) {
+            reviews = reviewService.searchReviews(search);
+            model.addAttribute("search", search);
+        } else {
+            // Lọc theo filter
+            switch (filter.toLowerCase()) {
+                case "approved":
+                    // Lấy những reviews đã được duyệt
+                    reviews = reviewService.getAllReviews().stream()
+                            .filter(Review::getIsApproved)
+                            .collect(Collectors.toList());
+                    break;
+                case "rejected":
+                    // Lấy những reviews bị từ chối
+                    reviews = reviewService.getAllReviews().stream()
+                            .filter(r -> !r.getIsApproved())
+                            .collect(Collectors.toList());
+                    break;
+                case "verified":
+                    // Lấy những reviews từ mua hàng đã xác thực
+                    reviews = reviewService.getVerifiedPurchaseReviews();
+                    break;
+                case "unapproved":
+                default:
+                    reviews = reviewService.getUnapprovedReviews();
+                    break;
+            }
         }
 
         model.addAttribute("reviews", reviews);

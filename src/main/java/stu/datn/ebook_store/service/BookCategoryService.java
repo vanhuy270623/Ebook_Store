@@ -11,5 +11,6 @@ public interface BookCategoryService {
     Optional<BookCategory> getCategoryByName(String categoryName);
     BookCategory saveCategory(BookCategory category);
     void deleteCategory(String categoryId);
+    List<BookCategory> searchCategories(String keyword);
 }
 

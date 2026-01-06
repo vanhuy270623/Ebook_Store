@@ -47,5 +47,13 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     List<Order> findByUser_UserIdAndOrderTypeOrderByCreatedAtDesc(String userId, Order.OrderType orderType);
 
     List<Order> findByOrderTypeAndPaymentStatusIn(Order.OrderType orderType, List<Order.PaymentStatus> statuses);
+
+    @Query("SELECT o FROM Order o WHERE " +
+           "LOWER(o.orderId) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(o.user.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(o.user.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(o.transactionId) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "ORDER BY o.createdAt DESC")
+    List<Order> searchOrders(@Param("keyword") String keyword);
 }
 

@@ -63,22 +63,29 @@ public class AdminOrderController extends BaseController {
             @RequestParam(required = false) String orderType,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(required = false) String search,
             Authentication authentication,
             Model model) {
 
         List<Order> orders;
 
-        // Apply filters
-        if (status != null && !status.trim().isEmpty() && !status.equals("ALL")) {
-            Order.PaymentStatus paymentStatus = Order.PaymentStatus.valueOf(status);
-            orders = orderService.getOrdersByPaymentStatus(paymentStatus);
-        } else if (orderType != null && !orderType.trim().isEmpty() && !orderType.equals("ALL")) {
-            Order.OrderType type = Order.OrderType.valueOf(orderType);
-            orders = orderService.getOrdersByOrderType(type);
-        } else if (startDate != null && endDate != null) {
-            orders = orderService.getOrdersBetweenDates(startDate, endDate);
+        // Tìm kiếm nếu có từ khóa
+        if (search != null && !search.trim().isEmpty()) {
+            orders = orderService.searchOrders(search);
+            model.addAttribute("search", search);
         } else {
-            orders = orderService.getAllOrders();
+            // Apply filters
+            if (status != null && !status.trim().isEmpty() && !status.equals("ALL")) {
+                Order.PaymentStatus paymentStatus = Order.PaymentStatus.valueOf(status);
+                orders = orderService.getOrdersByPaymentStatus(paymentStatus);
+            } else if (orderType != null && !orderType.trim().isEmpty() && !orderType.equals("ALL")) {
+                Order.OrderType type = Order.OrderType.valueOf(orderType);
+                orders = orderService.getOrdersByOrderType(type);
+            } else if (startDate != null && endDate != null) {
+                orders = orderService.getOrdersBetweenDates(startDate, endDate);
+            } else {
+                orders = orderService.getAllOrders();
+            }
         }
 
         // Sort by date descending

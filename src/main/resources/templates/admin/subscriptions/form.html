@@ -35,6 +35,8 @@
 				  th:object="${subscriptionRequest}"
 				  method="post">
 
+				<!-- Hidden field for subscriptionId when editing -->
+				<input type="hidden" th:if="${isEdit}" th:field="*{subscriptionId}" />
 
 				<div class="row">
 					<div class="col-md-8">

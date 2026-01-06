@@ -49,6 +49,14 @@ public class BookCategoryServiceImpl implements BookCategoryService {
         bookCategoryRepository.deleteById(categoryId);
     }
 
+    @Override
+    public List<BookCategory> searchCategories(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getAllCategories();
+        }
+        return bookCategoryRepository.searchCategories(keyword.trim());
+    }
+
     private String generateCategoryId() {
         long count = bookCategoryRepository.count();
         return "category_" + System.currentTimeMillis() + "_" + (count + 1);

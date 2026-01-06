@@ -77,9 +77,19 @@ public class BannerController extends BaseController {
     // ============================= CRUD OPERATIONS =============================
 
     @GetMapping
-    public String bannersList(Authentication authentication, Model model) {
+    public String bannersList(@RequestParam(value = "search", required = false) String search,
+                             Authentication authentication,
+                             Model model) {
         User currentUser = getCurrentUser(authentication);
-        List<Banner> banners = bannerService.getBannersByUserSortedByDate(currentUser);
+        List<Banner> banners;
+
+        // Tìm kiếm nếu có từ khóa
+        if (search != null && !search.trim().isEmpty()) {
+            banners = bannerService.searchBanners(search, currentUser);
+            model.addAttribute("search", search);
+        } else {
+            banners = bannerService.getBannersByUserSortedByDate(currentUser);
+        }
 
         model.addAttribute("banners", banners);
         model.addAttribute("totalBanners", banners.size());

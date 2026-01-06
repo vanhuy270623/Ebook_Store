@@ -203,6 +203,14 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.save(order);
     }
 
+    @Override
+    public List<Order> searchOrders(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getAllOrders();
+        }
+        return orderRepository.searchOrders(keyword.trim());
+    }
+
     /**
      * Generate order ID based on order type
      * Format: order_book_XX for book orders, order_sub_XX for subscription orders

@@ -26,5 +26,6 @@ public interface ReviewService {
     void approveReview(String reviewId);
     void rejectReview(String reviewId);
     long getTotalReviewsCount();
+    List<Review> searchReviews(String keyword);
 }
 

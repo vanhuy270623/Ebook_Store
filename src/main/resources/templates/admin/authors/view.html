@@ -33,12 +33,12 @@
 				<div class="col-md-3">
 					<div class="box box-primary">
 						<div class="box-body box-profile">
-							<img th:if="${author.avatarUrl}"
+							<img th:if="${author.avatarUrl != null and !#strings.isEmpty(author.avatarUrl)}"
 								 th:src="${author.avatarUrl}"
 								 class="profile-user-img img-responsive img-circle"
 								 th:alt="${author.name}"
 								 style="width: 150px; height: 150px; object-fit: cover;">
-							<i th:unless="${author.avatarUrl}"
+							<i th:unless="${author.avatarUrl != null and !#strings.isEmpty(author.avatarUrl)}"
 							   class="fas fa-user-circle text-muted"
 							   style="font-size: 150px; display: block; text-align: center;"></i>
 

@@ -90,6 +90,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         }
     }
 
+    @Override
+    public List<Subscription> searchSubscriptions(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getAllSubscriptions();
+        }
+        return subscriptionRepository.searchSubscriptions(keyword.trim());
+    }
+
     private String generateSubscriptionId() {
         long count = subscriptionRepository.count();
         return "subscription_" + System.currentTimeMillis() + "_" + (count + 1);

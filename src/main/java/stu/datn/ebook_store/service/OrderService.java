@@ -48,6 +48,9 @@ public interface OrderService {
     List<Order> getOrdersByUserIdAndType(String userId, Order.OrderType orderType);
     Order updateOrder(Order order);
 
+    // Search method
+    List<Order> searchOrders(String keyword);
+
     // ========== Business Logic Methods ==========
 
     /**

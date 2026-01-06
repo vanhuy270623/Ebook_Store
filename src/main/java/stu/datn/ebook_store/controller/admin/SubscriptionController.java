@@ -82,8 +82,17 @@ public class SubscriptionController extends BaseController {
      * GET /admin/subscriptions
      */
     @GetMapping
-    public String subscriptionsList(Model model) {
-        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
+    public String subscriptionsList(@RequestParam(value = "search", required = false) String search,
+                                   Model model) {
+        List<Subscription> subscriptions;
+
+        // Tìm kiếm nếu có từ khóa
+        if (search != null && !search.trim().isEmpty()) {
+            subscriptions = subscriptionService.searchSubscriptions(search);
+            model.addAttribute("search", search);
+        } else {
+            subscriptions = subscriptionService.getAllSubscriptions();
+        }
 
         model.addAttribute("subscriptions", subscriptions);
         model.addAttribute("totalSubscriptions", subscriptions.size());
@@ -144,7 +153,7 @@ public class SubscriptionController extends BaseController {
             subscription.setPrice(subscriptionRequest.getPrice());
             subscription.setDurationDays(subscriptionRequest.getDurationDays());
             subscription.setMaxDevices(subscriptionRequest.getMaxDevices());
-            subscription.setIsActive(subscriptionRequest.getIsActive());
+            subscription.setIsActive(subscriptionRequest.getIsActive() != null ? subscriptionRequest.getIsActive() : true);
             subscription.setHasAds(false); // Default no ads
             subscription.setDisplayOrder(0);
 
@@ -194,6 +203,7 @@ public class SubscriptionController extends BaseController {
             Model model) {
 
         if (result.hasErrors()) {
+            subscriptionRequest.setSubscriptionId(id); // Ensure ID is set for form redisplay
             addCommonFormAttributes(model, true);
             return "admin/subscriptions/form";
         }
@@ -213,7 +223,7 @@ public class SubscriptionController extends BaseController {
             subscription.setPrice(subscriptionRequest.getPrice());
             subscription.setDurationDays(subscriptionRequest.getDurationDays());
             subscription.setMaxDevices(subscriptionRequest.getMaxDevices());
-            subscription.setIsActive(subscriptionRequest.getIsActive());
+            subscription.setIsActive(subscriptionRequest.getIsActive() != null ? subscriptionRequest.getIsActive() : false);
 
             subscriptionService.saveSubscription(subscription);
 

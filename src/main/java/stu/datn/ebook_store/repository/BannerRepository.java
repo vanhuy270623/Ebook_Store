@@ -36,5 +36,11 @@ public interface BannerRepository extends JpaRepository<Banner, String> {
     List<Banner> findActiveBannersForDisplay(@Param("position") BannerPosition position,
                                               @Param("currentDate") LocalDateTime currentDate,
                                               Pageable pageable);
+
+    @Query("SELECT b FROM Banner b WHERE " +
+           "LOWER(b.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(b.targetUrl) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "ORDER BY b.createdAt DESC")
+    List<Banner> searchBanners(@Param("keyword") String keyword);
 }
 

@@ -126,6 +126,14 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewRepository.count();
     }
 
+    @Override
+    public List<Review> searchReviews(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getAllReviews();
+        }
+        return reviewRepository.searchReviews(keyword.trim());
+    }
+
     private String generateReviewId() {
         long count = reviewRepository.count();
         return "review_" + System.currentTimeMillis() + "_" + (count + 1);

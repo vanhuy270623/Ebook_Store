@@ -60,8 +60,18 @@ public class BookController extends BaseController {
     }
 
     @GetMapping
-    public String booksList(Model model) {
-        List<Book> books = bookService.getAllBooks();
+    public String booksList(@RequestParam(value = "search", required = false) String search,
+                           Model model) {
+        List<Book> books;
+
+        // Tìm kiếm nếu có từ khóa
+        if (search != null && !search.trim().isEmpty()) {
+            books = bookService.searchBooksByKeyword(search);
+            model.addAttribute("search", search);
+        } else {
+            books = bookService.getAllBooks();
+        }
+
         model.addAttribute("books", books);
         model.addAttribute("totalBooks", books.size());
         return "admin/books/list";

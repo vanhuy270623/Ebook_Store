@@ -102,8 +102,18 @@ public class AdminCategoryController extends BaseController {
      * Hiển thị danh sách danh mục
      */
     @GetMapping
-    public String categoriesList(Model model) {
-        List<BookCategory> categories = bookCategoryService.getAllCategories();
+    public String categoriesList(@RequestParam(value = "search", required = false) String search,
+                                 Model model) {
+        List<BookCategory> categories;
+
+        // Tìm kiếm nếu có từ khóa
+        if (search != null && !search.trim().isEmpty()) {
+            categories = bookCategoryService.searchCategories(search);
+            model.addAttribute("search", search);
+        } else {
+            categories = bookCategoryService.getAllCategories();
+        }
+
         model.addAttribute("categories", categories);
         model.addAttribute("totalCategories", categories.size());
         return "admin/categories/list";

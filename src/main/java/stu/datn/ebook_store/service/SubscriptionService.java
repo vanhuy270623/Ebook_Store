@@ -19,6 +19,11 @@ public interface SubscriptionService {
     void deactivateSubscription(String subscriptionId);
 
     /**
+     * Tìm kiếm subscription theo từ khóa
+     */
+    List<Subscription> searchSubscriptions(String keyword);
+
+    /**
      * Lấy thông tin subscription đang active của user
      * Bao gồm: subscription status, package name, end date, subscription books
      */

@@ -8,7 +8,7 @@ $(document).ready(function() {
     $('#reviewsTable').DataTable({
         "paging": true,
         "lengthChange": true,
-        "searching": true,
+        "searching": false, // Disabled - using custom search form instead
         "ordering": true,
         "info": true,
         "autoWidth": false,

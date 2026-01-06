@@ -15,6 +15,14 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Stri
     List<Subscription> findByIsActiveTrueOrderByDisplayOrderAsc();
 
     /**
+     * Search subscriptions by package name or description
+     */
+    @Query("SELECT s FROM Subscription s WHERE " +
+           "LOWER(s.description) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "ORDER BY s.createdAt DESC")
+    List<Subscription> searchSubscriptions(@Param("keyword") String keyword);
+
+    /**
      * Find the active subscription for a user based on their orders
      * @param userId The user ID
      * @param now Current timestamp to check if subscription is still valid

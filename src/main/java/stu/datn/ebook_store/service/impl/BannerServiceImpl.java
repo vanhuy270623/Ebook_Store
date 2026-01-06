@@ -92,6 +92,17 @@ public class BannerServiceImpl implements BannerService {
         return bannerRepository.findActiveBannersForDisplay(position, now, pageRequest);
     }
 
+    @Override
+    public List<Banner> searchBanners(String keyword, User user) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getBannersByUserSortedByDate(user);
+        }
+        // Tìm kiếm và lọc theo user
+        return bannerRepository.searchBanners(keyword.trim()).stream()
+                .filter(banner -> banner.getUser() != null && banner.getUser().equals(user))
+                .toList();
+    }
+
     private String generateBannerId() {
         long count = bannerRepository.count();
         return "banner_" + System.currentTimeMillis() + "_" + (count + 1);

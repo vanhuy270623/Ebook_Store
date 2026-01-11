@@ -24,6 +24,7 @@ public class SecurityConfig {
                         .ignoringRequestMatchers("/admin/books/assets/delete") // Ignore CSRF for file asset delete
                         .ignoringRequestMatchers("/admin/books/assets/upload") // Ignore CSRF for file asset upload
                         .ignoringRequestMatchers("/reading/api/**") // Ignore CSRF for reading API (progress, bookmarks)
+                        .ignoringRequestMatchers("/api/reading/**") // Ignore CSRF for new reading progress API
                         .ignoringRequestMatchers("/reading/stream/**") // Ignore CSRF for streaming endpoint
                         .ignoringRequestMatchers("/api/favorites/**") // Ignore CSRF for favorites API
                 )
@@ -54,6 +55,7 @@ public class SecurityConfig {
                                 "/user/**", // All user routes
                                 "/books/**", // Book browsing, search, view (requires login)
                                 "/reading/**", // Reading interface (requires login)
+                                "/api/reading/**", // Reading progress API (anti-skimming)
                                 "/subscription/**", // Subscription management
                                 "/payment/**", // Payment routes (VNPay, Bank Transfer)
                                 "/order/**", // Order routes

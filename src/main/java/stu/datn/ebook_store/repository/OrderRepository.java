@@ -55,5 +55,17 @@ public interface OrderRepository extends JpaRepository<Order, String> {
            "LOWER(o.transactionId) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "ORDER BY o.createdAt DESC")
     List<Order> searchOrders(@Param("keyword") String keyword);
+
+    @Query("SELECT o FROM Order o WHERE " +
+           "o.user.userId = :userId AND " +
+           "o.subscription.packageName = :packageName AND " +
+           "o.orderType = 'SUBSCRIPTION' AND " +
+           "o.paymentStatus = 'COMPLETED' AND " +
+           "o.endDate > :currentTime " +
+           "ORDER BY o.endDate DESC")
+    Optional<Order> findActiveSubscriptionByUserIdAndPackageName(
+        @Param("userId") String userId,
+        @Param("packageName") Subscription.PackageName packageName,
+        @Param("currentTime") LocalDateTime currentTime);
 }
 

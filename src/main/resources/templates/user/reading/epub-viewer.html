@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
+    <link rel="stylesheet" th:href="@{/css/reading-progress.css}">
     <title th:text="${book.title + ' - EPUB Reader'}">EPUB Reader</title>
 
     <!-- JSZip Library - Required by ePub.js to unzip EPUB files -->
@@ -81,8 +82,18 @@
         <!-- Reading Area -->
         <div class="reading-area">
             <div class="loading-overlay" id="loadingOverlay">
-                <div>
-                    <i class="fas fa-spinner fa-spin"></i> Đang tải EPUB...
+                <div class="loading-content">
+                    <i class="fas fa-spinner fa-spin fa-3x mb-3"></i>
+                    <h4 id="loadingText">Đang tải EPUB...</h4>
+                    <div class="progress-container" style="width: 300px; margin: 20px auto;">
+                        <div class="progress" style="height: 25px; background-color: #e9ecef;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" id="loadingProgressBar"
+                                 role="progressbar" style="width: 0%; background-color: #007bff;">
+                                <span id="loadingPercentage">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <small id="loadingInfo" class="text-muted">Đang kết nối đến server...</small>
                 </div>
             </div>
 
@@ -154,12 +165,39 @@
     </div>
 </div>
 
+<!-- Toast Notification Container - Must be at body level for proper z-index -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- DEBUG: Test Button (Remove after testing) -->
+<button onclick="testToast()" style="position: fixed; bottom: 20px; left: 20px; z-index: 999999; padding: 10px 20px; background: red; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+    TEST TOAST
+</button>
+
+<script>
+function testToast() {
+    console.log('=== TEST TOAST CLICKED ===');
+    const container = document.getElementById('toast-container');
+    console.log('Container:', container);
+
+    const toast = document.createElement('div');
+    toast.className = 'reading-toast warning show';
+    toast.style.cssText = 'position: fixed !important; top: 100px !important; right: 20px !important; z-index: 999999 !important; background: orange !important; padding: 20px !important; border-radius: 8px !important;';
+    toast.innerHTML = '<span style="color: black; font-weight: bold;">TEST TOAST - Nếu thấy cái này thì CSS đang hoạt động!</span>';
+
+    document.body.appendChild(toast);
+    console.log('Toast appended:', toast);
+
+    setTimeout(() => toast.remove(), 5000);
+}
+</script>
+
 <!-- Font Awesome -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 
 <!-- Data container for Thymeleaf variables -->
 <div id="epub-data"
      th:data-book-id="${book.bookId}"
+     th:data-book-asset-id="${asset != null ? asset.bookAssetId : ''}"
      th:data-asset-path="${asset.readingUrl != null ? asset.readingUrl : ''}"
      th:data-asset-file-url="${asset.fileUrl != null ? asset.fileUrl : ''}"
      th:data-encoded-location="${encodedLocation}"
@@ -172,6 +210,9 @@ Asset Debug Info:
 - ReadingUrl: [[${asset.readingUrl}]]
 - FileType: [[${asset.fileType}]]
 -->
+
+<!-- Anti-Skimming Progress Tracker -->
+<script th:src="@{/js/reading-progress-tracker.js}"></script>
 
 <!-- EPUB Reader Script -->
 <script th:src="@{/user_template/js/epub-reader.js}"></script>

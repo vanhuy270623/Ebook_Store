@@ -1,0 +1,207 @@
+/**
+ * Admin Sales Report - Custom Styles
+ * Trang báo cáo doanh thu admin
+ */
+
+.stats-card {
+    border-radius: 8px;
+    padding: 20px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.stats-card .icon {
+    font-size: 40px;
+    opacity: 0.3;
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.stats-card h3 {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0 0 5px 0;
+    opacity: 0.9;
+}
+
+.stats-card .value {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.stats-card .detail {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-top: 8px;
+}
+
+.stats-card.green {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+}
+
+.stats-card.blue {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+}
+
+.stats-card.orange {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+}
+
+.stats-card.dark-blue {
+    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+}
+
+.chart-container {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chart-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.chart-tabs {
+    display: flex;
+    gap: 10px;
+}
+
+.chart-tabs button {
+    padding: 5px 15px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+
+.chart-tabs button:hover {
+    background: #e8f4f8;
+    border-color: #3498db;
+}
+
+.chart-tabs button.active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.table-container {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table-container h3 {
+    margin: 0 0 20px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.transaction-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.transaction-table th {
+    background: #f8f9fa;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.transaction-table td {
+    padding: 12px;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 13px;
+}
+
+.badge-status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.badge-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.badge-primary {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.action-btn {
+    padding: 4px 8px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.filter-section {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.pie-chart-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.legend-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.legend-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.legend-value {
+    font-weight: 600;
+}
+

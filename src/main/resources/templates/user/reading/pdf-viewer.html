@@ -9,6 +9,9 @@
     <!-- PDF.js CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/web/viewer.min.css">
 
+    <!-- Anti-Skimming Progress Tracker CSS -->
+    <link rel="stylesheet" th:href="@{/css/reading-progress.css}">
+
 </head>
 <body>
 <div class="reader-container">
@@ -105,6 +108,32 @@
     </div>
 </div>
 
+<!-- Toast Notification Container - Must be at body level for proper z-index -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- DEBUG: Test Button (Remove after testing) -->
+<button onclick="testToast()" style="position: fixed; bottom: 20px; left: 20px; z-index: 999999; padding: 10px 20px; background: red; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+    TEST TOAST
+</button>
+
+<script>
+function testToast() {
+    console.log('=== TEST TOAST CLICKED ===');
+    const container = document.getElementById('toast-container');
+    console.log('Container:', container);
+
+    const toast = document.createElement('div');
+    toast.className = 'reading-toast warning show';
+    toast.style.cssText = 'position: fixed !important; top: 100px !important; right: 20px !important; z-index: 999999 !important; background: orange !important; padding: 20px !important; border-radius: 8px !important;';
+    toast.innerHTML = '<span style="color: black; font-weight: bold;">TEST TOAST - Nếu thấy cái này thì CSS đang hoạt động!</span>';
+
+    document.body.appendChild(toast);
+    console.log('Toast appended:', toast);
+
+    setTimeout(() => toast.remove(), 5000);
+}
+</script>
+
 <!-- PDF.js - Try multiple CDN sources -->
 <script>
     (function() {
@@ -153,6 +182,7 @@
 <!-- Data container for Thymeleaf variables -->
 <div id="pdf-data"
      th:data-book-id="${book.bookId}"
+     th:data-book-asset-id="${asset != null ? asset.bookAssetId : ''}"
      th:data-asset-path="${asset.readingUrl != null ? asset.readingUrl : ''}"
      th:data-asset-file-url="${asset.fileUrl != null ? asset.fileUrl : ''}"
      th:data-encoded-location="${encodedLocation}"
@@ -166,6 +196,9 @@ Asset Debug Info:
 - ReadingUrl: [[${asset.readingUrl}]]
 - FileType: [[${asset.fileType}]]
 -->
+
+<!-- Anti-Skimming Progress Tracker -->
+<script th:src="@{/js/reading-progress-tracker.js}"></script>
 
 <!-- PDF Reader Script -->
 <script th:src="@{/user_template/js/pdf-reader.js}"></script>

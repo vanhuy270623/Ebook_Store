@@ -22,8 +22,12 @@ const maxAttempts = 50;
 let touchStartX = 0;
 let touchEndX = 0;
 
-// Global bookId
+// Global bookId and bookAssetId
 let bookId = null;
+let bookAssetId = null;
+
+// Anti-Skimming Progress Tracker
+let progressTracker = null;
 
 /**
  * Initialize EPUB Viewer
@@ -55,7 +59,16 @@ function initEPUBViewer() {
 
     try {
         loadEPUB();
-        setInterval(saveProgress, 30000); // Auto-save every 30s
+
+        // Initialize Anti-Skimming Progress Tracker (giống PDF reader)
+        if (typeof ReadingProgressTracker !== 'undefined') {
+            // Note: progressTracker sẽ được khởi tạo sau khi book loaded
+            console.log('✅ ReadingProgressTracker available');
+        } else {
+            console.warn('⚠️ ReadingProgressTracker not found - using fallback');
+            // Fallback: Auto-save every 30s nếu tracker không có
+            setInterval(saveProgress, 30000);
+        }
     } catch (error) {
         console.error('Error initializing EPUB viewer:', error);
         showLoading(false);
@@ -77,15 +90,23 @@ async function loadEPUB() {
         }
 
         bookId = dataContainer.dataset.bookId;
+        bookAssetId = dataContainer.dataset.bookAssetId;
         const assetPath = dataContainer.dataset.assetPath;
         const assetFileUrl = dataContainer.dataset.assetFileUrl; // Fallback
         const encodedLocation = dataContainer.dataset.encodedLocation;
 
-        console.log('=== EPUB LOADING ===');
+        console.log('=== EPUB LOADING DEBUG ===');
         console.log('bookId:', bookId);
+        console.log('bookAssetId:', bookAssetId);
         console.log('assetPath (readingUrl):', assetPath);
         console.log('assetFileUrl (fallback):', assetFileUrl);
         console.log('encodedLocation:', encodedLocation);
+
+        // Debug: Log asset type
+        console.log('AssetPath type:', typeof assetPath);
+        console.log('AssetFileUrl type:', typeof assetFileUrl);
+        console.log('AssetPath empty?', !assetPath || assetPath.trim() === '');
+        console.log('AssetFileUrl empty?', !assetFileUrl || assetFileUrl.trim() === '');
 
         // Decode saved location (CFI string)
         let savedCFI = null;
@@ -103,35 +124,134 @@ async function loadEPUB() {
         if (!assetPath || assetPath.trim() === '' || assetPath === 'null' || assetPath === 'undefined') {
             console.warn('⚠️ readingUrl is null/empty, trying fileUrl as fallback...');
             finalPath = assetFileUrl;
+
+            // **FIX:** Nếu fileUrl là direct path, convert sang streaming endpoint
+            if (finalPath && (finalPath.startsWith('/book_asset/source/') || finalPath.startsWith('/uploads/source/'))) {
+                console.warn('⚠️ Direct path detected, converting to streaming endpoint for security...');
+                const streamingPath = `/reading/stream/${bookId}?assetId=${bookAssetId}&format=EPUB`;
+                console.log(`Converting: ${finalPath} → ${streamingPath}`);
+                finalPath = streamingPath;
+            }
+        }
+
+        // **FIX:** Thêm assetId và format vào URL nếu chưa có
+        if (finalPath && finalPath.startsWith('/reading/stream/') && !finalPath.includes('?')) {
+            finalPath = `${finalPath}?assetId=${bookAssetId}&format=EPUB`;
+            console.log('✅ Added assetId and format to streaming URL:', finalPath);
         }
 
         if (!finalPath || finalPath.trim() === '' || finalPath === 'null' || finalPath === 'undefined') {
             console.error('❌ Both readingUrl and fileUrl are invalid!');
             console.error('assetPath:', assetPath);
             console.error('assetFileUrl:', assetFileUrl);
+
+            alert('❌ Không thể tải sách!\n\n' +
+                  'Nguyên nhân: Đường dẫn file không hợp lệ.\n\n' +
+                  'Vui lòng:\n' +
+                  '1. Liên hệ admin để kiểm tra file\n' +
+                  '2. Thử tải lại trang\n' +
+                  '3. Chọn sách khác');
             throw new Error('Đường dẫn file EPUB không hợp lệ. Vui lòng thử lại hoặc liên hệ admin.');
         }
 
         console.log('✅ Using finalPath:', finalPath);
 
-        // Test file accessibility
+        // Test file accessibility với error handling chi tiết
         console.log('Testing file accessibility...');
-        const testResponse = await fetch(finalPath, { method: 'HEAD' });
-        if (!testResponse.ok) {
-            throw new Error(`File không tồn tại. HTTP ${testResponse.status}`);
-        }
-        console.log('✅ File accessible');
+        try {
+            const testResponse = await fetch(finalPath, { method: 'HEAD' });
+            console.log('HEAD response status:', testResponse.status);
+            console.log('HEAD response headers:', Object.fromEntries(testResponse.headers.entries()));
 
-        // Initialize book
-        book = ePub(finalPath);
-        console.log('Book instance created');
+            if (!testResponse.ok) {
+                throw new Error(`File không tồn tại. HTTP ${testResponse.status} - ${testResponse.statusText}`);
+            }
+            console.log('✅ File accessible');
+        } catch (headError) {
+            console.error('❌ HEAD request failed:', headError);
+
+            // Fallback: Try direct GET if HEAD fails
+            console.warn('⚠️ HEAD failed, trying direct GET...');
+            try {
+                const getResponse = await fetch(finalPath, { method: 'GET', headers: { 'Range': 'bytes=0-1' } });
+                console.log('GET (range) response status:', getResponse.status);
+
+                if (!getResponse.ok) {
+                    throw new Error(`File không accessible. HTTP ${getResponse.status}`);
+                }
+                console.log('✅ File accessible via GET');
+            } catch (getError) {
+                console.error('❌ Both HEAD and GET failed:', getError);
+
+                alert(`❌ Không thể truy cập file EPUB!\n\n` +
+                      `URL: ${finalPath}\n` +
+                      `Lỗi: ${headError.message}\n\n` +
+                      `Vui lòng:\n` +
+                      `1. Kiểm tra file có tồn tại trên server\n` +
+                      `2. Kiểm tra quyền truy cập\n` +
+                      `3. Liên hệ admin nếu vẫn lỗi`);
+                throw headError;
+            }
+        }
+
+        // **FIX:** Load EPUB as ArrayBuffer với Progress Indicator
+        updateLoadingProgress(0, 'Đang tải EPUB...');
+        console.log('📥 Downloading EPUB file as ArrayBuffer...');
+
+        const epubResponse = await fetch(finalPath);
+        if (!epubResponse.ok) {
+            throw new Error(`Failed to download EPUB: ${epubResponse.status}`);
+        }
+
+        // Get total file size
+        const contentLength = epubResponse.headers.get('Content-Length');
+        const total = parseInt(contentLength, 10);
+
+        // Stream download với progress
+        const reader = epubResponse.body.getReader();
+        let receivedLength = 0;
+        let chunks = [];
+
+        while(true) {
+            const {done, value} = await reader.read();
+
+            if (done) break;
+
+            chunks.push(value);
+            receivedLength += value.length;
+
+            // Update progress bar
+            if (total) {
+                const percent = Math.round((receivedLength / total) * 100);
+                const mbDownloaded = (receivedLength / 1024 / 1024).toFixed(2);
+                const mbTotal = (total / 1024 / 1024).toFixed(2);
+                updateLoadingProgress(percent, `Đang tải EPUB... ${mbDownloaded}MB / ${mbTotal}MB`);
+                console.log(`Download progress: ${percent}%`);
+            }
+        }
+
+        // Merge chunks thành ArrayBuffer
+        const chunksAll = new Uint8Array(receivedLength);
+        let position = 0;
+        for(let chunk of chunks) {
+            chunksAll.set(chunk, position);
+            position += chunk.length;
+        }
+
+        const epubArrayBuffer = chunksAll.buffer;
+        console.log('✅ EPUB downloaded:', (epubArrayBuffer.byteLength / 1024 / 1024).toFixed(2), 'MB');
+
+        // Initialize book với ArrayBuffer
+        updateLoadingProgress(100, 'Đang khởi tạo sách...');
+        book = ePub(epubArrayBuffer);
+        console.log('Book instance created from ArrayBuffer');
 
         // Open book
         try {
-            await book.open(finalPath);
-            console.log('✅ Book opened');
+            await book.opened;
+            console.log('✅ Book opened from ArrayBuffer');
         } catch (openErr) {
-            console.warn('⚠️ book.open() failed:', openErr);
+            console.warn('⚠️ book.opened failed:', openErr);
         }
 
         // Verify book data
@@ -225,6 +345,44 @@ async function loadEPUB() {
         showLoading(false);
         isLoading = false;
         console.log('=== EPUB LOADED SUCCESSFULLY ===');
+
+        // Initialize Anti-Skimming Progress Tracker (sau khi book load xong)
+        if (typeof ReadingProgressTracker !== 'undefined') {
+            progressTracker = new ReadingProgressTracker({
+                bookId: bookId,
+                bookAssetId: bookAssetId,
+                format: 'EPUB',
+                syncInterval: 30000, // Sync every 30 seconds
+
+                onSyncSuccess: (data) => {
+                    console.log('✅ EPUB Progress synced with anti-skimming:', data);
+                    // Check both 'isSkimming' and 'skimming' (Jackson may strip 'is' prefix)
+                    const isSkimmingDetected = data.isSkimming || data.skimming;
+                    if (isSkimmingDetected) {
+                        console.warn('⚠️ Skimming detected - time not accumulated');
+                        showSkimmingWarning(data.message || 'Bạn đang đọc quá nhanh! Vui lòng đọc chậm lại.');
+                    }
+                },
+
+                onSkimmingDetected: (data) => {
+                    console.warn('🚨 EPUB Skimming behavior detected!');
+                    console.log('Reading velocity:', data.readingVelocity, '%/s');
+                    console.log('Max allowed: 0.60 %/s');
+                    showSkimmingWarning('🚫 Đang đọc quá nhanh! Tiến độ KHÔNG được lưu. Hãy đọc chậm lại.');
+                }
+            });
+
+            progressTracker.start();
+            console.log('✅ Anti-Skimming Tracker initialized for EPUB');
+
+            // **IMPORTANT:** Update initial progress sau khi khởi tạo
+            if (currentLocation && book.locations && book.locations.total > 0) {
+                const cfi = currentLocation.start.cfi;
+                const percentage = book.locations.percentageFromCfi(cfi) * 100;
+                progressTracker.updateProgress(cfi, percentage);
+                console.log('✅ Initial EPUB progress set:', percentage.toFixed(2) + '%');
+            }
+        }
 
     } catch (error) {
         console.error('❌ Error loading EPUB:', error);
@@ -341,6 +499,14 @@ function updateProgress() {
 
         document.getElementById('progressText').textContent = progressPercent + '%';
         document.getElementById('progressBar').style.width = progressPercent + '%';
+
+        // **FIX:** Update Anti-Skimming Tracker với vị trí mới
+        if (progressTracker) {
+            const cfi = currentLocation.start.cfi;
+            const percentage = progress * 100; // Không làm tròn cho chính xác
+            progressTracker.updateProgress(cfi, percentage);
+            console.log(`📖 EPUB Progress: ${percentage.toFixed(2)}% (CFI: ${cfi.substring(0, 30)}...)`);
+        }
     } else {
         // Locations not generated yet, show placeholder
         document.getElementById('progressText').textContent = 'Đang tải...';
@@ -560,9 +726,16 @@ function toggleDarkMode() {
 /**
  * Save reading progress to server
  * FIXED: Lưu CFI vào last_read_location (field location)
+ * Works alongside tracker for immediate/forced saves
  */
 async function saveProgress() {
     if (isLoading || !currentLocation) return;
+
+    // Nếu tracker đang chạy, để tracker xử lý
+    if (progressTracker) {
+        console.log('⏭️ Tracker is handling progress sync');
+        return;
+    }
 
     try {
         const cfi = currentLocation.start.cfi;
@@ -570,29 +743,55 @@ async function saveProgress() {
         // Calculate percentage - wait for locations if needed
         let percentage = 0;
         if (book.locations && book.locations.total > 0) {
-            percentage = Math.round(book.locations.percentageFromCfi(cfi) * 100);
+            percentage = book.locations.percentageFromCfi(cfi) * 100;
         } else {
             console.warn('⚠️ Locations not generated, saving with 0%');
         }
 
-        console.log('=== SAVING EPUB PROGRESS ===');
+        console.log('=== FALLBACK EPUB PROGRESS SAVE ===');
         console.log('CFI:', cfi);
         console.log('Percentage:', percentage);
 
-        const formData = new FormData();
-        formData.append('location', cfi); // Lưu CFI string trực tiếp vào last_read_location
-        formData.append('percentage', percentage);
+        // Sử dụng API mới với anti-skimming
+        const requestData = {
+            bookId: bookId,
+            bookAssetId: bookAssetId,
+            currentLocationRaw: cfi,
+            progressPercentage: percentage,
+            activeTimeDelta: 30, // Estimate 30 seconds (fallback)
+            format: 'EPUB'
+        };
 
-        const response = await fetch(`/reading/api/progress/${bookId}`, {
+        const response = await fetch('/api/reading/sync', {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
             credentials: 'same-origin',
-            body: formData
+            body: JSON.stringify(requestData)
         });
 
         if (!response.ok) {
             console.error('Failed to save progress:', response.status);
         } else {
-            console.log('✅ Progress saved:', percentage + '%');
+                    const data = await response.json();
+            console.log('✅ Progress saved (fallback):', data);
+
+            // Hiển thị cảnh báo skimming
+            // Check both 'isSkimming' and 'skimming' (Jackson may strip 'is' prefix)
+            const isSkimmingDetected = data.isSkimming || data.skimming;
+            if (isSkimmingDetected) {
+                console.warn('⚠️ Skimming detected:', data.message);
+                console.log('>>> ABOUT TO CALL showSkimmingWarning <<<');
+                console.log('>>> Function exists?', typeof showSkimmingWarning);
+
+                try {
+                    showSkimmingWarning(data.message || 'Bạn đang đọc quá nhanh! Vui lòng đọc chậm lại.');
+                    console.log('>>> showSkimmingWarning called successfully');
+                } catch (e) {
+                    console.error('>>> ERROR calling showSkimmingWarning:', e);
+                }
+            }
         }
     } catch (error) {
         console.error('Error saving progress:', error);
@@ -815,7 +1014,37 @@ function escapeHtml(text) {
 
 function showLoading(show) {
     const overlay = document.getElementById('loadingOverlay');
-    overlay.style.display = show ? 'flex' : 'none';
+    if (overlay) {
+        overlay.style.display = show ? 'flex' : 'none';
+    }
+}
+
+function updateLoadingProgress(percent, message) {
+    const overlay = document.getElementById('loadingOverlay');
+    const progressBar = overlay ? overlay.querySelector('.progress-bar') : null;
+    const progressText = overlay ? overlay.querySelector('#loadingPercentage') : null;
+    const loadingInfo = overlay ? overlay.querySelector('#loadingInfo') : null;
+    const loadingText = overlay ? overlay.querySelector('#loadingText') : null;
+
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+
+    if (progressBar) {
+        progressBar.style.width = percent + '%';
+    }
+
+    if (progressText) {
+        progressText.textContent = percent + '%';
+    }
+
+    if (loadingInfo && message) {
+        loadingInfo.textContent = message;
+    }
+
+    if (loadingText) {
+        loadingText.textContent = percent < 100 ? 'Đang tải EPUB...' : 'Sẵn sàng đọc!';
+    }
 }
 
 // ==================== EVENT LISTENERS ====================
@@ -842,7 +1071,18 @@ document.addEventListener('click', function(e) {
 });
 
 // Save progress when leaving page
-window.addEventListener('beforeunload', saveProgress);
+// Save progress when leaving page
+window.addEventListener('beforeunload', () => {
+    // Stop tracker first (this will trigger final sync)
+    if (progressTracker) {
+        progressTracker.stop();
+    }
+
+    // Also do manual save as fallback
+    if (!progressTracker && currentLocation) {
+        saveProgress();
+    }
+});
 
 // Auto-hide sidebar on mobile
 if (window.innerWidth <= 768) {
@@ -883,4 +1123,42 @@ window.addEventListener('resize', function() {
         }
     }, 300);
 });
+
+// ==================== TOAST NOTIFICATIONS ====================
+
+/**
+ * Hiển thị cảnh báo khi phát hiện skimming
+ */
+function showSkimmingWarning(message) {
+    // Remove existing toast if any
+    const existingToast = document.querySelector('.reading-toast.warning');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'reading-toast warning';
+    toast.innerHTML = `
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>${message}</span>
+    `;
+
+    // Append to toast container or body
+    const container = document.getElementById('toast-container') || document.body;
+    container.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100);
+
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, 5000);
+}
 

@@ -1,6 +1,7 @@
 /**
  * PDF Reader Script
  * Handles PDF book reading with PDF.js library
+ * Integrated with Anti-Skimming Progress Tracker
  */
 
 // PDF.js variables
@@ -13,6 +14,14 @@ let ctx = null;
 
 // Global bookId
 let bookId = null;
+let bookAssetId = null;
+
+// Anti-Skimming Progress Tracker
+let progressTracker = null;
+
+// Track last save time to avoid spam
+let lastSaveTime = 0;
+const SAVE_THROTTLE_MS = 3000; // Minimum 3s between saves
 
 // Track loading attempts
 let loadAttempts = 0;
@@ -79,12 +88,14 @@ function initPDFViewer() {
         }
 
         bookId = dataContainer.dataset.bookId;
+        bookAssetId = dataContainer.dataset.bookAssetId;
         const assetPath = dataContainer.dataset.assetPath;
         const assetFileUrl = dataContainer.dataset.assetFileUrl; // Fallback
         const encodedLocation = dataContainer.dataset.encodedLocation;
 
         console.log('=== INIT DEBUG ===');
         console.log('bookId:', bookId);
+        console.log('bookAssetId:', bookAssetId);
         console.log('assetPath (readingUrl):', assetPath);
         console.log('assetFileUrl (fallback):', assetFileUrl);
         console.log('encodedLocation:', encodedLocation);
@@ -101,6 +112,12 @@ function initPDFViewer() {
             console.error('assetPath:', assetPath);
             console.error('assetFileUrl:', assetFileUrl);
             throw new Error('Đường dẫn file PDF không hợp lệ. Vui lòng thử lại hoặc liên hệ admin.');
+        }
+
+        // **FIX:** Thêm assetId và format vào URL nếu chưa có
+        if (finalPath && finalPath.startsWith('/reading/stream/') && !finalPath.includes('?')) {
+            finalPath = `${finalPath}?assetId=${bookAssetId}&format=PDF`;
+            console.log('✅ Added assetId and format to streaming URL:', finalPath);
         }
 
         console.log('✅ Using finalPath:', finalPath);
@@ -126,8 +143,41 @@ function initPDFViewer() {
 
         loadPDF();
 
-        // Auto-save progress every 30 seconds
-        setInterval(saveProgress, 30000);
+        // Initialize Anti-Skimming Progress Tracker
+        if (typeof ReadingProgressTracker !== 'undefined') {
+            progressTracker = new ReadingProgressTracker({
+                bookId: bookId,
+                bookAssetId: bookAssetId,
+                format: 'PDF',
+                syncInterval: 30000, // Sync every 30 seconds
+
+                onSyncSuccess: (data) => {
+                    console.log('✅ Progress synced with anti-skimming:', data);
+                    // Check both 'isSkimming' and 'skimming' (Jackson may strip 'is' prefix)
+                    const isSkimmingDetected = data.isSkimming || data.skimming;
+                    if (isSkimmingDetected) {
+                        console.warn('⚠️ Skimming detected - time not accumulated');
+                        // Hiển thị cảnh báo trên UI
+                        showSkimmingWarning(data.message || 'Bạn đang đọc quá nhanh! Vui lòng đọc chậm lại để thời gian đọc được tính.');
+                    }
+                },
+
+                onSkimmingDetected: (data) => {
+                    console.warn('🚨 Skimming behavior detected!');
+                    console.log('Reading velocity:', data.readingVelocity, '%/s');
+                    console.log('Max allowed: 0.60 %/s');
+                    // Hiển thị cảnh báo trên UI
+                    showSkimmingWarning('🚫 Đang đọc quá nhanh! Tiến độ KHÔNG được lưu. Hãy đọc chậm lại.');
+                }
+            });
+
+            progressTracker.start();
+            console.log('✅ Anti-Skimming Tracker initialized');
+        } else {
+            console.warn('⚠️ ReadingProgressTracker not found - using fallback');
+            // Fallback to old method if tracker not loaded
+            setInterval(saveProgress, 30000);
+        }
     } catch (error) {
         console.error('Error initializing PDF viewer:', error);
         showLoading(false);
@@ -310,7 +360,15 @@ async function renderPage(num) {
         pageNum = num;
         scale = renderScale;
 
-        // Save progress (debounced)
+        // Update Anti-Skimming Tracker with normalized progress
+        if (progressTracker && pageCount > 0) {
+            const progressPercentage = (num / pageCount) * 100;
+            const location = `page-${num}`;
+            progressTracker.updateProgress(location, progressPercentage);
+            console.log(`📖 Page ${num}/${pageCount} (${progressPercentage.toFixed(1)}%)`);
+        }
+
+        // Debounced manual save (fallback nếu tracker không hoạt động)
         if (window.saveProgressTimeout) {
             clearTimeout(window.saveProgressTimeout);
         }
@@ -398,26 +456,66 @@ function toggleDarkMode() {
 
 /**
  * Save reading progress
+ * Works alongside tracker for immediate/forced saves
  */
 async function saveProgress() {
+    // Throttle: Tránh spam API nếu vừa mới save
+    const now = Date.now();
+    if (now - lastSaveTime < SAVE_THROTTLE_MS) {
+        console.log('⏸️ Throttled - too soon since last save');
+        return;
+    }
+
     try {
-        console.log('=== SAVING PROGRESS ===');
+        console.log('=== MANUAL PROGRESS SAVE ===');
         console.log('Page:', pageNum, '/', pageCount);
 
-        const formData = new FormData();
-        formData.append('currentPage', pageNum);
-        formData.append('totalPages', pageCount);
+        const progressPercentage = pageCount > 0 ? (pageNum / pageCount) * 100 : 0;
+        const location = `page-${pageNum}`;
 
-        const response = await fetch(`/reading/api/progress/${bookId}`, {
+        const requestData = {
+            bookId: bookId,
+            bookAssetId: bookAssetId,
+            currentLocationRaw: location,
+            progressPercentage: progressPercentage,
+            activeTimeDelta: 5, // Small delta for manual save
+            format: 'PDF'
+        };
+
+        const response = await fetch('/api/reading/sync', {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
             credentials: 'same-origin',
-            body: formData
+            body: JSON.stringify(requestData)
         });
 
         if (!response.ok) {
             console.error('Failed to save progress:', response.status);
         } else {
-            console.log('✅ Progress saved:', pageNum, '/', pageCount);
+                    const data = await response.json();
+            console.log('✅ Progress saved:', data);
+            lastSaveTime = now; // Update last save time
+
+            // Hiển thị cảnh báo skimming
+            // Check both 'isSkimming' and 'skimming' (Jackson may strip 'is' prefix)
+            const isSkimmingDetected = data.isSkimming || data.skimming;
+            if (isSkimmingDetected) {
+                console.warn('⚠️ Skimming detected:', data.message);
+                console.log('>>> ABOUT TO CALL showSkimmingWarning <<<');
+                console.log('>>> Function exists?', typeof showSkimmingWarning);
+
+                try {
+                    showSkimmingWarning(data.message || 'Bạn đang đọc quá nhanh! Vui lòng đọc chậm lại.');
+                    console.log('>>> showSkimmingWarning called successfully');
+                } catch (e) {
+                    console.error('>>> ERROR calling showSkimmingWarning:', e);
+                }
+            } else if (data.success) {
+                // Optional: Hiển thị thông báo thành công (có thể tắt nếu quá nhiều)
+                // showSuccessToast('Tiến độ đã được lưu');
+            }
         }
     } catch (error) {
         console.error('Error saving progress:', error);
@@ -675,5 +773,101 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Save progress when leaving page
-window.addEventListener('beforeunload', saveProgress);
+window.addEventListener('beforeunload', () => {
+    // Stop tracker first (this will trigger final sync)
+    if (progressTracker) {
+        progressTracker.stop();
+    }
+
+    // Also do a manual save to ensure data is saved
+    // Using navigator.sendBeacon for reliable save on page unload
+    const progressPercentage = pageCount > 0 ? (pageNum / pageCount) * 100 : 0;
+    const location = `page-${pageNum}`;
+
+    const requestData = {
+        bookId: bookId,
+        bookAssetId: bookAssetId,
+        currentLocationRaw: location,
+        progressPercentage: progressPercentage,
+        activeTimeDelta: 1, // Minimal time for unload save
+        format: 'PDF'
+    };
+
+    // Use sendBeacon for guaranteed delivery
+    const blob = new Blob([JSON.stringify(requestData)], { type: 'application/json' });
+    navigator.sendBeacon('/api/reading/sync', blob);
+});
+
+// ==================== TOAST NOTIFICATIONS ====================
+
+/**
+ * Hiển thị cảnh báo khi phát hiện skimming
+ */
+function showSkimmingWarning(message) {
+    console.log('=== showSkimmingWarning CALLED ===');
+    console.log('Message:', message);
+
+    // Remove existing toast if any
+    const existingToast = document.querySelector('.reading-toast.warning');
+    if (existingToast) {
+        console.log('Removing existing toast:', existingToast);
+        existingToast.remove();
+    }
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'reading-toast warning';
+    toast.innerHTML = `
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>${message}</span>
+    `;
+    console.log('Toast created:', toast);
+    console.log('Toast className:', toast.className);
+
+    // Append to toast container or body
+    const container = document.getElementById('toast-container') || document.body;
+    console.log('Container:', container);
+    container.appendChild(toast);
+    console.log('Toast appended to container');
+
+    // Animate in
+    setTimeout(() => {
+        toast.classList.add('show');
+        console.log('Added "show" class. Current classes:', toast.className);
+        console.log('Toast computed style:', window.getComputedStyle(toast).opacity, window.getComputedStyle(toast).transform);
+    }, 100);
+
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        console.log('Removed "show" class');
+        setTimeout(() => {
+            toast.remove();
+            console.log('Toast removed from DOM');
+        }, 300);
+    }, 5000);
+}
+
+/**
+ * Hiển thị thông báo thành công (optional)
+ */
+function showSuccessToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'reading-toast success';
+    toast.innerHTML = `
+        <i class="fas fa-check-circle"></i>
+        <span>${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000); // 3 seconds for success
+}
 

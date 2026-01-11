@@ -80,6 +80,73 @@ public class AdminCategoryController extends BaseController {
     }
 
     /**
+     * Xử lý validation errors và thêm vào model
+     */
+    private String handleValidationErrors(BindingResult bindingResult, Model model, boolean isEdit,
+                                        BookCategory category) {
+        String errors = bindingResult.getAllErrors().stream()
+                .map(org.springframework.validation.ObjectError::getDefaultMessage)
+                .collect(Collectors.joining("; "));
+        model.addAttribute("error", errors);
+
+        if (category != null) {
+            model.addAttribute("category", category);
+        }
+        addCommonFormAttributes(model, isEdit);
+        return "admin/categories/form";
+    }
+
+    /**
+     * Tạo và lưu category mới hoặc cập nhật category hiện có
+     */
+    private BookCategory createOrUpdateCategory(BookCategoryCreateRequest createRequest,
+                                              BookCategoryUpdateRequest updateRequest,
+                                              BookCategory existingCategory) {
+        BookCategory category = existingCategory != null ? existingCategory : new BookCategory();
+
+        String categoryName, description, iconUrl;
+        Integer displayOrder;
+        Boolean isActive;
+
+        if (createRequest != null) {
+            categoryName = createRequest.getCategoryName();
+            description = createRequest.getDescription();
+            iconUrl = createRequest.getIconUrl();
+            displayOrder = createRequest.getDisplayOrder();
+            isActive = createRequest.getIsActive();
+
+            // Set new ID và slug cho category mới
+            category.setBookCategoryId(generateNextCategoryId());
+        } else {
+            categoryName = updateRequest.getCategoryName();
+            description = updateRequest.getDescription();
+            iconUrl = updateRequest.getIconUrl();
+            displayOrder = updateRequest.getDisplayOrder();
+            isActive = updateRequest.getIsActive();
+        }
+
+        category.setCategoryName(categoryName);
+        category.setCategorySlug(createSlug(categoryName));
+        category.setDescription(description);
+        category.setIconUrl(iconUrl);
+        category.setDisplayOrder(displayOrder);
+        category.setIsActive(isActive);
+
+        return category;
+    }
+
+    /**
+     * Helper method để tìm category theo ID và xử lý trường hợp không tìm thấy
+     */
+    private BookCategory findCategoryOrRedirect(String categoryId, RedirectAttributes redirectAttributes) {
+        BookCategory category = bookCategoryService.getCategoryById(categoryId).orElse(null);
+        if (category == null) {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy danh mục với ID: " + categoryId);
+        }
+        return category;
+    }
+
+    /**
      * Tạo slug từ tên danh mục (VD: "Khoa Học - Viễn Tưởng" -> "khoa-hoc-vien-tuong")
      */
     private String createSlug(String input) {
@@ -124,10 +191,8 @@ public class AdminCategoryController extends BaseController {
      */
     @GetMapping("/view/{id}")
     public String viewCategory(@PathVariable String id, Model model, RedirectAttributes redirectAttributes) {
-        BookCategory category = bookCategoryService.getCategoryById(id).orElse(null);
-
+        BookCategory category = findCategoryOrRedirect(id, redirectAttributes);
         if (category == null) {
-            redirectAttributes.addFlashAttribute("error", "Không tìm thấy danh mục với ID: " + id);
             return REDIRECT_CATEGORIES;
         }
 
@@ -150,10 +215,8 @@ public class AdminCategoryController extends BaseController {
      */
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable String id, Model model, RedirectAttributes redirectAttributes) {
-        BookCategory category = bookCategoryService.getCategoryById(id).orElse(null);
-
+        BookCategory category = findCategoryOrRedirect(id, redirectAttributes);
         if (category == null) {
-            redirectAttributes.addFlashAttribute("error", "Không tìm thấy danh mục!");
             return REDIRECT_CATEGORIES;
         }
 
@@ -177,12 +240,7 @@ public class AdminCategoryController extends BaseController {
                                 RedirectAttributes redirectAttributes) {
         // Kiểm tra validation errors
         if (bindingResult.hasErrors()) {
-            String errors = bindingResult.getAllErrors().stream()
-                    .map(org.springframework.validation.ObjectError::getDefaultMessage)
-                    .collect(Collectors.joining("; "));
-            model.addAttribute("error", errors);
-            addCommonFormAttributes(model, false);
-            return "admin/categories/form";
+            return handleValidationErrors(bindingResult, model, false, null);
         }
 
         // Kiểm tra tên danh mục trùng
@@ -192,21 +250,12 @@ public class AdminCategoryController extends BaseController {
         }
 
         try {
-            // Tạo Category entity
-            String newCategoryId = generateNextCategoryId();
-            BookCategory newCategory = new BookCategory();
-            newCategory.setBookCategoryId(newCategoryId);
-            newCategory.setCategoryName(request.getCategoryName());
-            newCategory.setCategorySlug(createSlug(request.getCategoryName()));
-            newCategory.setDescription(request.getDescription());
-            newCategory.setIconUrl(request.getIconUrl());
-            newCategory.setDisplayOrder(request.getDisplayOrder());
-            newCategory.setIsActive(request.getIsActive());
-
+            // Tạo Category entity sử dụng helper method
+            BookCategory newCategory = createOrUpdateCategory(request, null, null);
             bookCategoryService.saveCategory(newCategory);
-            redirectAttributes.addFlashAttribute("success",
-                    "Thêm danh mục thành công! ID: " + newCategoryId + ", Tên: " + request.getCategoryName());
 
+            redirectAttributes.addFlashAttribute("success",
+                    "Thêm danh mục thành công! ID: " + newCategory.getBookCategoryId() + ", Tên: " + request.getCategoryName());
             return REDIRECT_CATEGORIES;
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
@@ -222,22 +271,14 @@ public class AdminCategoryController extends BaseController {
                                 BindingResult bindingResult,
                                 Model model,
                                 RedirectAttributes redirectAttributes) {
-        // Kiểm tra validation errors
-        if (bindingResult.hasErrors()) {
-            String errors = bindingResult.getAllErrors().stream()
-                    .map(org.springframework.validation.ObjectError::getDefaultMessage)
-                    .collect(Collectors.joining("; "));
-            model.addAttribute("error", errors);
-
-            BookCategory category = bookCategoryService.getCategoryById(request.getCategoryId()).orElse(null);
-            model.addAttribute("category", category);
-            addCommonFormAttributes(model, true);
-
-            return "admin/categories/form";
-        }
 
         BookCategory existingCategory = bookCategoryService.getCategoryById(request.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
+
+        // Kiểm tra validation errors
+        if (bindingResult.hasErrors()) {
+            return handleValidationErrors(bindingResult, model, true, existingCategory);
+        }
 
         // Kiểm tra tên danh mục trùng (trừ chính nó)
         if (isCategoryNameDuplicate(request.getCategoryName(), request.getCategoryId())) {
@@ -246,15 +287,9 @@ public class AdminCategoryController extends BaseController {
         }
 
         try {
-            // Cập nhật thông tin
-            existingCategory.setCategoryName(request.getCategoryName());
-            existingCategory.setCategorySlug(createSlug(request.getCategoryName()));
-            existingCategory.setDescription(request.getDescription());
-            existingCategory.setIconUrl(request.getIconUrl());
-            existingCategory.setDisplayOrder(request.getDisplayOrder());
-            existingCategory.setIsActive(request.getIsActive());
-
-            bookCategoryService.saveCategory(existingCategory);
+            // Cập nhật thông tin sử dụng helper method
+            BookCategory updatedCategory = createOrUpdateCategory(null, request, existingCategory);
+            bookCategoryService.saveCategory(updatedCategory);
             redirectAttributes.addFlashAttribute("success", "Cập nhật danh mục thành công!");
 
             return REDIRECT_CATEGORIES;
@@ -282,17 +317,6 @@ public class AdminCategoryController extends BaseController {
             response.put("message", errorMessage);
             return ResponseEntity.badRequest().body(response);
         }
-    }
-
-    /**
-     * Hiển thị thống kê danh mục
-     */
-    @GetMapping("/statistics")
-    public String categoriesStatistics(Model model) {
-        List<BookCategory> allCategories = bookCategoryService.getAllCategories();
-        model.addAttribute("totalCategories", allCategories.size());
-        model.addAttribute("categories", allCategories);
-        return "admin/categories/statistics";
     }
 }
 

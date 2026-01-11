@@ -6,7 +6,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.service.BookService;
 import stu.datn.ebook_store.service.UserService;
@@ -94,6 +96,25 @@ public class AdminDashboardController extends BaseController {
         model.addAttribute("recentActivities", java.util.Collections.emptyList()); // TODO: Implement activity tracking
 
         return "admin/dashboard";
+    }
+
+    /**
+     * Endpoint để cập nhật VIP subscription cho tất cả admin hiện tại
+     * Chỉ admin gốc mới có quyền thực hiện
+     */
+    @PostMapping("/update-admin-vip")
+    public String updateAdminVipSubscriptions(RedirectAttributes redirectAttributes) {
+        try {
+            // Kiểm tra quyền admin gốc (có thể thêm logic kiểm tra thêm nếu cần)
+            userService.ensureAllAdminsHaveVipSubscription();
+            redirectAttributes.addFlashAttribute("success",
+                "Đã cập nhật VIP subscription cho tất cả admin thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error",
+                "Lỗi khi cập nhật VIP subscription cho admin: " + e.getMessage());
+        }
+
+        return "redirect:/admin/dashboard";
     }
 }
 

@@ -3,6 +3,8 @@
 <head>
     <th:block th:replace="~{admin/layout/head :: head}"></th:block>
     <title>Báo cáo Doanh thu - Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <link rel="stylesheet" th:href="@{/admin_template/css/admin-sales-report.css}">
 </head>
 <body class="hold-transition skin-blue sidebar-mini">
 <div class="wrapper">
@@ -13,7 +15,7 @@
     <aside th:replace="~{admin/layout/sidebar :: sidebar}"></aside>
 
     <!-- Content Wrapper -->
-    <div class="content-wrapper">
+    <div class="content-wrapper" style="background: #f4f6f9;">
         <!-- Content Header -->
         <section class="content-header">
             <h1>
@@ -36,178 +38,198 @@
             </div>
 
             <!-- Filter Form -->
-            <div class="box box-primary">
-                <div class="box-header with-border">
-                    <h3 class="box-title">Bộ lọc thời gian</h3>
-                </div>
+            <div class="filter-section">
                 <form method="get" th:action="@{/admin/reports/sales}">
-                    <div class="box-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Từ ngày:</label>
-                                    <input type="date" name="startDate" class="form-control"
-                                           th:value="${startDate}">
-                                </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label style="font-weight: 600; font-size: 13px;">Từ ngày:</label>
+                                <input type="date" name="startDate" class="form-control"
+                                       th:value="${startDate}">
                             </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Đến ngày:</label>
-                                    <input type="date" name="endDate" class="form-control"
-                                           th:value="${endDate}">
-                                </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label style="font-weight: 600; font-size: 13px;">Đến ngày:</label>
+                                <input type="date" name="endDate" class="form-control"
+                                       th:value="${endDate}">
                             </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>&nbsp;</label>
-                                    <button type="submit" class="btn btn-primary btn-block">
-                                        <i class="fa fa-filter"></i> Lọc
-                                    </button>
-                                </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button type="submit" class="btn btn-primary btn-block" style="height: 34px;">
+                                    <i class="fa fa-filter"></i> Lọc
+                                </button>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
 
-            <!-- Statistics Boxes -->
+            <!-- Statistics Cards -->
             <div class="row">
-                <div class="col-md-3 col-sm-6 col-xs-12">
-                    <div class="info-box">
-                        <span class="info-box-icon bg-green"><i class="fa fa-money"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Tổng doanh thu</span>
-                            <span class="info-box-number" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</span>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stats-card green">
+                        <i class="fa fa-money icon"></i>
+                        <h3>TỔNG DOANH THU</h3>
+                        <div class="value" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')}">520,000,000</div>
+                        <div class="detail">
+                            <i class="fa fa-arrow-up"></i> Xem chi tiết
                         </div>
                     </div>
                 </div>
 
-                <div class="col-md-3 col-sm-6 col-xs-12">
-                    <div class="info-box">
-                        <span class="info-box-icon bg-blue"><i class="fa fa-shopping-cart"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Tổng đơn hàng</span>
-                            <span class="info-box-number" th:text="${totalOrders}">0</span>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stats-card blue">
+                        <i class="fa fa-calendar icon"></i>
+                        <h3>HÔM NAY</h3>
+                        <div class="value" th:text="${#numbers.formatDecimal(todayRevenue, 0, 'COMMA', 0, 'POINT')}">0</div>
+                        <div class="detail">
+                            <i class="fa fa-arrow-up"></i> <span th:text="${todayOrdersCount}">0</span> đơn hàng
                         </div>
                     </div>
                 </div>
 
-                <div class="col-md-3 col-sm-6 col-xs-12">
-                    <div class="info-box">
-                        <span class="info-box-icon bg-yellow"><i class="fa fa-calculator"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Giá trị TB/đơn</span>
-                            <span class="info-box-number" th:text="${#numbers.formatDecimal(averageOrderValue, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</span>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stats-card orange">
+                        <i class="fa fa-calendar-o icon"></i>
+                        <h3>THÁNG NÀY</h3>
+                        <div class="value" th:text="${#numbers.formatDecimal(thisMonthRevenue, 0, 'COMMA', 0, 'POINT')}">0</div>
+                        <div class="detail">
+                            <i class="fa fa-arrow-up"></i> Chi tiết
                         </div>
                     </div>
                 </div>
 
-                <div class="col-md-3 col-sm-6 col-xs-12">
-                    <div class="info-box">
-                        <span class="info-box-icon bg-red"><i class="fa fa-credit-card"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Phương thức TT</span>
-                            <span class="info-box-number" th:text="${revenueByMethod != null ? revenueByMethod.size() : 0}">0</span>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stats-card dark-blue">
+                        <i class="fa fa-bar-chart icon"></i>
+                        <h3>NĂM NAY</h3>
+                        <div class="value" th:text="${#numbers.formatDecimal(thisYearRevenue, 0, 'COMMA', 0, 'POINT')}">0</div>
+                        <div class="detail">
+                            <i class="fa fa-arrow-up"></i> Xem chi tiết
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Revenue by Payment Method -->
+            <!-- Charts Row -->
             <div class="row">
-                <div class="col-md-6">
-                    <div class="box box-info">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">Doanh thu theo phương thức thanh toán</h3>
-                        </div>
-                        <div class="box-body">
-                            <table class="table table-bordered">
-                                <thead>
-                                <tr>
-                                    <th>Phương thức</th>
-                                    <th class="text-right">Doanh thu</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr th:each="entry : ${revenueByMethod}">
-                                    <td>
-                                        <span th:if="${entry.key == 'VNPAY'}" class="label label-primary">VNPay</span>
-                                        <span th:if="${entry.key == 'BANK_TRANSFER'}" class="label label-success">Chuyển khoản</span>
-                                        <span th:if="${entry.key != 'VNPAY' && entry.key != 'BANK_TRANSFER'}" th:text="${entry.key}"></span>
-                                    </td>
-                                    <td class="text-right" th:text="${#numbers.formatDecimal(entry.value, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="box box-success">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">Doanh thu theo ngày</h3>
-                        </div>
-                        <div class="box-body">
-                            <div style="max-height: 300px; overflow-y: auto;">
-                                <table class="table table-bordered table-striped">
-                                    <thead>
-                                    <tr>
-                                        <th>Ngày</th>
-                                        <th class="text-right">Doanh thu</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr th:each="entry : ${dailyRevenue}">
-                                        <td th:text="${entry.key}"></td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(entry.value, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</td>
-                                    </tr>
-                                    </tbody>
-                                </table>
+                <!-- Revenue Over Time Chart -->
+                <div class="col-md-8">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa fa-line-chart"></i> Doanh thu theo thời gian</h3>
+                            <div class="chart-tabs">
+                                <button class="tab-btn active" data-period="week">Tuần</button>
+                                <button class="tab-btn" data-period="month">Tháng</button>
+                                <button class="tab-btn" data-period="year">Năm</button>
                             </div>
                         </div>
+                        <canvas id="revenueChart" height="80"></canvas>
+                    </div>
+                </div>
+
+                <!-- Revenue Source Pie Chart -->
+                <div class="col-md-4">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa fa-pie-chart"></i> Nguồn doanh thu</h3>
+                        </div>
+                        <canvas id="sourceChart" height="150"></canvas>
+                        <div class="pie-chart-legend" th:if="${revenueByType != null && !revenueByType.isEmpty()}">
+                            <th:block th:each="entry, stat : ${revenueByType}">
+                                <div class="legend-item">
+                                    <div class="legend-label">
+                                        <div class="legend-color"
+                                             th:style="${'background-color: ' + (stat.index == 0 ? '#2ecc71' : (stat.index == 1 ? '#f39c12' : '#e74c3c'))}"></div>
+                                        <span th:text="${entry.key == 'BOOK' ? 'Bán sách' : (entry.key == 'SUBSCRIPTION' ? 'Đăng ký gói' : 'Khác')}">Bán sách</span>
+                                    </div>
+                                    <div>
+                                        <span th:text="${(totalRevenue > 0 ? #numbers.formatDecimal(entry.value / totalRevenue * 100, 0, 'COMMA', 0, 'POINT') : '0') + '%'}">65%</span>
+                                    </div>
+                                </div>
+                            </th:block>
+                            <hr style="margin: 10px 0;">
+                            <th:block th:each="entry, stat : ${revenueByType}">
+                                <div class="legend-item">
+                                    <div class="legend-label" style="font-weight: 600;"
+                                         th:text="${entry.key == 'BOOK' ? 'Tổng Bán sách' : (entry.key == 'SUBSCRIPTION' ? 'Tổng Đăng ký' : 'Tổng Khác')}">Tổng Bán sách</div>
+                                    <div class="legend-value" th:text="${#numbers.formatDecimal(entry.value, 0, 'COMMA', 0, 'POINT') + ' ₫'}">220.5M ₫</div>
+                                </div>
+                            </th:block>
+                        </div>
+                        <div class="pie-chart-legend" th:if="${revenueByType == null || revenueByType.isEmpty()}">
+                            <p style="text-align: center; color: #999; padding: 20px;">
+                                <i class="fa fa-info-circle" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
+                                Không có dữ liệu doanh thu
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Recent Orders -->
-            <div class="box box-primary">
-                <div class="box-header with-border">
-                    <h3 class="box-title">Đơn hàng gần đây</h3>
+            <!-- Recent Transactions Table -->
+            <div class="table-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0;"><i class="fa fa-list"></i> Giao dịch gần đây</h3>
+                    <div>
+                        <select id="transactionTypeFilter" class="form-control" style="display: inline-block; width: auto; font-size: 13px;">
+                            <option value="">Tất cả loại</option>
+                            <option value="BOOK">Mua sách</option>
+                            <option value="SUBSCRIPTION">Đăng ký gói</option>
+                        </select>
+                        <select id="transactionTimeFilter" class="form-control" style="display: inline-block; width: auto; font-size: 13px; margin-left: 10px;">
+                            <option value="month">Tháng này</option>
+                            <option value="week">Tuần này</option>
+                            <option value="today">Hôm nay</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="box-body">
-                    <table class="table table-bordered table-hover">
-                        <thead>
-                        <tr>
-                            <th>Mã đơn</th>
-                            <th>Khách hàng</th>
-                            <th>Ngày tạo</th>
-                            <th>Phương thức TT</th>
-                            <th class="text-right">Tổng tiền</th>
-                            <th>Trạng thái</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="order : ${orders}" th:if="${orders != null && !orders.isEmpty()}">
-                            <td><a th:href="@{/admin/orders/view/{id}(id=${order.orderId})}" th:text="${order.orderId}"></a></td>
-                            <td th:text="${order.user?.fullName != null ? order.user.fullName : order.user?.username}">User</td>
-                            <td th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">Date</td>
-                            <td>
-                                <span th:if="${order.paymentMethod?.name() == 'VNPAY'}" class="label label-primary">VNPay</span>
-                                <span th:if="${order.paymentMethod?.name() == 'BANK_TRANSFER'}" class="label label-success">Chuyển khoản</span>
-                            </td>
-                            <td class="text-right" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</td>
-                            <td>
-                                <span th:if="${order.paymentStatus?.name() == 'COMPLETED'}" class="label label-success">Hoàn thành</span>
-                                <span th:if="${order.paymentStatus?.name() == 'PAID'}" class="label label-success">Đã thanh toán</span>
-                            </td>
-                        </tr>
-                        <tr th:if="${orders == null || orders.isEmpty()}">
-                            <td colspan="6" class="text-center text-muted">Không có dữ liệu</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <table class="transaction-table">
+                    <thead>
+                    <tr>
+                        <th>ID Đơn hàng</th>
+                        <th>Người dùng</th>
+                        <th>Loại giao dịch</th>
+                        <th>Số tiền</th>
+                        <th>Ngày giao dịch</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="order : ${orders}"
+                        th:if="${orders != null && !orders.isEmpty()}"
+                        class="transaction-row"
+                        th:data-order-type="${order.orderType?.name()}"
+                        th:data-created-date="${order.createdAt}">
+                        <td><strong th:text="${order.orderId}">#ORD-29384</strong></td>
+                        <td th:text="${order.user?.fullName != null ? order.user.fullName : order.user?.username}">Nguyễn Văn An</td>
+                        <td>
+                            <span class="badge-status badge-primary" th:text="${order.orderType?.name() == 'BOOK' ? 'Mua sách' : 'Đăng ký gói'}">Mua sách</span>
+                        </td>
+                        <td><strong th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">150,000 ₫</strong></td>
+                        <td th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">20/06/2026 14:30</td>
+                        <td>
+                            <span class="badge-status badge-success" th:if="${order.paymentStatus?.name() == 'COMPLETED' || order.paymentStatus?.name() == 'PAID'}">Hoàn thành</span>
+                            <span class="badge-status badge-warning" th:if="${order.paymentStatus?.name() == 'PENDING'}">Đang xử lý</span>
+                        </td>
+                        <td>
+                            <a th:href="@{/admin/orders/view/{id}(id=${order.orderId})}" class="action-btn" style="text-decoration: none; display: inline-block;">
+                                <i class="fa fa-search"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${orders == null || orders.isEmpty()}">
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #999;">
+                            <i class="fa fa-inbox" style="font-size: 48px; margin-bottom: 10px; display: block;"></i>
+                            Không có giao dịch nào
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
 
         </section>
@@ -220,6 +242,22 @@
 <script th:src="@{/admin_template/js/jquery.min.js}"></script>
 <script th:src="@{/admin_template/js/bootstrap.min.js}"></script>
 <script th:src="@{/admin_template/js/adminlte.min.js}"></script>
+<script th:src="@{/admin_template/js/admin-sales-report.js}"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // Initialize Sales Report with data from Thymeleaf
+    document.addEventListener('DOMContentLoaded', function() {
+        var dailyData = /*[[${dailyRevenue}]]*/ {};
+        var typeData = /*[[${revenueByType}]]*/ {};
+        var totalRevenue = /*[[${totalRevenue}]]*/ 0;
+
+        // Initialize the sales report
+        if (window.SalesReport) {
+            window.SalesReport.init(dailyData, typeData, totalRevenue);
+        }
+    });
+    /*]]>*/
+</script>
 </body>
 </html>
 

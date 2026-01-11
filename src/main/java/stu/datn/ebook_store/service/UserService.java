@@ -28,10 +28,14 @@ public interface UserService {
     long getAllAdminsCountIncludingDeleted(); // Count all admins including deleted ones
     java.util.List<User> getRecentUsers(int limit);
     java.util.List<User> getAllUsers();
+    java.util.List<User> getAllAdmins(); // Get all active admin users
     java.util.Optional<User> getUserById(String userId);
     User saveUser(User user);
     void toggleUserStatus(String userId);
     java.util.List<User> searchUsers(String keyword);
+
+    // Subscription management for admins
+    void ensureAllAdminsHaveVipSubscription(); // Ensure all existing admins have VIP subscription
 
     // Soft deletion methods
     void softDeleteUser(String userId);

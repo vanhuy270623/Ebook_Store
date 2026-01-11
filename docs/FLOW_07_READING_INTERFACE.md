@@ -1,14 +1,18 @@
 # 📖 FLOW 07: READING INTERFACE (Giao Diện Đọc Sách)
 
+> **Cập nhật lần cuối:** 11/01/2026  
+> **Phiên bản:** 2.0 - Bao gồm Anti-Skimming Validation & Time-Capping
+
 ## 📋 Mục Lục
 1. [Tổng Quan](#tổng-quan)
 2. [Flow 7.1: Access Reading Interface](#flow-71-access-reading-interface)
 3. [Flow 7.2: PDF Reader](#flow-72-pdf-reader)
 4. [Flow 7.3: EPUB Reader](#flow-73-epub-reader)
-5. [Flow 7.4: Reading Progress Tracking](#flow-74-reading-progress-tracking)
+5. [Flow 7.4: Anti-Skimming & Progress Tracking](#flow-74-anti-skimming--progress-tracking)
 6. [Flow 7.5: Bookmarks](#flow-75-bookmarks)
 7. [Reader Features](#reader-features)
 8. [Technical Implementation](#technical-implementation)
+9. [API Reference](#api-reference)
 
 ---
 
@@ -39,11 +43,17 @@
 │ Ownership    │
 └──────┬───────┘
        │
-       ├──► PDF Format → PDF.js Reader
+       ▼
+┌──────────────────────────────────────┐
+│         /reading/book/{bookId}       │
+│  (Auto-detect format & redirect)     │
+└──────┬───────────────────────────────┘
        │
-       ├──► EPUB Format → ePub.js Reader
+       ├──► Only PDF  → /reading/pdf/{bookId}
        │
-       └──► Other → Universal Reader
+       ├──► Only EPUB → /reading/epub/{bookId}
+       │
+       └──► Both formats → Show format chooser
        │
        ▼
 ┌──────────────┐
@@ -51,34 +61,49 @@
 │  Interface   │
 └──────┬───────┘
        │
-       ├──► Track Progress
+       ├──► Track Progress (Anti-Skimming)
        ├──► Save Bookmarks
        ├──► Adjust Settings
-       └──► Navigate Pages
+       └──► Navigate Pages/Chapters
 ```
 
 ### Components
-- **Controller**: `ReadingController.java`
-- **Service**: `ReadingProgressService.java`, `OrderService.java`
-- **Entity**: `ReadingProgress.java`, `Order.java`, `Book.java`
-- **Libraries**: 
-  - PDF.js (Mozilla) - PDF rendering
-  - ePub.js - EPUB rendering
-  - Custom JavaScript - Reader controls
+
+| Layer | Component | Mô tả |
+|-------|-----------|-------|
+| **Controller** | `ReadingController.java` | Xử lý routing và view rendering |
+| **API Controller** | `ReadingProgressApiController.java` | REST API cho progress sync |
+| **Service** | `ReadingProgressServiceImpl.java` | Logic anti-skimming & time-capping |
+| **Entity** | `ReadingProgress.java` | Lưu trữ tiến độ, bookmarks, thời gian đọc |
+| **DTO** | `ProgressSyncRequest.java`, `ProgressSyncResponse.java` | Request/Response sync |
+| **Frontend** | `reading-progress-tracker.js` | Client-side tracking |
+| **Libraries** | PDF.js 3.11.174, ePub.js 0.3.93 | Rendering engines |
 
 ### URLs
+
 **Reading Interface:**
-- `GET /reading/pdf/{bookId}` - PDF viewer (sử dụng PDF.js)
-- `GET /reading/epub/{bookId}` - EPUB reader (sử dụng ePub.js)
-- `GET /reading/pdf/{category}/{fileName}` - PDF viewer by path (alternative route)
-- `GET /reading/epub/{category}/{fileName}` - EPUB reader by path (alternative route)
+| URL | Method | Mô tả |
+|-----|--------|-------|
+| `/reading/book/{bookId}` | GET | Auto-detect format & redirect |
+| `/reading/pdf/{bookId}` | GET | PDF Viewer |
+| `/reading/epub/{bookId}` | GET | EPUB Reader |
+| `/reading/pdf/{category}/{fileName}` | GET | PDF Viewer by path |
+| `/reading/epub/{category}/{fileName}` | GET | EPUB Reader by path |
+| `/reading/stream/{bookId}` | GET | Secure file streaming |
 
-**Secure Streaming:**
-- `GET /reading/stream/{bookId}` - Secure file streaming endpoint (validates access)
+**Progress API:**
+| URL | Method | Mô tả |
+|-----|--------|-------|
+| `/api/reading/sync` | POST | Đồng bộ tiến độ với anti-skimming |
+| `/api/reading/can-review/{bookId}` | GET | Kiểm tra quyền đánh giá |
+| `/api/reading/progress/{bookId}` | GET | Lấy thông tin tiến độ |
 
-**Progress Tracking:**
-- `POST /api/reading/progress/update` - Save reading progress
-- `GET /api/reading/progress/{bookId}` - Get reading progress
+**Bookmarks API:**
+| URL | Method | Mô tả |
+|-----|--------|-------|
+| `/reading/api/bookmarks/{bookId}` | GET | Lấy danh sách bookmarks |
+| `/reading/api/bookmarks/{bookId}` | POST | Thêm bookmark mới |
+| `/reading/api/bookmarks/{bookId}/{id}` | DELETE | Xóa bookmark |
 
 ---
 
@@ -86,33 +111,31 @@
 
 ### Sequence Diagram
 ```
-User → Browser → ReadingController → OrderService → ReadingProgressService → Database
-  │       │              │                 │                │                    │
-  │ Click "Đọc sách"                                                            │
-  │───────────────────────►│                                                     │
-  │       │                │ checkOwnership()                                    │
-  │       │                ├────────────────►│                                   │
-  │       │                │                 │ hasUserPurchasedBook()           │
-  │       │                │                 ├────────────────────────────────────►│
-  │       │                │                 │◄────────────────────────────────────┤
-  │       │                │◄────────────────┤                                   │
-  │       │                │                                                      │
-  │       │                │ getReadingProgress()                                │
-  │       │                ├────────────────────────────────────►│               │
-  │       │                │                                     │ SELECT *      │
-  │       │                │                                     ├──────────────►│
-  │       │                │                                     │◄──────────────┤
-  │       │                │◄────────────────────────────────────┤               │
-  │       │                │                                                      │
-  │       │                │ detectBookFormat()                                  │
-  │       │                │ redirectToReader()                                  │
-  │       │◄────────────────┤                                                     │
-  │◄───────┤ (show appropriate reader)                                           │
+User → Browser → ReadingController → Services → Database
+  │       │              │               │           │
+  │ Click "Đọc sách"    │               │           │
+  │ /reading/book/{id}  │               │           │
+  │─────────────────────►│               │           │
+  │       │              │ checkAuth()   │           │
+  │       │              │ canUserAccessBook()       │
+  │       │              ├───────────────►│           │
+  │       │              │               │ Query     │
+  │       │              │               ├──────────►│
+  │       │              │◄──────────────┤           │
+  │       │              │               │           │
+  │       │              │ getAssets()   │           │
+  │       │              │ (PDF/EPUB?)   │           │
+  │       │              ├───────────────►│           │
+  │       │              │◄──────────────┤           │
+  │       │              │               │           │
+  │       │              │ Auto-redirect │           │
+  │       │◄─────────────┤ or show chooser          │
+  │◄──────┤              │               │           │
 ```
 
-### Implementation Details
+### Controller Implementation
 
-**Controller**: `ReadingController.java`
+**File:** `ReadingController.java`
 
 ```java
 @Controller
@@ -123,13 +146,64 @@ public class ReadingController extends BaseController {
     private final BookService bookService;
     private final BookAssetService bookAssetService;
     private final ReadingProgressService readingProgressService;
-    private final OrderService orderService;
     private final OrderItemService orderItemService;
-    private final FileStorageService fileStorageService;
     
     /**
-     * PDF Viewer - Route theo bookId
-     * URL: /reading/pdf/{bookId}
+     * Trang chọn format đọc sách (PDF/EPUB)
+     * - Nếu chỉ có 1 file → TỰ ĐỘNG redirect
+     * - Nếu có cả 2 file → Hiển thị trang chọn
+     */
+    @GetMapping("/book/{bookId}")
+    public String chooseFormat(@PathVariable String bookId,
+                               Model model,
+                               RedirectAttributes redirectAttributes) {
+        User user = getCurrentUser();
+        
+        // Authentication check
+        if (user == null) {
+            redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập");
+            return "redirect:/auth/login";
+        }
+        
+        Book book = bookRepository.findByIdWithAuthors(bookId)
+                .orElseThrow(() -> new RuntimeException("Book not found"));
+        
+        // Access control
+        if (!canUserAccessBook(user, book)) {
+            redirectAttributes.addFlashAttribute("error", "Bạn không có quyền đọc");
+            return "redirect:/books/view/" + bookId;
+        }
+        
+        List<BookAsset> assets = bookAssetService.getAssetsByBookId(bookId);
+        
+        // Filter readable formats
+        List<BookAsset> readableAssets = assets.stream()
+                .filter(a -> FileType.PDF.equals(a.getFileType()) || 
+                            FileType.EPUB.equals(a.getFileType()))
+                .toList();
+        
+        boolean hasPDF = readableAssets.stream()
+                .anyMatch(a -> FileType.PDF.equals(a.getFileType()));
+        boolean hasEPUB = readableAssets.stream()
+                .anyMatch(a -> FileType.EPUB.equals(a.getFileType()));
+        
+        // Auto-redirect if only one format
+        if (hasPDF && !hasEPUB) {
+            return "redirect:/reading/pdf/" + bookId;
+        }
+        if (hasEPUB && !hasPDF) {
+            return "redirect:/reading/epub/" + bookId;
+        }
+        
+        // Show format chooser if both available
+        model.addAttribute("book", book);
+        model.addAttribute("hasPDF", hasPDF);
+        model.addAttribute("hasEPUB", hasEPUB);
+        return "user/reading/reader";
+    }
+    
+    /**
+     * PDF Viewer
      */
     @GetMapping("/pdf/{bookId}")
     public String pdfViewer(@PathVariable String bookId,
@@ -140,93 +214,7 @@ public class ReadingController extends BaseController {
     }
     
     /**
-     * PDF Viewer - Route theo category/fileName  
-     * URL: /reading/pdf/{category}/{fileName}
-     * Example: /reading/pdf/khoahoc-vientuong/Cac_The_Gioi_Song_Song.pdf
-     */
-    @GetMapping("/pdf/{category}/{fileName:.+}")
-    public String pdfViewerByPath(@PathVariable String category,
-                                   @PathVariable String fileName,
-                                   Model model,
-                                   RedirectAttributes redirectAttributes) {
-        try {
-            log.info("Opening PDF by path - category: {}, fileName: {}", 
-                     category, fileName);
-            User currentUser = getCurrentUser();
-            
-            // Kiểm tra authentication
-            if (currentUser == null) {
-                redirectAttributes.addFlashAttribute("error", 
-                    "Vui lòng đăng nhập để đọc sách");
-                return "redirect:/auth/login";
-            }
-            
-            // Tìm book theo file path
-            String fileUrl = "/book_asset/source/" + category + "/" + fileName;
-            BookAsset asset = bookAssetService.findByFileUrl(fileUrl);
-            
-            if (asset == null) {
-                log.error("Asset not found for fileUrl: {}", fileUrl);
-                redirectAttributes.addFlashAttribute("error", 
-                    "Không tìm thấy file sách");
-                return "redirect:/books";
-            }
-            
-            Book book = asset.getBook();
-            
-            // Kiểm tra quyền truy cập
-            if (!canUserAccessBook(currentUser, book)) {
-                log.warn("User {} does not have access to book {}", 
-                        currentUser.getUserId(), book.getBookId());
-                redirectAttributes.addFlashAttribute("error", 
-                    "Bạn không có quyền đọc cuốn sách này");
-                return "redirect:/books/view/" + book.getBookId();
-            }
-            
-            // Lấy hoặc tạo mới reading progress
-            ReadingProgress progress = readingProgressService
-                    .getReadingProgressByUserAndBook(currentUser, book)
-                    .orElseGet(() -> {
-                        ReadingProgress newProgress = new ReadingProgress();
-                        newProgress.setUser(currentUser);
-                        newProgress.setBook(book);
-                        newProgress.setBookAsset(asset);
-                        newProgress.setProgressPercentage(0.0f);
-                        newProgress.setIsCompleted(false);
-                        newProgress.setIsFavorite(false);
-                        newProgress.setAccessType(determineAccessType(book, currentUser));
-                        newProgress.setCreatedAt(LocalDateTime.now());
-                        newProgress.setLastReadAt(LocalDateTime.now());
-                        return readingProgressService.saveReadingProgress(newProgress);
-                    });
-            
-            // Prepare model
-            model.addAttribute("book", book);
-            model.addAttribute("asset", asset);
-            model.addAttribute("progress", progress);
-            model.addAttribute("user", currentUser);
-            
-            // Encode lastReadLocation cho JavaScript
-            if (progress != null && progress.getLastReadLocation() != null) {
-                String encodedLocation = Base64.getEncoder()
-                        .encodeToString(progress.getLastReadLocation()
-                        .getBytes(StandardCharsets.UTF_8));
-                model.addAttribute("encodedLocation", encodedLocation);
-            }
-            
-            return "user/reading/pdf-viewer";
-            
-        } catch (Exception e) {
-            log.error("Error opening PDF: {}", e.getMessage(), e);
-            redirectAttributes.addFlashAttribute("error", 
-                "Có lỗi xảy ra khi mở sách");
-            return "redirect:/books";
-        }
-    }
-    
-    /**
-     * EPUB Reader - Route theo bookId
-     * URL: /reading/epub/{bookId}
+     * EPUB Reader
      */
     @GetMapping("/epub/{bookId}")
     public String epubReader(@PathVariable String bookId,
@@ -235,137 +223,38 @@ public class ReadingController extends BaseController {
         return prepareReaderView(bookId, "EPUB", model, redirectAttributes, 
                                 "user/reading/epub-viewer");
     }
-    
-    /**
-     * Shared logic để prepare reader view
-     */
-    private String prepareReaderView(String bookId, String expectedFormat,
-                                     Model model, 
-                                     RedirectAttributes redirectAttributes,
-                                     String viewName) {
-        try {
-            User currentUser = getCurrentUser();
-            
-            if (currentUser == null) {
-                redirectAttributes.addFlashAttribute("error", 
-                    "Vui lòng đăng nhập");
-                return "redirect:/auth/login";
-            }
-            
-            // Get book
-            Book book = bookService.getBookById(bookId)
-                    .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
-            
-            // Check access
-            if (!canUserAccessBook(currentUser, book)) {
-                redirectAttributes.addFlashAttribute("error", 
-                    "Bạn không có quyền đọc cuốn sách này");
-                return "redirect:/books/view/" + bookId;
-            }
-            
-            // Get asset
-            BookAsset asset = bookAssetService.getByBookId(bookId)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy file sách"));
-            
-            // Get or create progress
-            ReadingProgress progress = readingProgressService
-                    .getOrCreateProgress(currentUser, book, asset);
-            
-            // Add to model
-            model.addAttribute("book", book);
-            model.addAttribute("asset", asset);
-            model.addAttribute("progress", progress);
-            model.addAttribute("user", currentUser);
-            
-            return viewName;
-            
-        } catch (Exception e) {
-            log.error("Error in prepareReaderView: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/books";
-        }
-    }
-    
-    /**
-     * Check if user can access book
-     * Returns true if:
-     * - Book is FREE
-     * - User has purchased book
-     * - User has active subscription with unlimited access
-     */
-    private boolean canUserAccessBook(User user, Book book) {
-        // FREE books
-        if (book.getAccessType() == Book.AccessType.FREE) {
-            return true;
-        }
-        
-        // Check if purchased
-        boolean hasPurchased = orderItemService
-                .hasUserPurchasedBook(user.getUserId(), book.getBookId());
-        
-        if (hasPurchased) {
-            return true;
-        }
-        
-        // Check subscription (PREMIUM access)
-        // TODO: Implement subscription-based access
-        
-        return false;
-    }
 }
 ```
 
-**Access Control Logic:**
+### Access Control Logic
 
-The system uses **3-tier access control**:
+**3-Tier Access Control:**
 
-1. **FREE Books** (`access_type = 'FREE'`)
-   - Anyone can read (no purchase required)
-   
-2. **PREMIUM Books** (`access_type = 'PREMIUM'`)
-   - Must purchase individually OR have active subscription
-   
-3. **SUBSCRIPTION_ONLY** 
-   - Requires active subscription (cannot purchase individually)
-
-**Service: BookAsset URL Methods**
+| Access Type | Điều kiện |
+|-------------|-----------|
+| `FREE` | Ai cũng đọc được (không cần mua) |
+| `PREMIUM` | Phải mua hoặc có subscription |
+| `SUBSCRIPTION_ONLY` | Chỉ có subscription mới đọc được |
 
 ```java
-@Entity
-public class BookAsset {
-    /**
-     * Get viewer page URL
-     * Returns: /reading/pdf/{bookId} or /reading/epub/{bookId}
-     * This is the main URL users click to open books
-     */
-    public String getViewerUrl() {
-        if (this.book == null || this.book.getBookId() == null) {
-            return null;
-        }
-        
-        String bookId = this.book.getBookId();
-        
-        if (this.fileType == FileType.PDF) {
-            return "/reading/pdf/" + bookId;
-        } else if (this.fileType == FileType.EPUB) {
-            return "/reading/epub/" + bookId;
-        }
-        
-        return null;
+private boolean canUserAccessBook(User user, Book book) {
+    // FREE books - anyone can read
+    if (book.getAccessType() == Book.AccessType.FREE) {
+        return true;
     }
     
-    /**
-     * Get secure streaming URL
-     * Returns: /reading/stream/{bookId}
-     * Used by viewer pages to stream file content with validation
-     */
-    public String getReadingUrl() {
-        if (this.book == null || this.book.getBookId() == null) {
-            return null;
-        }
-        
-        return "/reading/stream/" + this.book.getBookId();
+    // Check purchase
+    boolean hasPurchased = orderItemService
+            .hasUserPurchasedBook(user.getUserId(), book.getBookId());
+    
+    if (hasPurchased) {
+        return true;
     }
+    
+    // Check active subscription (for PREMIUM/SUBSCRIPTION_ONLY)
+    // TODO: Implement subscription-based access
+    
+    return false;
 }
 ```
 
@@ -373,309 +262,163 @@ public class BookAsset {
 
 ## Flow 7.2: PDF Reader
 
-### PDF.js Integration
+### Template Structure
 
-**Controller**:
-```java
-@GetMapping("/pdf/{bookId}")
-public String pdfReader(
-        @PathVariable String bookId,
-        Authentication authentication,
-        Model model,
-        RedirectAttributes redirectAttributes) {
-    
-    try {
-        User currentUser = (User) authentication.getPrincipal();
-        Book book = bookService.getBookById(bookId);
-        
-        if (book == null || !checkBookAccess(currentUser, book)) {
-            return "redirect:/user/books/" + bookId;
-        }
-        
-        // Get reading progress
-        ReadingProgress progress = readingProgressService
-            .getOrCreateProgress(currentUser, book);
-        
-        // Prepare model
-        model.addAttribute("book", book);
-        model.addAttribute("progress", progress);
-        model.addAttribute("pdfUrl", book.getSourceFileUrl());
-        model.addAttribute("currentPage", progress.getCurrentPage());
-        model.addAttribute("totalPages", progress.getTotalPages());
-        
-        return "user/reading/pdf-viewer";
-        
-    } catch (Exception e) {
-        redirectAttributes.addFlashAttribute("error", "Lỗi mở PDF");
-        return "redirect:/user/books";
-    }
-}
-```
+**File:** `pdf-viewer.html`
 
-**PDF Viewer Template** (`pdf-viewer.html`):
 ```html
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title th:text="${book.title}">PDF Reader</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <style>
-        #pdf-container {
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        #pdf-toolbar {
-            background: #333;
-            color: white;
-            padding: 10px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        #pdf-canvas {
-            flex: 1;
-            overflow: auto;
-            background: #525659;
-        }
-        
-        canvas {
-            display: block;
-            margin: 20px auto;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-    </style>
+    <title th:text="${book.title + ' - PDF Reader'}">PDF Reader</title>
+    <link rel="stylesheet" th:href="@{/user_template/css/reading.css}">
+    <link rel="stylesheet" th:href="@{/css/reading-progress.css}">
 </head>
 <body>
-    <div id="pdf-container">
-        <!-- Toolbar -->
-        <div id="pdf-toolbar">
-            <button id="prev-page">◀ Previous</button>
-            <span>
-                Page: <span id="page-num"></span> / <span id="page-count"></span>
-            </span>
-            <button id="next-page">Next ▶</button>
-            
-            <button id="zoom-out">Zoom Out</button>
-            <span id="zoom-level">100%</span>
-            <button id="zoom-in">Zoom In</button>
-            
-            <button id="fit-width">Fit Width</button>
-            <button id="fit-page">Fit Page</button>
-            
-            <button id="dark-mode">🌙 Dark Mode</button>
-            
-            <button id="fullscreen">⛶ Fullscreen</button>
-            
-            <button id="close-reader" onclick="window.location.href='/user/books'">
-                ✖ Close
-            </button>
+<div class="reader-container">
+    <!-- Header with book info and controls -->
+    <div class="reader-header">
+        <div class="book-info">
+            <img th:src="${book.coverImageUrl}" alt="Cover">
+            <div class="book-details">
+                <h3 th:text="${book.title}">Book Title</h3>
+                <p th:text="${book.authorNames}">Author</p>
+            </div>
         </div>
         
-        <!-- PDF Canvas -->
-        <div id="pdf-canvas">
-            <canvas id="the-canvas"></canvas>
+        <div class="reader-controls">
+            <!-- Page Navigation -->
+            <button onclick="previousPage()">◀</button>
+            <input type="number" id="pageInput" value="1" onchange="goToPage(this.value)">
+            <span>/ <span id="totalPages">1</span></span>
+            <button onclick="nextPage()">▶</button>
+            
+            <!-- Zoom Controls -->
+            <button onclick="zoomOut()">−</button>
+            <input type="number" id="zoomInput" value="100">%
+            <button onclick="zoomIn()">+</button>
+            
+            <!-- Actions -->
+            <button onclick="toggleDarkMode()">🌙 Chế độ tối</button>
+            <button onclick="toggleBookmarksSidebar()">📑 Bookmarks</button>
+            <button onclick="saveManualBookmark()">+ Bookmark</button>
         </div>
     </div>
     
-    <script th:inline="javascript">
-        /*<![CDATA[*/
-        const pdfUrl = /*[[${pdfUrl}]]*/ '';
-        const bookId = /*[[${book.bookId}]]*/ '';
-        const initialPage = /*[[${currentPage}]]*/ 1;
-        
-        let pdfDoc = null;
-        let pageNum = initialPage;
-        let pageRendering = false;
-        let pageNumPending = null;
-        let scale = 1.5;
-        
-        const canvas = document.getElementById('the-canvas');
-        const ctx = canvas.getContext('2d');
-        
-        /**
-         * Load and render PDF
-         */
-        pdfjsLib.getDocument(pdfUrl).promise.then(function(pdfDoc_) {
-            pdfDoc = pdfDoc_;
-            document.getElementById('page-count').textContent = pdfDoc.numPages;
-            
-            // Initial render
-            renderPage(pageNum);
-        });
-        
-        /**
-         * Render specific page
-         */
-        function renderPage(num) {
-            pageRendering = true;
-            
-            pdfDoc.getPage(num).then(function(page) {
-                const viewport = page.getViewport({scale: scale});
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                
-                const renderContext = {
-                    canvasContext: ctx,
-                    viewport: viewport
-                };
-                
-                const renderTask = page.render(renderContext);
-                
-                renderTask.promise.then(function() {
-                    pageRendering = false;
-                    if (pageNumPending !== null) {
-                        renderPage(pageNumPending);
-                        pageNumPending = null;
-                    }
-                    
-                    // Update UI
-                    document.getElementById('page-num').textContent = num;
-                    
-                    // Save progress
-                    saveReadingProgress(num);
-                });
-            });
-        }
-        
-        /**
-         * Queue page render
-         */
-        function queueRenderPage(num) {
-            if (pageRendering) {
-                pageNumPending = num;
-            } else {
-                renderPage(num);
-            }
-        }
-        
-        /**
-         * Previous page
-         */
-        function onPrevPage() {
-            if (pageNum <= 1) {
-                return;
-            }
-            pageNum--;
-            queueRenderPage(pageNum);
-        }
-        document.getElementById('prev-page').addEventListener('click', onPrevPage);
-        
-        /**
-         * Next page
-         */
-        function onNextPage() {
-            if (pageNum >= pdfDoc.numPages) {
-                return;
-            }
-            pageNum++;
-            queueRenderPage(pageNum);
-        }
-        document.getElementById('next-page').addEventListener('click', onNextPage);
-        
-        /**
-         * Zoom controls
-         */
-        document.getElementById('zoom-in').addEventListener('click', function() {
-            scale += 0.25;
-            updateZoom();
-        });
-        
-        document.getElementById('zoom-out').addEventListener('click', function() {
-            if (scale > 0.5) {
-                scale -= 0.25;
-                updateZoom();
-            }
-        });
-        
-        function updateZoom() {
-            document.getElementById('zoom-level').textContent = Math.round(scale * 100) + '%';
-            queueRenderPage(pageNum);
-        }
-        
-        /**
-         * Fit width/page
-         */
-        document.getElementById('fit-width').addEventListener('click', function() {
-            scale = canvas.parentElement.clientWidth / canvas.width * scale;
-            updateZoom();
-        });
-        
-        /**
-         * Dark mode
-         */
-        let darkMode = false;
-        document.getElementById('dark-mode').addEventListener('click', function() {
-            darkMode = !darkMode;
-            if (darkMode) {
-                canvas.style.filter = 'invert(1) hue-rotate(180deg)';
-            } else {
-                canvas.style.filter = 'none';
-            }
-        });
-        
-        /**
-         * Fullscreen
-         */
-        document.getElementById('fullscreen').addEventListener('click', function() {
-            if (!document.fullscreenElement) {
-                document.getElementById('pdf-container').requestFullscreen();
-            } else {
-                document.exitFullscreen();
-            }
-        });
-        
-        /**
-         * Keyboard shortcuts
-         */
-        document.addEventListener('keydown', function(e) {
-            switch(e.key) {
-                case 'ArrowLeft':
-                    onPrevPage();
-                    break;
-                case 'ArrowRight':
-                    onNextPage();
-                    break;
-                case '+':
-                    scale += 0.25;
-                    updateZoom();
-                    break;
-                case '-':
-                    scale -= 0.25;
-                    updateZoom();
-                    break;
-            }
-        });
-        
-        /**
-         * Save reading progress to server
-         */
-        function saveReadingProgress(currentPage) {
-            fetch('/api/reading/progress', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    bookId: bookId,
-                    currentPage: currentPage,
-                    totalPages: pdfDoc.numPages,
-                    progressPercentage: (currentPage / pdfDoc.numPages) * 100
-                })
-            });
-        }
-        
-        // Auto-save progress every 30 seconds
-        setInterval(function() {
-            saveReadingProgress(pageNum);
-        }, 30000);
-        /*]]>*/
-    </script>
+    <!-- PDF Canvas -->
+    <div class="pdf-viewer">
+        <canvas id="pdfCanvas"></canvas>
+    </div>
+</div>
+
+<!-- Toast Container for notifications -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- Data for JavaScript -->
+<div id="pdf-data"
+     th:data-book-id="${book.bookId}"
+     th:data-book-asset-id="${asset.bookAssetId}"
+     th:data-asset-path="${asset.readingUrl}"
+     th:data-encoded-location="${encodedLocation}"
+     style="display: none;"></div>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script th:src="@{/js/reading-progress-tracker.js}"></script>
+<script th:src="@{/user_template/js/pdf-reader.js}"></script>
 </body>
 </html>
+```
+
+### PDF.js Integration
+
+**File:** `pdf-reader.js`
+
+```javascript
+// Global variables
+let pdfDoc = null;
+let currentPage = 1;
+let totalPages = 0;
+let scale = 1.5;
+let progressTracker = null;
+
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', async function() {
+    const dataEl = document.getElementById('pdf-data');
+    const bookId = dataEl.dataset.bookId;
+    const bookAssetId = dataEl.dataset.bookAssetId;
+    const assetPath = dataEl.dataset.assetPath;
+    
+    // Build streaming URL
+    const streamUrl = `/reading/stream/${bookId}?assetId=${bookAssetId}&format=PDF`;
+    
+    // Load PDF
+    pdfDoc = await pdfjsLib.getDocument(streamUrl).promise;
+    totalPages = pdfDoc.numPages;
+    
+    // Initialize Anti-Skimming Tracker
+    progressTracker = new ReadingProgressTracker({
+        bookId: bookId,
+        bookAssetId: bookAssetId,
+        format: 'PDF',
+        syncInterval: 30000,  // Sync every 30 seconds
+        
+        onSyncSuccess: (data) => {
+            // Check both 'isSkimming' and 'skimming' (Jackson serialization)
+            const isSkimmingDetected = data.isSkimming || data.skimming;
+            if (isSkimmingDetected) {
+                showSkimmingWarning(data.message);
+            }
+        }
+    });
+    progressTracker.start();
+    
+    // Render first page
+    renderPage(1);
+});
+
+// Render specific page
+async function renderPage(num) {
+    const page = await pdfDoc.getPage(num);
+    const viewport = page.getViewport({ scale });
+    
+    const canvas = document.getElementById('pdfCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+    
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    
+    currentPage = num;
+    updateUI();
+    
+    // Update progress tracker
+    const percentage = (num / totalPages) * 100;
+    progressTracker.updateProgress(`page-${num}`, percentage);
+}
+
+// Navigation
+function nextPage() {
+    if (currentPage < totalPages) renderPage(currentPage + 1);
+}
+
+function previousPage() {
+    if (currentPage > 1) renderPage(currentPage - 1);
+}
+
+// Show skimming warning toast
+function showSkimmingWarning(message) {
+    const toast = document.createElement('div');
+    toast.className = 'reading-toast warning';
+    toast.innerHTML = `
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>${message}</span>
+    `;
+    
+    document.getElementById('toast-container').appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => toast.remove(), 5000);
+}
 ```
 
 ---
@@ -684,311 +427,402 @@ public String pdfReader(
 
 ### ePub.js Integration
 
-**Controller**:
-```java
-@GetMapping("/epub/{bookId}")
-public String epubReader(
-        @PathVariable String bookId,
-        Authentication authentication,
-        Model model) {
-    
-    User currentUser = (User) authentication.getPrincipal();
-    Book book = bookService.getBookById(bookId);
-    
-    if (!checkBookAccess(currentUser, book)) {
-        return "redirect:/user/books/" + bookId;
-    }
-    
-    ReadingProgress progress = readingProgressService
-        .getOrCreateProgress(currentUser, book);
-    
-    model.addAttribute("book", book);
-    model.addAttribute("progress", progress);
-    model.addAttribute("epubUrl", book.getSourceFileUrl());
-    
-    return "user/reading/epub-viewer";
-}
-```
+**File:** `epub-reader.js`
 
-**EPUB Viewer Template** (`epub-viewer.html`):
-```html
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <title th:text="${book.title}">EPUB Reader</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        
-        #epub-toolbar {
-            background: #2c3e50;
-            color: white;
-            padding: 15px;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        
-        #viewer {
-            width: 100%;
-            height: calc(100vh - 60px);
-        }
-        
-        #toc-panel {
-            position: fixed;
-            left: -300px;
-            top: 60px;
-            width: 300px;
-            height: calc(100vh - 60px);
-            background: white;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
-            transition: left 0.3s;
-            overflow-y: auto;
-        }
-        
-        #toc-panel.open {
-            left: 0;
-        }
-    </style>
-</head>
-<body>
-    <!-- Toolbar -->
-    <div id="epub-toolbar">
-        <button id="prev">◀ Previous</button>
-        <button id="next">Next ▶</button>
-        <button id="toc-toggle">📑 Contents</button>
-        
-        <span>Font Size:</span>
-        <button id="font-smaller">A-</button>
-        <button id="font-larger">A+</button>
-        
-        <select id="theme-select">
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-            <option value="sepia">Sepia</option>
-        </select>
-        
-        <button id="bookmark-add">🔖 Bookmark</button>
-        <button id="close" onclick="window.location.href='/user/books'">✖ Close</button>
-    </div>
+```javascript
+let book = null;
+let rendition = null;
+let progressTracker = null;
+
+document.addEventListener('DOMContentLoaded', async function() {
+    const dataEl = document.getElementById('epub-data');
+    const bookId = dataEl.dataset.bookId;
+    const bookAssetId = dataEl.dataset.bookAssetId;
+    const streamUrl = `/reading/stream/${bookId}?assetId=${bookAssetId}&format=EPUB`;
     
-    <!-- Table of Contents -->
-    <div id="toc-panel">
-        <h3 style="padding: 15px; margin: 0;">Table of Contents</h3>
-        <div id="toc-list"></div>
-    </div>
+    // Download and initialize EPUB
+    const response = await fetch(streamUrl);
+    const blob = await response.blob();
+    const arrayBuffer = await blob.arrayBuffer();
     
-    <!-- EPUB Viewer -->
-    <div id="viewer"></div>
+    book = ePub(arrayBuffer);
+    rendition = book.renderTo('epub-viewer', {
+        width: '100%',
+        height: '100%',
+        spread: 'auto'
+    });
     
-    <script th:inline="javascript">
-        /*<![CDATA[*/
-        const epubUrl = /*[[${epubUrl}]]*/ '';
-        const bookId = /*[[${book.bookId}]]*/ '';
+    // Wait for locations to be generated
+    await book.ready;
+    await book.locations.generate(1024);
+    
+    // Initialize Anti-Skimming Tracker
+    progressTracker = new ReadingProgressTracker({
+        bookId: bookId,
+        bookAssetId: bookAssetId,
+        format: 'EPUB',
+        syncInterval: 30000,
         
-        // Initialize ePub.js
-        const book = ePub(epubUrl);
-        const rendition = book.renderTo("viewer", {
-            width: "100%",
-            height: "100%",
-            spread: "always"
-        });
-        
-        // Display book
-        rendition.display();
-        
-        // Navigation
-        document.getElementById('prev').addEventListener('click', function() {
-            rendition.prev();
-        });
-        
-        document.getElementById('next').addEventListener('click', function() {
-            rendition.next();
-        });
-        
-        // Table of contents
-        book.loaded.navigation.then(function(toc) {
-            const tocList = document.getElementById('toc-list');
-            toc.forEach(function(chapter) {
-                const item = document.createElement('div');
-                item.style.padding = '10px 15px';
-                item.style.cursor = 'pointer';
-                item.style.borderBottom = '1px solid #eee';
-                item.textContent = chapter.label;
-                item.addEventListener('click', function() {
-                    rendition.display(chapter.href);
-                    document.getElementById('toc-panel').classList.remove('open');
-                });
-                tocList.appendChild(item);
-            });
-        });
-        
-        // Toggle TOC
-        document.getElementById('toc-toggle').addEventListener('click', function() {
-            document.getElementById('toc-panel').classList.toggle('open');
-        });
-        
-        // Font size
-        let fontSize = 100;
-        document.getElementById('font-larger').addEventListener('click', function() {
-            fontSize += 10;
-            rendition.themes.fontSize(fontSize + '%');
-        });
-        
-        document.getElementById('font-smaller').addEventListener('click', function() {
-            fontSize -= 10;
-            rendition.themes.fontSize(fontSize + '%');
-        });
-        
-        // Themes
-        document.getElementById('theme-select').addEventListener('change', function(e) {
-            const theme = e.target.value;
-            switch(theme) {
-                case 'dark':
-                    rendition.themes.override('color', '#fff');
-                    rendition.themes.override('background', '#1a1a1a');
-                    break;
-                case 'sepia':
-                    rendition.themes.override('color', '#5b4636');
-                    rendition.themes.override('background', '#f4ecd8');
-                    break;
-                default:
-                    rendition.themes.override('color', '#000');
-                    rendition.themes.override('background', '#fff');
+        onSyncSuccess: (data) => {
+            const isSkimmingDetected = data.isSkimming || data.skimming;
+            if (isSkimmingDetected) {
+                showSkimmingWarning(data.message);
             }
-        });
-        
-        // Track progress
-        rendition.on('relocated', function(location) {
-            saveProgress(location.start.cfi, location.start.percentage);
-        });
-        
-        function saveProgress(cfi, percentage) {
-            fetch('/api/reading/progress', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    bookId: bookId,
-                    currentPosition: cfi,
-                    progressPercentage: percentage * 100
-                })
-            });
         }
-        /*]]>*/
-    </script>
-</body>
-</html>
+    });
+    progressTracker.start();
+    
+    // Track location changes
+    rendition.on('relocated', (location) => {
+        const cfi = location.start.cfi;
+        const percentage = book.locations.percentageFromCfi(cfi) * 100;
+        progressTracker.updateProgress(cfi, percentage);
+    });
+    
+    // Display book
+    rendition.display();
+});
+
+// Navigation
+function nextPage() { rendition.next(); }
+function prevPage() { rendition.prev(); }
+
+// Table of Contents
+async function loadTOC() {
+    const toc = await book.loaded.navigation;
+    // Render TOC items...
+}
+
+// Theme switching
+function setTheme(theme) {
+    switch(theme) {
+        case 'dark':
+            rendition.themes.override('color', '#fff');
+            rendition.themes.override('background', '#1a1a1a');
+            break;
+        case 'sepia':
+            rendition.themes.override('color', '#5b4636');
+            rendition.themes.override('background', '#f4ecd8');
+            break;
+        default:
+            rendition.themes.override('color', '#000');
+            rendition.themes.override('background', '#fff');
+    }
+}
 ```
 
 ---
 
-## Flow 7.4: Reading Progress Tracking
+## Flow 7.4: Anti-Skimming & Progress Tracking
 
-### API Endpoint
+### Overview
 
-**Controller**:
-```java
-@RestController
-@RequestMapping("/api/reading")
-public class ReadingApiController {
-    
-    private final ReadingProgressService readingProgressService;
-    
-    @PostMapping("/progress")
-    public ResponseEntity<?> saveProgress(
-            @RequestBody ReadingProgressDto dto,
-            Authentication authentication) {
-        
-        try {
-            User currentUser = (User) authentication.getPrincipal();
-            
-            ReadingProgress progress = readingProgressService.saveProgress(
-                currentUser.getUserId(),
-                dto.getBookId(),
-                dto.getCurrentPage(),
-                dto.getTotalPages(),
-                dto.getCurrentPosition(),
-                dto.getProgressPercentage()
-            );
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Progress saved",
-                "progress", progress
-            ));
-            
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
-        }
-    }
-}
+Hệ thống **Anti-Skimming Validation** sử dụng chiến thuật **Time-Capping** để:
+- Ngăn chặn việc "lướt nhanh" để đạt 100% progress
+- Đảm bảo tiến độ tương ứng với thời gian đọc thực tế
+- Yêu cầu đọc ít nhất 20% để có thể viết review
+
+### Time-Capping Formula
+
+```
+MAX_PROGRESS_GAIN_PER_SECOND = 0.5%
+
+Công thức:
+- Client báo: "Tôi đã đọc từ 10% → 50% trong 30 giây"
+- Max allowed: 30s × 0.5%/s = 15%
+- Actual gain: min(40%, 15%) = 15%
+- Final progress: 10% + 15% = 25%
+
+Kết quả: Tiến độ được giới hạn ở 25% thay vì 50%
 ```
 
-**Service**:
+### Sequence Diagram
+
+```
+┌────────────┐    ┌──────────────────┐    ┌─────────────────┐    ┌──────────┐
+│  Frontend  │    │ ProgressTracker  │    │   API Server    │    │ Database │
+└─────┬──────┘    └────────┬─────────┘    └────────┬────────┘    └────┬─────┘
+      │                    │                       │                   │
+      │ User reads pages   │                       │                   │
+      │───────────────────►│                       │                   │
+      │                    │                       │                   │
+      │                    │ Track active time     │                   │
+      │                    │ (1 second intervals)  │                   │
+      │                    │                       │                   │
+      │                    │ Every 30s: POST /api/reading/sync         │
+      │                    │──────────────────────►│                   │
+      │                    │                       │                   │
+      │                    │                       │ Calculate velocity│
+      │                    │                       │ Apply time-capping│
+      │                    │                       │                   │
+      │                    │                       │ Save to DB        │
+      │                    │                       │──────────────────►│
+      │                    │                       │◄──────────────────│
+      │                    │                       │                   │
+      │                    │◄──────────────────────│                   │
+      │                    │ Response: {           │                   │
+      │                    │   isSkimming: true,   │                   │
+      │                    │   currentProgress: 25%│                   │
+      │                    │ }                     │                   │
+      │                    │                       │                   │
+      │ Show warning toast │                       │                   │
+      │◄───────────────────│                       │                   │
+```
+
+### Backend Service Implementation
+
+**File:** `ReadingProgressServiceImpl.java`
+
 ```java
 @Service
 @Transactional
-public class ReadingProgressService {
+public class ReadingProgressServiceImpl implements ReadingProgressService {
     
-    private final ReadingProgressRepository progressRepository;
+    // Tốc độ tối đa: 0.5% mỗi giây
+    // = ~3.3 phút để đọc 100% sách
+    private static final float MAX_PROGRESS_GAIN_PER_SECOND = 0.5f;
     
-    public ReadingProgress saveProgress(
-            String userId,
-            String bookId,
-            Integer currentPage,
-            Integer totalPages,
-            String currentPosition,
-            Double progressPercentage) {
+    // Ngưỡng để đánh giá: 20%
+    private static final float REVIEW_ELIGIBILITY_THRESHOLD = 20.0f;
+    
+    @Override
+    public ProgressSyncResponse syncProgress(User user, ProgressSyncRequest request) {
+        // 1. Lấy hoặc tạo ReadingProgress
+        ReadingProgress progress = getOrCreateProgress(user, request);
         
-        ReadingProgress progress = progressRepository
-            .findByUserIdAndBookId(userId, bookId)
-            .orElse(new ReadingProgress());
+        float oldProgress = progress.getProgressPercentage();
+        float clientProgress = request.getProgressPercentage();
+        int deltaTime = request.getActiveTimeDelta();
         
-        progress.setUserId(userId);
-        progress.setBookId(bookId);
-        progress.setCurrentPage(currentPage);
-        progress.setTotalPages(totalPages);
-        progress.setCurrentPosition(currentPosition);
-        progress.setProgressPercentage(progressPercentage);
-        progress.setLastReadAt(LocalDateTime.now());
+        // 2. LUÔN LƯU VỊ TRÍ (đảm bảo UX - mở lại đúng chỗ)
+        progress.setLastReadLocation(request.getCurrentLocationRaw());
         
-        return progressRepository.save(progress);
+        // 3. TÍNH TOÁN TIẾN ĐỘ với TIME-CAPPING
+        float clientGain = clientProgress - oldProgress;
+        float maxPossibleGain = deltaTime * MAX_PROGRESS_GAIN_PER_SECOND;
+        float actualGain = Math.min(clientGain, maxPossibleGain);
+        float finalProgress = Math.min(oldProgress + actualGain, 100.0f);
+        
+        boolean wasCapped = clientGain > maxPossibleGain;
+        
+        // 4. Lưu tiến độ đã kiểm soát
+        progress.setProgressPercentage(finalProgress);
+        
+        // 5. Tích lũy thời gian đọc
+        if (deltaTime > 0) {
+            long totalTime = progress.getTotalActiveSeconds() + deltaTime;
+            progress.setTotalActiveSeconds(totalTime);
+        }
+        
+        // 6. Kiểm tra hoàn thành
+        if (finalProgress >= 100.0f) {
+            progress.setIsCompleted(true);
+        }
+        
+        // 7. Lưu và trả về response
+        ReadingProgress saved = repository.save(progress);
+        
+        String message = wasCapped 
+            ? String.format("⚠️ Tiến độ điều chỉnh từ %.1f%% → %.1f%%. Hãy đọc chậm lại!", 
+                           clientProgress, finalProgress)
+            : "✅ Tiến độ đã được đồng bộ!";
+        
+        return ProgressSyncResponse.builder()
+                .success(true)
+                .isSkimming(wasCapped)
+                .currentProgress(saved.getProgressPercentage())
+                .totalActiveTime(saved.getTotalActiveSeconds())
+                .canReview(saved.getProgressPercentage() >= REVIEW_ELIGIBILITY_THRESHOLD)
+                .isCompleted(saved.getIsCompleted())
+                .message(message)
+                .build();
     }
 }
 ```
+
+### Frontend Progress Tracker
+
+**File:** `reading-progress-tracker.js`
+
+```javascript
+class ReadingProgressTracker {
+    constructor(options) {
+        this.bookId = options.bookId;
+        this.bookAssetId = options.bookAssetId;
+        this.format = options.format || 'PDF';
+        this.syncInterval = options.syncInterval || 30000;
+        
+        // State
+        this.currentLocation = null;
+        this.currentProgress = 0.0;
+        this.activeTimeAccumulator = 0;
+        this.isActive = false;
+        
+        // Callbacks
+        this.onSyncSuccess = options.onSyncSuccess;
+        this.onSkimmingDetected = options.onSkimmingDetected;
+        
+        this._setupActivityDetection();
+    }
+    
+    _setupActivityDetection() {
+        const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
+        let timer = null;
+        
+        const markActive = () => {
+            this.isActive = true;
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => this.isActive = false, 5000);
+        };
+        
+        events.forEach(e => document.addEventListener(e, markActive, { passive: true }));
+        
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) this.isActive = false;
+        });
+    }
+    
+    start() {
+        // Accumulate active time every second
+        this.activeTimer = setInterval(() => {
+            if (this.isActive) this.activeTimeAccumulator++;
+        }, 1000);
+        
+        // Auto sync
+        this.syncTimer = setInterval(() => this.syncToServer(), this.syncInterval);
+    }
+    
+    updateProgress(location, percentage) {
+        this.currentLocation = location;
+        this.currentProgress = percentage;
+    }
+    
+    async syncToServer() {
+        if (!this.currentLocation || this.activeTimeAccumulator === 0) return;
+        
+        const payload = {
+            bookId: this.bookId,
+            bookAssetId: this.bookAssetId,
+            currentLocationRaw: this.currentLocation,
+            progressPercentage: this.currentProgress,
+            activeTimeDelta: this.activeTimeAccumulator,
+            format: this.format
+        };
+        
+        const response = await fetch('/api/reading/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        
+        // Reset accumulator
+        this.activeTimeAccumulator = 0;
+        
+        // Check skimming (handle Jackson serialization)
+        const isSkimmingDetected = data.isSkimming || data.skimming;
+        if (isSkimmingDetected) {
+            this._showToast('warning', 'Cảnh báo', data.message);
+            if (this.onSkimmingDetected) this.onSkimmingDetected(data);
+        }
+        
+        if (this.onSyncSuccess) this.onSyncSuccess(data);
+    }
+}
+```
+
+### DTO Definitions
+
+**ProgressSyncRequest.java:**
+```java
+@Getter @Setter
+public class ProgressSyncRequest {
+    private String bookId;
+    private String bookAssetId;
+    private String currentLocationRaw;  // "page-15" or CFI
+    private Float progressPercentage;   // 0-100
+    private Integer activeTimeDelta;    // seconds
+    private String format;              // PDF or EPUB
+}
+```
+
+**ProgressSyncResponse.java:**
+```java
+@Getter @Setter @Builder
+public class ProgressSyncResponse {
+    private boolean success;
+    
+    @JsonProperty("isSkimming")
+    private boolean isSkimming;
+    
+    private Float currentProgress;
+    private Long totalActiveTime;
+    private boolean canReview;
+    
+    @JsonProperty("isCompleted")
+    private boolean isCompleted;
+    
+    private String message;
+    private Float readingVelocity;
+    private String progressId;
+}
+```
+
+> **Lưu ý:** Annotation `@JsonProperty("isSkimming")` đảm bảo Jackson serialize đúng tên field với tiền tố `is`.
 
 ---
 
 ## Flow 7.5: Bookmarks
 
-**Save Bookmark**:
+### Bookmark Data Structure
+
 ```java
-@PostMapping("/bookmark")
-public ResponseEntity<?> saveBookmark(
-        @RequestBody BookmarkDto dto,
-        Authentication authentication) {
+@Data
+public static class BookmarkData {
+    private String id;
+    private String location;      // page-X or CFI
+    private Integer pageNumber;   // For PDF
+    private Float percentage;     // 0-100
+    private String note;
+    private LocalDateTime createdAt;
+}
+```
+
+### API Endpoints
+
+**Add Bookmark:**
+```java
+@PostMapping("/api/bookmarks/{bookId}")
+@ResponseBody
+public String addBookmark(@PathVariable String bookId,
+                          @RequestParam String location,
+                          @RequestParam(required = false) Integer pageNumber,
+                          @RequestParam(required = false) Float percentage,
+                          @RequestParam(required = false) String note) {
+    User user = getCurrentUser();
+    ReadingProgress progress = getOrCreateProgress(user, bookId);
     
-    User currentUser = (User) authentication.getPrincipal();
+    readingProgressService.addBookmark(
+        progress.getProgressId(), 
+        location, 
+        pageNumber, 
+        percentage, 
+        note
+    );
     
-    Bookmark bookmark = new Bookmark();
-    bookmark.setUserId(currentUser.getUserId());
-    bookmark.setBookId(dto.getBookId());
-    bookmark.setPageNumber(dto.getPageNumber());
-    bookmark.setPosition(dto.getPosition());
-    bookmark.setNote(dto.getNote());
-    bookmark.setCreatedAt(LocalDateTime.now());
-    
-    bookmarkRepository.save(bookmark);
-    
-    return ResponseEntity.ok(Map.of("success", true));
+    return "{\"status\":\"success\"}";
+}
+```
+
+**Get Bookmarks:**
+```java
+@GetMapping("/api/bookmarks/{bookId}")
+@ResponseBody
+public List<BookmarkData> getBookmarks(@PathVariable String bookId) {
+    User user = getCurrentUser();
+    ReadingProgress progress = getProgress(user, bookId);
+    return readingProgressService.getBookmarks(progress.getProgressId());
 }
 ```
 
@@ -997,35 +831,159 @@ public ResponseEntity<?> saveBookmark(
 ## Reader Features
 
 ### ✅ PDF Reader Features
-- Page navigation (prev/next)
-- Zoom in/out
-- Fit width/page
-- Dark mode
-- Fullscreen
-- Keyboard shortcuts
-- Progress tracking
-- Auto-save
+| Feature | Mô tả |
+|---------|-------|
+| Page Navigation | Prev/Next, Jump to page |
+| Zoom Controls | Zoom in/out, Fit width/page |
+| Dark Mode | Invert colors cho đọc ban đêm |
+| Bookmarks | Lưu và quản lý bookmarks |
+| Progress Tracking | Anti-skimming validation |
+| Resume Reading | Mở lại đúng trang đã đọc |
+| Keyboard Shortcuts | ←/→ navigation, +/- zoom |
 
 ### ✅ EPUB Reader Features
-- Chapter navigation
-- Table of contents
-- Font size adjustment
-- Theme selection (light/dark/sepia)
-- Progress tracking
-- Bookmarks
-- Text selection
-- Responsive layout
+| Feature | Mô tả |
+|---------|-------|
+| Chapter Navigation | Next/Prev chapter |
+| Table of Contents | Sidebar TOC |
+| Font Size | Adjustable text size |
+| Themes | Light/Dark/Sepia |
+| Progress Tracking | Anti-skimming validation |
+| Resume Reading | Mở lại đúng CFI |
+| Responsive Layout | Adapt to screen size |
 
 ### ✅ Common Features
-- Auto-save reading position
-- Resume from last position
-- Progress percentage
-- Time tracking
-- Reading statistics
+| Feature | Mô tả |
+|---------|-------|
+| Auto-save | Lưu tự động mỗi 30 giây |
+| Time Tracking | Đếm thời gian đọc thực |
+| Review Eligibility | Yêu cầu 20% để review |
+| Skimming Detection | Cảnh báo đọc quá nhanh |
+| Toast Notifications | Hiển thị thông báo |
 
 ---
 
-**Last Updated:** 06/12/2025  
+## API Reference
+
+### POST /api/reading/sync
+
+**Request:**
+```json
+{
+  "bookId": "book_13",
+  "bookAssetId": "asset_13",
+  "currentLocationRaw": "page-25",
+  "progressPercentage": 18.25,
+  "activeTimeDelta": 30,
+  "format": "PDF"
+}
+```
+
+**Response (Normal):**
+```json
+{
+  "success": true,
+  "isSkimming": false,
+  "currentProgress": 18.25,
+  "totalActiveTime": 450,
+  "canReview": false,
+  "isCompleted": false,
+  "message": "✅ Tiến độ đã được đồng bộ thành công!",
+  "readingVelocity": 0.27,
+  "progressId": "prog_01"
+}
+```
+
+**Response (Skimming Detected):**
+```json
+{
+  "success": true,
+  "isSkimming": true,
+  "currentProgress": 15.23,
+  "totalActiveTime": 34,
+  "canReview": false,
+  "isCompleted": false,
+  "message": "⚠️ Tiến độ đã được điều chỉnh từ 18.2% → 15.2%. Hãy đọc chậm lại!",
+  "readingVelocity": 0.61
+}
+```
+
+### GET /api/reading/can-review/{bookId}
+
+**Response:**
+```json
+{
+  "canReview": true,
+  "requiredProgress": 20.0,
+  "message": "Bạn có thể đánh giá sách này"
+}
+```
+
+---
+
+## Technical Implementation
+
+### File Structure
+
+```
+src/main/java/stu/datn/ebook_store/
+├── controller/user/
+│   ├── ReadingController.java          # View routing
+│   └── ReadingProgressApiController.java # REST API
+├── service/
+│   ├── ReadingProgressService.java     # Interface
+│   └── impl/ReadingProgressServiceImpl.java # Time-capping logic
+├── dto/
+│   ├── ProgressSyncRequest.java
+│   └── ProgressSyncResponse.java
+└── entity/
+    └── ReadingProgress.java            # Entity with bookmarks
+
+src/main/resources/
+├── templates/user/reading/
+│   ├── pdf-viewer.html
+│   ├── epub-viewer.html
+│   └── reader.html (format chooser)
+├── static/
+│   ├── js/reading-progress-tracker.js
+│   ├── user_template/js/
+│   │   ├── pdf-reader.js
+│   │   └── epub-reader.js
+│   └── css/reading-progress.css
+```
+
+### Database Schema
+
+```sql
+-- ReadingProgress entity
+CREATE TABLE reading_progress (
+    progress_id VARCHAR(50) PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL,
+    book_id VARCHAR(50) NOT NULL,
+    book_asset_id VARCHAR(50),
+    progress_percentage FLOAT DEFAULT 0,
+    last_read_location VARCHAR(500),
+    total_active_seconds BIGINT DEFAULT 0,
+    is_completed BOOLEAN DEFAULT FALSE,
+    is_favorite BOOLEAN DEFAULT FALSE,
+    access_type VARCHAR(20),
+    bookmarks_json TEXT,
+    created_at DATETIME,
+    last_read_at DATETIME,
+    updated_at DATETIME,
+    
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (book_id) REFERENCES books(book_id),
+    UNIQUE KEY unique_user_book (user_id, book_id)
+);
+
+CREATE INDEX idx_progress_user ON reading_progress(user_id);
+CREATE INDEX idx_progress_book ON reading_progress(book_id);
+```
+
+---
+
+**Last Updated:** 11/01/2026  
 **Status:** ✅ COMPLETE  
-**Version:** 1.0
+**Version:** 2.0
 

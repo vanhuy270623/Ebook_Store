@@ -118,28 +118,25 @@ public class UserReviewController extends BaseController {
             }
 
             // 4. CHECK READING PROGRESS (Quy tắc 20% - áp dụng cho TẤT CẢ loại sách)
-            Optional<ReadingProgress> progressOpt = readingProgressService
-                .getReadingProgressByUserAndBook(currentUser, book);
+            // Sử dụng service method mới với Anti-Skimming validation
+            if (!readingProgressService.canUserReview(currentUser, bookId)) {
+                // Lấy thông tin chi tiết progress để hiển thị
+                Optional<ReadingProgress> progressOpt = readingProgressService
+                    .getReadingProgressByUserAndBook(currentUser, book);
 
-            if (progressOpt.isEmpty()) {
+                double percentRead = progressOpt
+                    .map(p -> p.getProgressPercentage() != null ? p.getProgressPercentage().doubleValue() : 0.0)
+                    .orElse(0.0);
+
+                String message = progressOpt.isEmpty()
+                    ? "Bạn chưa mở sách này lần nào. Hãy đọc ít nhất 20% nội dung để đánh giá."
+                    : String.format(
+                        "Bạn mới đọc %.1f%%. Hãy đọc ít nhất 20%% nội dung để có thể đưa ra đánh giá khách quan.",
+                        percentRead
+                    );
+
                 response.put("success", false);
-                response.put("message", "Bạn chưa mở sách này lần nào. Hãy đọc ít nhất 20% nội dung để đánh giá.");
-                response.put("currentProgress", 0.0);
-                response.put("requiredProgress", MINIMUM_READING_PROGRESS);
-                return ResponseEntity.status(403).body(response);
-            }
-
-            ReadingProgress progress = progressOpt.get();
-            double percentRead = progress.getProgressPercentage() != null
-                ? progress.getProgressPercentage().doubleValue()
-                : 0.0;
-
-            if (percentRead < MINIMUM_READING_PROGRESS) {
-                response.put("success", false);
-                response.put("message", String.format(
-                    "Bạn mới đọc %.1f%%. Hãy đọc ít nhất 20%% nội dung để có thể đưa ra đánh giá khách quan.",
-                    percentRead
-                ));
+                response.put("message", message);
                 response.put("currentProgress", percentRead);
                 response.put("requiredProgress", MINIMUM_READING_PROGRESS);
                 return ResponseEntity.status(403).body(response);

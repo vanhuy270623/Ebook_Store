@@ -1,5 +1,7 @@
 package stu.datn.ebook_store.service;
 
+import stu.datn.ebook_store.dto.ProgressSyncRequest;
+import stu.datn.ebook_store.dto.ProgressSyncResponse;
 import stu.datn.ebook_store.entity.ReadingProgress;
 import stu.datn.ebook_store.entity.User;
 import stu.datn.ebook_store.entity.Book;
@@ -24,5 +26,9 @@ public interface ReadingProgressService {
     void addBookmark(String progressId, String location, Integer pageNumber, Float percentage, String note);
     void removeBookmark(String progressId, String bookmarkId);
     List<ReadingProgress.BookmarkData> getBookmarks(String progressId);
+
+    // Anti-Skimming & Progress Tracking - MỚI
+    ProgressSyncResponse syncProgress(User user, ProgressSyncRequest request);
+    boolean canUserReview(User user, String bookId);
 }
 

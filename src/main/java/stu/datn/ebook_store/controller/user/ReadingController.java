@@ -925,9 +925,11 @@ public class ReadingController extends BaseController {
      */
     @GetMapping("/stream/{bookId}")
     public org.springframework.http.ResponseEntity<org.springframework.core.io.Resource> streamFile(
-            @PathVariable String bookId) {
+            @PathVariable String bookId,
+            @RequestParam(required = false) String assetId,
+            @RequestParam(required = false) String format) {
         try {
-            log.info("Streaming file request - bookId: {}", bookId);
+            log.info("Streaming file request - bookId: {}, assetId: {}, format: {}", bookId, assetId, format);
 
             User currentUser = getCurrentUser();
             if (currentUser == null) {
@@ -937,15 +939,48 @@ public class ReadingController extends BaseController {
                         .build();
             }
 
-            // Tìm asset theo bookId và fileType PDF (ưu tiên PDF trước)
-            log.debug("Searching for asset with bookId: {}", bookId);
+            BookAsset asset = null;
 
-            BookAsset asset = bookAssetService.getAssetByBookIdAndFileType(bookId, BookAsset.FileType.PDF).orElse(null);
+            // Strategy 1: Nếu có assetId, tìm trực tiếp theo assetId (CHÍNH XÁC NHẤT)
+            if (assetId != null && !assetId.isEmpty()) {
+                log.debug("Searching asset by assetId: {}", assetId);
+                asset = bookAssetService.getAssetById(assetId).orElse(null);
 
-            // Fallback: Thử tìm EPUB nếu không có PDF
+                if (asset != null) {
+                    log.info("✅ Found asset by assetId: {} (type: {})", assetId, asset.getFileType());
+                }
+            }
+
+            // Strategy 2: Nếu có format parameter, tìm theo bookId + format
+            if (asset == null && format != null && !format.isEmpty()) {
+                log.debug("Searching asset by bookId + format: {} + {}", bookId, format);
+
+                BookAsset.FileType fileType = null;
+                if ("PDF".equalsIgnoreCase(format)) {
+                    fileType = BookAsset.FileType.PDF;
+                } else if ("EPUB".equalsIgnoreCase(format)) {
+                    fileType = BookAsset.FileType.EPUB;
+                }
+
+                if (fileType != null) {
+                    asset = bookAssetService.getAssetByBookIdAndFileType(bookId, fileType).orElse(null);
+                    if (asset != null) {
+                        log.info("✅ Found asset by format: {} (type: {})", bookId, fileType);
+                    }
+                }
+            }
+
+            // Strategy 3: Fallback - Tìm theo thứ tự EPUB → PDF (đổi thứ tự ưu tiên)
             if (asset == null) {
-                log.warn("PDF asset not found for book {}, trying EPUB", bookId);
+                log.debug("No assetId/format provided, searching by bookId with fallback...");
+
+                // Thử EPUB trước (nhiều người dùng đọc EPUB hơn)
                 asset = bookAssetService.getAssetByBookIdAndFileType(bookId, BookAsset.FileType.EPUB).orElse(null);
+
+                if (asset == null) {
+                    log.warn("EPUB asset not found for book {}, trying PDF", bookId);
+                    asset = bookAssetService.getAssetByBookIdAndFileType(bookId, BookAsset.FileType.PDF).orElse(null);
+                }
             }
 
             if (asset == null) {

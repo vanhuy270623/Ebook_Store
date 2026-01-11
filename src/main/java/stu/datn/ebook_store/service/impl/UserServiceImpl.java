@@ -257,6 +257,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<User> getAllAdmins() {
+        return userRepository.findActiveByRoleName(Role.RoleName.ADMIN);
+    }
+
+    @Override
     public Optional<User> getUserById(String userId) {
         return userRepository.findActiveById(userId);
     }
@@ -320,6 +326,40 @@ public class UserServiceImpl implements UserService {
         } catch (Exception e) {
             // Log error nhưng không throw exception để không ảnh hưởng việc tạo user
             System.err.println("Không thể tạo VIP subscription cho admin: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void ensureAllAdminsHaveVipSubscription() {
+        try {
+            // Lấy tất cả admin hiện tại
+            List<User> allAdmins = getAllAdmins();
+
+            // Tìm gói VIP
+            Optional<Subscription> vipSubscription = subscriptionRepository.findByPackageName(Subscription.PackageName.VIP);
+
+            if (vipSubscription.isEmpty()) {
+                System.err.println("Không tìm thấy gói VIP subscription!");
+                return;
+            }
+
+            for (User admin : allAdmins) {
+                // Kiểm tra xem admin đã có VIP subscription active chưa
+                Optional<Order> existingVipOrder = orderRepository.findActiveSubscriptionByUserIdAndPackageName(
+                    admin.getUserId(),
+                    Subscription.PackageName.VIP,
+                    LocalDateTime.now()
+                );
+
+                if (existingVipOrder.isEmpty()) {
+                    // Tạo VIP subscription cho admin này
+                    createVipSubscriptionForAdmin(admin);
+                    System.out.println("Đã tạo VIP subscription cho admin: " + admin.getUsername());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi khi cập nhật VIP subscription cho admin: " + e.getMessage());
         }
     }
 

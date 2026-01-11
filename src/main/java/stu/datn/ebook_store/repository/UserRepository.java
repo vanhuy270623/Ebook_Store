@@ -56,6 +56,10 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("SELECT COUNT(u) FROM User u WHERE u.deletedAt IS NULL AND u.role.roleName = :roleName")
     long countActiveByRoleName(@Param("roleName") stu.datn.ebook_store.entity.Role.RoleName roleName);
 
+    // Find active users by role
+    @Query("SELECT u FROM User u WHERE u.deletedAt IS NULL AND u.role.roleName = :roleName ORDER BY u.createdAt DESC")
+    List<User> findActiveByRoleName(@Param("roleName") stu.datn.ebook_store.entity.Role.RoleName roleName);
+
     // Count all users by role (including deleted ones) - for ID generation
     @Query("SELECT COUNT(u) FROM User u WHERE u.role.roleName = :roleName")
     long countAllByRoleName(@Param("roleName") stu.datn.ebook_store.entity.Role.RoleName roleName);

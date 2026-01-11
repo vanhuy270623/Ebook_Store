@@ -54,15 +54,26 @@ public class ReadingProgress {
     @Column(name = "bookmarks_data", columnDefinition = "JSON")
     private String bookmarksData;
 
+    @Column(name = "total_active_seconds")
+    private Long totalActiveSeconds = 0L;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.lastReadAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        if (this.totalActiveSeconds == null) {
+            this.totalActiveSeconds = 0L;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.lastReadAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     public enum AccessType {

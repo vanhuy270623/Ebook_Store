@@ -97,6 +97,55 @@ public class ReportController extends BaseController {
                         BigDecimal::add)
                 ));
 
+            // Doanh thu theo loại đơn hàng (BOOK vs SUBSCRIPTION) - Item f)
+            Map<String, BigDecimal> revenueByType = completedOrders.stream()
+                .collect(Collectors.groupingBy(
+                    o -> o.getOrderType() != null ?
+                         o.getOrderType().toString() : "UNKNOWN",
+                    Collectors.reducing(BigDecimal.ZERO,
+                        o -> o.getTotalAmount() != null ? o.getTotalAmount() : BigDecimal.ZERO,
+                        BigDecimal::add)
+                ));
+
+            // Tính doanh thu hôm nay
+            LocalDateTime todayStart = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
+            LocalDateTime todayEnd = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
+
+            BigDecimal todayRevenue = completedOrders.stream()
+                .filter(o -> o.getCreatedAt() != null &&
+                            o.getCreatedAt().isAfter(todayStart) &&
+                            o.getCreatedAt().isBefore(todayEnd))
+                .map(Order::getTotalAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Tính doanh thu tháng này
+            LocalDateTime monthStart = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+
+            BigDecimal thisMonthRevenue = completedOrders.stream()
+                .filter(o -> o.getCreatedAt() != null &&
+                            o.getCreatedAt().isAfter(monthStart))
+                .map(Order::getTotalAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Tính doanh thu năm này
+            LocalDateTime yearStart = LocalDateTime.now().withDayOfYear(1).withHour(0).withMinute(0).withSecond(0);
+
+            BigDecimal thisYearRevenue = completedOrders.stream()
+                .filter(o -> o.getCreatedAt() != null &&
+                            o.getCreatedAt().isAfter(yearStart))
+                .map(Order::getTotalAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Tính số lượng đơn hàng hôm nay
+            long todayOrdersCount = completedOrders.stream()
+                .filter(o -> o.getCreatedAt() != null &&
+                            o.getCreatedAt().isAfter(todayStart) &&
+                            o.getCreatedAt().isBefore(todayEnd))
+                .count();
+
             model.addAttribute("totalRevenue", totalRevenue);
             model.addAttribute("totalOrders", completedOrders.size());
             model.addAttribute("averageOrderValue",
@@ -104,6 +153,11 @@ public class ReportController extends BaseController {
                 totalRevenue.divide(BigDecimal.valueOf(completedOrders.size()), 2, BigDecimal.ROUND_HALF_UP));
             model.addAttribute("dailyRevenue", dailyRevenue);
             model.addAttribute("revenueByMethod", revenueByMethod);
+            model.addAttribute("revenueByType", revenueByType);
+            model.addAttribute("todayRevenue", todayRevenue);
+            model.addAttribute("thisMonthRevenue", thisMonthRevenue);
+            model.addAttribute("thisYearRevenue", thisYearRevenue);
+            model.addAttribute("todayOrdersCount", todayOrdersCount);
             model.addAttribute("orders", completedOrders);
             model.addAttribute("startDate", start.toLocalDate());
             model.addAttribute("endDate", end.toLocalDate());

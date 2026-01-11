@@ -3,7 +3,6 @@ package stu.datn.ebook_store.controller.admin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +10,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import stu.datn.ebook_store.controller.BaseController;
 import stu.datn.ebook_store.entity.Order;
 import stu.datn.ebook_store.entity.OrderItem;
-import stu.datn.ebook_store.entity.User;
 import stu.datn.ebook_store.service.OrderService;
 import stu.datn.ebook_store.service.OrderItemService;
 
@@ -45,10 +43,64 @@ public class AdminOrderController extends BaseController {
     // ============================= HELPER METHODS =============================
 
     /**
-     * Lấy thông tin user hiện tại từ Authentication
+     * Tạo response success cho AJAX endpoints
      */
-    private User getCurrentUser(Authentication authentication) {
-        return (User) authentication.getPrincipal();
+    private Map<String, Object> createSuccessResponse(String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", message);
+        return response;
+    }
+
+    /**
+     * Tạo response error cho AJAX endpoints
+     */
+    private Map<String, Object> createErrorResponse(String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("message", message);
+        return response;
+    }
+
+    /**
+     * Validate order cho approve/reject operations
+     */
+    private ResponseEntity<Map<String, Object>> validateOrderForApproval(String orderId) {
+        Optional<Order> orderOpt = orderService.getOrderById(orderId);
+        if (orderOpt.isEmpty()) {
+            return ResponseEntity.ok(createErrorResponse("Không tìm thấy đơn hàng"));
+        }
+
+        Order order = orderOpt.get();
+        if (order.getPaymentStatus() != Order.PaymentStatus.WAITING_APPROVAL) {
+            return ResponseEntity.ok(createErrorResponse("Đơn hàng không ở trạng thái chờ duyệt"));
+        }
+
+        return null; // Valid order
+    }
+
+    /**
+     * Tính toán order statistics và thêm vào model
+     */
+    private void addOrderStatisticsToModel(List<Order> orders, Model model) {
+        long pendingOrders = orders.stream()
+                .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.PENDING)
+                .count();
+        long waitingApprovalOrders = orders.stream()
+                .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.WAITING_APPROVAL)
+                .count();
+        long completedOrders = orders.stream()
+                .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.COMPLETED
+                          || o.getPaymentStatus() == Order.PaymentStatus.PAID)
+                .count();
+        long failedOrders = orders.stream()
+                .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.FAILED)
+                .count();
+
+        model.addAttribute("pendingOrders", pendingOrders);
+        model.addAttribute("waitingApprovalOrders", waitingApprovalOrders);
+        model.addAttribute("completedOrders", completedOrders);
+        model.addAttribute("failedOrders", failedOrders);
     }
 
     // ============================= VIEW OPERATIONS =============================
@@ -64,7 +116,6 @@ public class AdminOrderController extends BaseController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @RequestParam(required = false) String search,
-            Authentication authentication,
             Model model) {
 
         List<Order> orders;
@@ -100,25 +151,8 @@ public class AdminOrderController extends BaseController {
         model.addAttribute("paymentStatuses", Order.PaymentStatus.values());
         model.addAttribute("orderTypes", Order.OrderType.values());
 
-        // Quick statistics
-        long pendingOrders = orders.stream()
-                .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.PENDING)
-                .count();
-        long waitingApprovalOrders = orders.stream()
-                .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.WAITING_APPROVAL)
-                .count();
-        long completedOrders = orders.stream()
-                .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.COMPLETED
-                          || o.getPaymentStatus() == Order.PaymentStatus.PAID)
-                .count();
-        long failedOrders = orders.stream()
-                .filter(o -> o.getPaymentStatus() == Order.PaymentStatus.FAILED)
-                .count();
-
-        model.addAttribute("pendingOrders", pendingOrders);
-        model.addAttribute("waitingApprovalOrders", waitingApprovalOrders);
-        model.addAttribute("completedOrders", completedOrders);
-        model.addAttribute("failedOrders", failedOrders);
+        // Quick statistics using helper method
+        addOrderStatisticsToModel(orders, model);
 
         return "admin/orders/list";
     }
@@ -308,20 +342,12 @@ public class AdminOrderController extends BaseController {
             @PathVariable String id,
             @RequestParam String status) {
 
-        Map<String, Object> response = new HashMap<>();
-
         try {
             Order.PaymentStatus newStatus = Order.PaymentStatus.valueOf(status);
             orderService.updateOrderStatus(id, newStatus);
-
-            response.put("success", true);
-            response.put("message", "Cập nhật thành công");
-            return ResponseEntity.ok(response);
-
+            return ResponseEntity.ok(createSuccessResponse("Cập nhật thành công"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Có lỗi xảy ra: " + e.getMessage());
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(createErrorResponse("Có lỗi xảy ra: " + e.getMessage()));
         }
     }
 
@@ -331,44 +357,28 @@ public class AdminOrderController extends BaseController {
      */
     @PostMapping("/approve/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> approveOrder(
-            @PathVariable String id,
-            Authentication authentication) {
-
-        Map<String, Object> response = new HashMap<>();
-
+    public ResponseEntity<Map<String, Object>> approveOrder(@PathVariable String id) {
         try {
+            // Validate order
+            ResponseEntity<Map<String, Object>> validationError = validateOrderForApproval(id);
+            if (validationError != null) {
+                return validationError;
+            }
+
+            // Get order and update status
             Optional<Order> orderOpt = orderService.getOrderById(id);
-            if (orderOpt.isEmpty()) {
-                response.put("success", false);
-                response.put("message", "Không tìm thấy đơn hàng");
-                return ResponseEntity.ok(response);
+            if (orderOpt.isPresent()) {
+                Order order = orderOpt.get();
+                order.setPaymentStatus(Order.PaymentStatus.PAID);
+                orderService.saveOrder(order);
             }
-
-            Order order = orderOpt.get();
-
-            // Kiểm tra trạng thái hiện tại
-            if (order.getPaymentStatus() != Order.PaymentStatus.WAITING_APPROVAL) {
-                response.put("success", false);
-                response.put("message", "Đơn hàng không ở trạng thái chờ duyệt");
-                return ResponseEntity.ok(response);
-            }
-
-            // Cập nhật trạng thái thành PAID
-            order.setPaymentStatus(Order.PaymentStatus.PAID);
-            orderService.saveOrder(order);
 
             // TODO: Gửi email thông báo cho khách hàng (nếu có email service)
             // emailService.sendPaymentApprovedEmail(order);
 
-            response.put("success", true);
-            response.put("message", "Đã duyệt đơn hàng thành công");
-            return ResponseEntity.ok(response);
-
+            return ResponseEntity.ok(createSuccessResponse("Đã duyệt đơn hàng thành công"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Có lỗi xảy ra: " + e.getMessage());
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(createErrorResponse("Có lỗi xảy ra: " + e.getMessage()));
         }
     }
 
@@ -378,45 +388,28 @@ public class AdminOrderController extends BaseController {
      */
     @PostMapping("/reject/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> rejectOrder(
-            @PathVariable String id,
-            @RequestParam(required = false) String reason,
-            Authentication authentication) {
-
-        Map<String, Object> response = new HashMap<>();
-
+    public ResponseEntity<Map<String, Object>> rejectOrder(@PathVariable String id) {
         try {
+            // Validate order
+            ResponseEntity<Map<String, Object>> validationError = validateOrderForApproval(id);
+            if (validationError != null) {
+                return validationError;
+            }
+
+            // Get order and update status
             Optional<Order> orderOpt = orderService.getOrderById(id);
-            if (orderOpt.isEmpty()) {
-                response.put("success", false);
-                response.put("message", "Không tìm thấy đơn hàng");
-                return ResponseEntity.ok(response);
+            if (orderOpt.isPresent()) {
+                Order order = orderOpt.get();
+                order.setPaymentStatus(Order.PaymentStatus.FAILED);
+                orderService.saveOrder(order);
             }
-
-            Order order = orderOpt.get();
-
-            // Kiểm tra trạng thái hiện tại
-            if (order.getPaymentStatus() != Order.PaymentStatus.WAITING_APPROVAL) {
-                response.put("success", false);
-                response.put("message", "Đơn hàng không ở trạng thái chờ duyệt");
-                return ResponseEntity.ok(response);
-            }
-
-            // Cập nhật trạng thái thành FAILED
-            order.setPaymentStatus(Order.PaymentStatus.FAILED);
-            orderService.saveOrder(order);
 
             // TODO: Gửi email thông báo cho khách hàng với lý do (nếu có email service)
             // emailService.sendPaymentRejectedEmail(order, reason);
 
-            response.put("success", true);
-            response.put("message", "Đã từ chối đơn hàng");
-            return ResponseEntity.ok(response);
-
+            return ResponseEntity.ok(createSuccessResponse("Đã từ chối đơn hàng"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Có lỗi xảy ra: " + e.getMessage());
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(createErrorResponse("Có lỗi xảy ra: " + e.getMessage()));
         }
     }
 }
